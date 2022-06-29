@@ -1,0 +1,15 @@
+session_name: default
+windows:
+  - window_name: default
+    layout: 75c9,182x57,0,0[182x28,0,0{91x28,0,0,1,90x28,92,0,5},182x28,0,29{91x28,0,29,2,90x28,92,29[90x14,92,29,3,90x13,92,44,4]}]
+    shell_command_before:
+      - echo "PANE 1"
+      - echo "PANE 2"
+    panes:
+      - neofetch | lolcat
+      - shell_command:
+        - yay -Syyu
+        - yay -Sc
+      - echo third
+      - echo fourth
+      - echo "ngrok start --all --config ~/.ngrok2/default.yml"

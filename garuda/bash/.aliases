@@ -1,0 +1,63 @@
+#Directory navigation aliases
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+#!/usr/bin/env bash
+
+# ls aliases
+alias ls='ls --color=auto'    # add colors for filetype recognition
+alias lx='ls -lXB'        # sort by extension
+alias lk='ls -lSr'        # sort by size
+alias la='ls -Al'        # show hidden files
+alias lr='ls -lR'        # recursice ls
+alias ll='ls -l --color=auto --time-style="+%Y-%m-%d %H:%M:%S"'      # long listing
+alias l.='ls -d .* --color=auto'
+alias l='ls -hF --color'    # quick listing
+alias lsd='ls -l | grep "^d"'   #list only directory
+
+alias grep='grep --color=auto'
+alias egrep='egrep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias tailf='tail -f'
+
+alias c='clear'
+alias user="getent passwd"
+alias group="getent group"
+alias df='df -Th'
+
+alias ps='ps f'
+alias psgr='ps aux | grep -v grep | grep -i -e VSZ -e'
+alias pstree='pstree -haspg '
+
+# Generic Miscellaneous
+alias mkdate='mkdir `date +%Y-%m-%d`'
+alias finduser='getent passwd | grep -i '
+alias list-dep='systemctl list-dependencies'
+alias source-bash='source ~/.bashrc'
+alias source-zsh='source ~/.zshrc'
+alias drop-caches='sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"'
+alias strip="sed 's/^[ \t]*//;s/[ \t]*$//'"
+
+# Git related
+alias git-graph='git log --graph --oneline --all'
+alias git-character-diff='git diff --word-diff-regex=.'
+alias git-show-diff='git show --word-diff-regex=.'
+alias git-log-pretty='git log --pretty=format:"%h%x09%an%x09%ad%x09%s"'
+alias git-commit-ammend='git commit --amend'
+alias git-commit-ammend-no-edit='git commit --amend --no-edit'
+
+# Editor related
+# Use vim if present for vi
+alias view='vi -R '
+if [ -x "$(command -v vim)" ]; then
+	alias vi='vim'
+    alias view='vim -R'
+fi
+alias em='emacs -nw'
+
+alias trs='tmux rename-session '
+alias hr='history -r'
+
+# Reload the shell (i.e. invoke as a login shell)
+alias reload="exec ${SHELL} -l"

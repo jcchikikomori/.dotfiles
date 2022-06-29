@@ -1,0 +1,53 @@
+# Load Antigen
+source /usr/share/zsh/share/antigen.zsh
+
+# Load the oh-my-zsh's library.
+antigen use oh-my-zsh
+
+# bundle antigen zsh plugins @ https://github.com/robbyrussell/oh-my-zsh/tree/master/plugins
+antigen bundles <<EOBUNDLES
+	macos
+	common-aliases
+	command-not-found
+	colored-man-pages
+	tmux
+	nodejs
+	java
+	maven
+	ruby
+	git
+	arialdomartini/oh-my-git
+	systemd
+	sudo
+	lol
+	zsh-users/zsh-completions
+	zsh-users/zsh-autosuggestions
+	zsh-users/zsh-syntax-highlighting
+	zsh-users/zsh-history-substring-search
+	# zdharma/fast-syntax-highlighting
+	# HeroCC/LS_COLORS
+EOBUNDLES
+
+# NVM bundle
+# antigen bundle lukechilds/zsh-nvm
+# antigen bundle Sparragus/zsh-auto-nvm-use
+
+# Load the theme @ https://github.com/robbyrussell/oh-my-zsh/tree/master/themes/
+# Load the theme
+# simple and fast
+antigen theme steeef
+# cool but slow
+# antigen theme https://github.com/denysdovhan/spaceship-zsh-theme spaceship
+# antigen theme romkatv/powerlevel10k
+
+# ANTIGEN APPLY CHANGES
+antigen apply
+
+# Source all the configs
+# source ~/.zsh/history.zsh
+# source ~/.zsh/functions.zsh
+# source ~/.zsh/aliases.zsh
+# source ~/.zsh/exports.zsh
+if [ -e "$HOME/.zsh/local.zsh" ]; then # If local.zsh exists, source it
+  source ~/.zsh/local.zsh
+fi
