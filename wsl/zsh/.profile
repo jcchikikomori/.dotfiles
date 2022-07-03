@@ -30,6 +30,11 @@ fi
 # TMUX
 export DISABLE_AUTO_TITLE='true'
 
+# FOR: chaotic-aur/android-sdk
+# FOR: chaotic-aur/sdkmanager
+export ANDROID_SDK_ROOT=/opt/android-sdk
+export ANDROID_AVD_HOME=$HOME/.android/avd
+
 # GWSL
 export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
 export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
