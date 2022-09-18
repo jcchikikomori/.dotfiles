@@ -349,7 +349,3 @@ source /usr/share/nvm/init-nvm.sh
 
 ## profile
 source $HOME/.profile
-
-## antigen
-# source /usr/share/zsh/share/antigen.zsh
-source $HOME/.antigenrc

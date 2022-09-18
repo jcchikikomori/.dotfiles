@@ -15,6 +15,12 @@ export BROWSER=wslview
 #export QT_QPA_PLATFORMTHEME="qt5ct"
 #export GTK2_RC_FILES="$HOME/.gtkrc-2.0"
 
+export PHPENV_ROOT="$HOME/myphpenv"
+if [ -d "${PHPENV_ROOT}" ]; then
+  export PATH="${PHPENV_ROOT}/bin:${PATH}"
+  eval "$(phpenv init -)"
+fi
+
 # NVM
 # source /usr/share/nvm/init-nvm.sh
 
@@ -23,7 +29,8 @@ export BROWSER=wslview
 # export DOCKER_HOST=unix:///var/run/docker.sock
 
 # Start TMUX
-if [ -z "$TMUX" ]; then
+# To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
+if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
   tmux attach || tmux new
 fi
 
@@ -35,9 +42,16 @@ export DISABLE_AUTO_TITLE='true'
 export ANDROID_SDK_ROOT=/opt/android-sdk
 export ANDROID_AVD_HOME=$HOME/.android/avd
 
+# archlinux-java
+export JAVA_HOME=/usr/lib/jvm/default
+
+# sdkman (MUST BE AFTER archlinux-java)
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
 # GWSL
 export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
 export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
-export LIBGL_ALWAYS_INDIRECT=1 #GWSL
-export GDK_SCALE=1 #GWSL
-export QT_SCALE_FACTOR=1 #GWSL
+export LIBGL_ALWAYS_INDIRECT=0 #GWSL
+#export GDK_SCALE=1 #GWSL
+#export QT_SCALE_FACTOR=1 #GWSL

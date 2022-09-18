@@ -1,0 +1,6 @@
+#!/usr/bin/zsh
+
+export SESSION="$(pwd | sha256sum | cut -f 1 -d ' ')"
+export TMUX_DISABLE_AT_BOOT=true
+# exec tmux at -t $SESSION
+exec $SHELL
