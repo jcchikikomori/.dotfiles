@@ -28,7 +28,7 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 
 # Start TMUX
 # To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
-export TMUX_DISABLE_AT_BOOT=1
+# export TMUX_DISABLE_AT_BOOT=1
 if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
   tmux attach || tmux new
 fi

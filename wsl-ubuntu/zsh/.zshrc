@@ -302,6 +302,12 @@ alias upgrademe='sudo apt-get upgrade'
 # Stow Me!
 alias stowme='sh $HOME/.dotfiles/wsl-ubuntu/stowme.sh'
 
+# Auto-add SSH
+if [ -z "$SSH_AUTH_SOCK" ] ; then
+    eval `ssh-agent -s`
+    ssh-add
+fi
+
 ## rbenv
 # eval "$(rbenv init -)"
 
