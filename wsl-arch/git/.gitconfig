@@ -13,3 +13,5 @@
 	trustExitCode = true
 [init]
 	defaultBranch = main
+[commit]
+	gpgsign = true
