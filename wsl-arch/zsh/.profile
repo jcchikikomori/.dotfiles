@@ -1,10 +1,17 @@
 # SSH Agent
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
-SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+# SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 
 # Auto-add SSH (not working yet)
 # https://bbs.archlinux.org/viewtopic.php?id=35524
 # Install this instead: aur/pam_ssh_agent_auth
+
+# Start ssh-agent if not already running
+if ! pgrep -u $USER ssh-agent > /dev/null; then
+  eval "$(ssh-agent -s)"
+  SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
+fi
 
 # ibus-daemon -d -x
 export EDITOR=vim
@@ -35,7 +42,8 @@ if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
 fi
 
 # TMUX
-export DISABLE_AUTO_TITLE='true'
+# export TMUX_DISABLE_AT_BOOT=true
+export DISABLE_AUTO_TITLE=true
 
 # FOR: chaotic-aur/android-sdk
 # FOR: chaotic-aur/sdkmanager

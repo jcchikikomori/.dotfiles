@@ -1,3 +1,7 @@
 /.vscode
 **/**/.zhistory
 **/**/.zsh_history
+**/id_rsa
+**/id_rsa.pub
+**/.ssh/*
+!**/.ssh/config
