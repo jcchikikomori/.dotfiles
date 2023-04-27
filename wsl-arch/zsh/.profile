@@ -1,10 +1,15 @@
 # SSH Agent
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
-SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+# SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 
 # Auto-add SSH (not working yet)
 # https://bbs.archlinux.org/viewtopic.php?id=35524
 # Install this instead: aur/pam_ssh_agent_auth
+
+# Start ssh-agent if not already running
+if ! pgrep -u $USER ssh-agent > /dev/null; then
+  eval "$(ssh-agent -s)"
+fi
 
 # ibus-daemon -d -x
 export EDITOR=vim
@@ -30,12 +35,11 @@ fi
 
 # Start TMUX
 # To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
+export TMUX_DISABLE_AT_BOOT=true
+export DISABLE_AUTO_TITLE=true
 if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
   tmux attach || tmux new
 fi
-
-# TMUX
-export DISABLE_AUTO_TITLE='true'
 
 # FOR: chaotic-aur/android-sdk
 # FOR: chaotic-aur/sdkmanager
@@ -48,6 +52,9 @@ export JAVA_HOME=/usr/lib/jvm/default
 # sdkman (MUST BE AFTER archlinux-java)
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# GPG Workarounds (for signing commits)
+export GPG_TTY=$(tty)
 
 # GWSL
 export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
