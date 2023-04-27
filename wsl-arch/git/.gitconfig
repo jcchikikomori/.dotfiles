@@ -1,6 +1,7 @@
 [user]
 	name = John Cyrill Corsanes
 	email = jccorsanes@protonmail.com
+	signingkey = F2288A022ED387947F7656E280337CE58D59BF46
 [diff]
 	tool = diffmerge
 [difftool "diffmerge"]

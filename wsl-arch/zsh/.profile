@@ -9,8 +9,6 @@
 # Start ssh-agent if not already running
 if ! pgrep -u $USER ssh-agent > /dev/null; then
   eval "$(ssh-agent -s)"
-  SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
-  ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
 fi
 
 # ibus-daemon -d -x
@@ -37,13 +35,11 @@ fi
 
 # Start TMUX
 # To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
+export TMUX_DISABLE_AT_BOOT=true
+export DISABLE_AUTO_TITLE=true
 if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
   tmux attach || tmux new
 fi
-
-# TMUX
-# export TMUX_DISABLE_AT_BOOT=true
-export DISABLE_AUTO_TITLE=true
 
 # FOR: chaotic-aur/android-sdk
 # FOR: chaotic-aur/sdkmanager
