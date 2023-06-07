@@ -1,0 +1,7 @@
+!tags/
+*.pyc
+*.sw[nop]
+.bundle
+.env
+.git/
+node_modules/
