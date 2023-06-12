@@ -61,9 +61,14 @@ export SDKMAN_DIR="$HOME/.sdkman"
 #DOCKER_HOST=`echo "unix://${XDG_RUNTIME_DIR}/podman/podman.sock"`
 #export DOCKER_HOST
 
+# Flatpak-related workarounds
+#export PATH=/var/lib/flatpak/exports/bin:$PATH
+alias code="flatpak run com.visualstudio.code"
+
 # GWSL
-export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
-export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
-export LIBGL_ALWAYS_INDIRECT=0 #GWSL
+# This directory is non-WSL
+#export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
+#export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
+#export LIBGL_ALWAYS_INDIRECT=0 #GWSL
 #export GDK_SCALE=1 #GWSL
 #export QT_SCALE_FACTOR=1 #GWSL
