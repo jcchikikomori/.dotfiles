@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
@@ -23,7 +23,7 @@ chmod +x install.sh
 sudo ./install.sh install
 rm -f install.sh
 
-# If you want to automatically start your distro on Windows startup, enable distrod by the following command 
+# If you want to automatically start your distro on Windows startup, enable distrod by the following command
 #/opt/distrod/bin/distrod enable --start-on-windows-boot
 # Otherwise
 /opt/distrod/bin/distrod enable
