@@ -7,6 +7,10 @@ env:
   # available, otherwise `xterm-256color` is used.
   TERM: xterm-256color
 
+# https://github.com/alacritty/alacritty-theme
+import:
+ - ~/.config/alacritty/themes/themes/darcula.yaml
+
 window:
   # Window dimensions (changes require restart)
   #
@@ -14,7 +18,7 @@ window:
   # If both are `0`, this setting is ignored.
   dimensions:
     columns: 98
-    lines: 25
+    lines: 28
 
   # Window position (changes require restart)
   #
@@ -40,7 +44,7 @@ window:
   # Window opacity as a floating point number from `0.0` to `1.0`.
   # The value `0.0` is completely transparent and `1.0` is opaque.
   # opacity: 1.0
-  opacity: 0.90
+  opacity: 0.95
 
   # Window decorations
   #
