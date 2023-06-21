@@ -91,7 +91,7 @@ export EDITOR='vim'
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
-# Compilation Cache
+# Compilation Cache (ccache package required)
 export PATH="/usr/lib/ccache:${PATH}"
 export CC="ccache gcc"
 export CXX="ccache g++"
@@ -121,6 +121,7 @@ if [ -d "$HOME/.local/bin" ]; then
     export PATH=$HOME/.local/bin:$PATH
 fi
 
+# Starship
 eval "$(starship init zsh)"
 function set_win_title(){
     echo -ne "\033]0; $USER@$HOST:${PWD/$HOME/~} \007"

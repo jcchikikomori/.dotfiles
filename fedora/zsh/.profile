@@ -1,7 +1,7 @@
 # SSH Agent
 # TODO: Does not apply for Ubuntu
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
-# SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 
 # Auto-add SSH (not working yet)
 # https://bbs.archlinux.org/viewtopic.php?id=35524
@@ -64,6 +64,12 @@ export SDKMAN_DIR="$HOME/.sdkman"
 # Flatpak-related workarounds
 #export PATH=/var/lib/flatpak/exports/bin:$PATH
 alias code="flatpak run com.visualstudio.code"
+
+# Fedora-related workarounds
+# Ensure include the installed libraries from system before compiling software
+export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+# Ensure path for GO programming language
+export GOPATH="${HOME}/go"
 
 # GWSL
 # This directory is non-WSL
