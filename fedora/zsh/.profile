@@ -1,11 +1,14 @@
 # SSH Agent
-# TODO: Does not apply for Ubuntu
+# References:
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
-SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
-
-# Auto-add SSH (not working yet)
-# https://bbs.archlinux.org/viewtopic.php?id=35524
-# Install this instead: aur/pam_ssh_agent_auth
+# https://owensgl.github.io/biol525D/Topic_1/configure_ssh_agent
+if [ -z "$(pgrep ssh-agent)" ]; then
+    rm -rf '/tmp/ssh-*'
+    eval "$(ssh-agent -s)" > /dev/null
+else
+    export SSH_AGENT_PID=$(pgrep ssh-agent)
+    export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+fi
 
 export EDITOR=vim
 
