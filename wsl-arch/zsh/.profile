@@ -1,14 +1,13 @@
 # SSH Agent
+# References:
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
-# SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
-
-# Auto-add SSH (not working yet)
-# https://bbs.archlinux.org/viewtopic.php?id=35524
-# Install this instead: aur/pam_ssh_agent_auth
-
-# Start ssh-agent if not already running
-if ! pgrep -u $USER ssh-agent > /dev/null; then
-  eval "$(ssh-agent -s)"
+# https://owensgl.github.io/biol525D/Topic_1/configure_ssh_agent
+if [ -z "$(pgrep ssh-agent)" ]; then
+    rm -rf '/tmp/ssh-*'
+    eval "$(ssh-agent -s)" > /dev/null
+else
+    export SSH_AGENT_PID=$(pgrep ssh-agent)
+    export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 fi
 
 # ibus-daemon -d -x
@@ -60,5 +59,7 @@ export GPG_TTY=$(tty)
 export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
 export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
 export LIBGL_ALWAYS_INDIRECT=0 #GWSL
-#export GDK_SCALE=1 #GWSL
-#export QT_SCALE_FACTOR=1 #GWSL
+export GDK_SCALE=0.5 #GWSL
+export QT_SCALE_FACTOR=1 #GWSL
+export GDK_DPI_SCALE=1
+
