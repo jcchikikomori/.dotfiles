@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Setting default locale
+sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
+
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
 sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip
@@ -47,16 +50,12 @@ curl -s "https://get.sdkman.io" | bash
 
 # Setting up bash fzf
 git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true; ~/.fzf/install;
-
 # Setting up bash fasd
 git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
-
 # Setting up Vim Plug
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-
 # Setting up Tmux TPM
 git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
-
 # Always put this oh-my-zsh into the end
 yay -S --noconfirm --noprogressbar stow tmux starship antigen
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
