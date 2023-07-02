@@ -2,7 +2,7 @@
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3
+sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip
 mkdir -p temp && cd temp/
 git clone https://aur.archlinux.org/yay.git
 cd yay
@@ -35,13 +35,15 @@ ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" || true
 # NVM
 yay -S --noconfirm --noprogressbar chaotic-aur/nvm
 # Workarounds & Misc softwares
-yay -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth archlinux-java sdkman
+yay -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 # Programming languages
 yay -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
 pyenv install 3.11.4 -v
 pyenv global 3.11.4
 nvm install 18 --lts
 npm install -g dotstow
+# Programming languages: SDKMAN
+curl -s "https://get.sdkman.io" | bash
 
 # Setting up bash fzf
 git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true; ~/.fzf/install;

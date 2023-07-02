@@ -326,13 +326,6 @@ source $HOME/.profile
 ## antigen
 source $HOME/.antigenrc
 
-## pyenv
-# export PYENV_ROOT="$HOME/.pyenv" >> ~/.zshrc
-# export PATH="$PYENV_ROOT/bin:$PATH" >> ~/.zshrc
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
-
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/home/johnc/.sdkman"
 [[ -s "/home/johnc/.sdkman/bin/sdkman-init.sh" ]] && source "/home/johnc/.sdkman/bin/sdkman-init.sh"

@@ -57,10 +57,24 @@ export SDKMAN_DIR="$HOME/.sdkman"
 export GPG_TTY=$(tty)
 
 # GWSL
-export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
-export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
+#export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
+#export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
 export LIBGL_ALWAYS_INDIRECT=0 #GWSL
 export GDK_SCALE=0.5 #GWSL
 export QT_SCALE_FACTOR=1 #GWSL
 export GDK_DPI_SCALE=1
+
+## pyenv
+# export PYENV_ROOT="$HOME/.pyenv" >> ~/.zshrc
+# export PATH="$PYENV_ROOT/bin:$PATH" >> ~/.zshrc
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# bash fzf
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/home/johnc/.sdkman"
+[[ -s "/home/johnc/.sdkman/bin/sdkman-init.sh" ]] && source "/home/johnc/.sdkman/bin/sdkman-init.sh"
 
