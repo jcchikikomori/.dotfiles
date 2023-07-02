@@ -2,6 +2,7 @@
 # References:
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
 # https://owensgl.github.io/biol525D/Topic_1/configure_ssh_agent
+# Note: Unstable on Arch. Use aur/pam_ssh_agent_auth
 if [ -z "$(pgrep ssh-agent)" ]; then
     rm -rf '/tmp/ssh-*'
     eval "$(ssh-agent -s)" > /dev/null
@@ -26,7 +27,7 @@ if [ -d "${PHPENV_ROOT}" ]; then
 fi
 
 # NVM
-# source /usr/share/nvm/init-nvm.sh
+source /usr/share/nvm/init-nvm.sh
 
 # Docker (Disable this for WSL to work!)
 # export PATH=/home/docker/bin:$PATH
@@ -34,7 +35,7 @@ fi
 
 # Start TMUX
 # To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
-export TMUX_DISABLE_AT_BOOT=true
+# export TMUX_DISABLE_AT_BOOT=true
 export DISABLE_AUTO_TITLE=true
 if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
   tmux attach || tmux new

@@ -330,7 +330,7 @@ source $HOME/.antigenrc
 # export PYENV_ROOT="$HOME/.pyenv" >> ~/.zshrc
 # export PATH="$PYENV_ROOT/bin:$PATH" >> ~/.zshrc
 export PYENV_ROOT="$HOME/.pyenv"
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
