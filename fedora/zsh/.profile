@@ -73,11 +73,3 @@ alias code="flatpak run com.visualstudio.code"
 export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
 # Ensure path for GO programming language
 export GOPATH="${HOME}/go"
-
-# GWSL
-# This directory is non-WSL
-#export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
-#export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
-#export LIBGL_ALWAYS_INDIRECT=0 #GWSL
-#export GDK_SCALE=1 #GWSL
-#export QT_SCALE_FACTOR=1 #GWSL
