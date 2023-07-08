@@ -64,6 +64,12 @@ export SDKMAN_DIR="$HOME/.sdkman"
 #DOCKER_HOST=`echo "unix://${XDG_RUNTIME_DIR}/podman/podman.sock"`
 #export DOCKER_HOST
 
+# Gaming!
+# DXVK
+export DXVK_CONFIG_FILE=$HOME/.dxvk/dxvk.conf
+export DXVK_STATE_CACHE_PATH=$HOME/.dxvk/cache
+export DXVK_LOG_PATH=$HOME/.dxvk/log
+
 # Flatpak-related workarounds
 #export PATH=/var/lib/flatpak/exports/bin:$PATH
 alias code="flatpak run com.visualstudio.code"
