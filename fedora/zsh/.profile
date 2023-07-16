@@ -82,3 +82,8 @@ alias code="flatpak run com.visualstudio.code"
 export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
 # Ensure path for GO programming language
 export GOPATH="${HOME}/go"
+
+# Resetting values for deprecated QT properties
+export QT_SCREEN_SCALE_FACTORS=
+export QT_SCALE_FACTOR=
+export QT_AUTO_SCREEN_SCALE_FACTOR=
