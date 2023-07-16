@@ -92,7 +92,7 @@ set clipboard=unnamedplus
 " almost no delays in switching modes
 set timeoutlen=1000 ttimeoutlen=10
 
-colorscheme gruvbox
+" colorscheme gruvbox
 
 cnoreabbrev W w
 cnoreabbrev Q q
