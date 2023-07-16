@@ -1,14 +1,14 @@
 # SSH Agent
+# References:
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
-# SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
-
-# Auto-add SSH (not working yet)
-# https://bbs.archlinux.org/viewtopic.php?id=35524
-# Install this instead: aur/pam_ssh_agent_auth
-
-# Start ssh-agent if not already running
-if ! pgrep -u $USER ssh-agent > /dev/null; then
-  eval "$(ssh-agent -s)"
+# https://owensgl.github.io/biol525D/Topic_1/configure_ssh_agent
+# Note: Unstable on Arch. Use aur/pam_ssh_agent_auth
+if [ -z "$(pgrep ssh-agent)" ]; then
+    rm -rf '/tmp/ssh-*'
+    eval "$(ssh-agent -s)" > /dev/null
+else
+    export SSH_AGENT_PID=$(pgrep ssh-agent)
+    export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 fi
 
 # ibus-daemon -d -x
@@ -27,7 +27,7 @@ if [ -d "${PHPENV_ROOT}" ]; then
 fi
 
 # NVM
-# source /usr/share/nvm/init-nvm.sh
+source /usr/share/nvm/init-nvm.sh
 
 # Docker (Disable this for WSL to work!)
 # export PATH=/home/docker/bin:$PATH
@@ -35,7 +35,7 @@ fi
 
 # Start TMUX
 # To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
-export TMUX_DISABLE_AT_BOOT=true
+# export TMUX_DISABLE_AT_BOOT=true
 export DISABLE_AUTO_TITLE=true
 if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
   tmux attach || tmux new
@@ -57,8 +57,24 @@ export SDKMAN_DIR="$HOME/.sdkman"
 export GPG_TTY=$(tty)
 
 # GWSL
-export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
-export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
+#export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
+#export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
 export LIBGL_ALWAYS_INDIRECT=0 #GWSL
-#export GDK_SCALE=1 #GWSL
-#export QT_SCALE_FACTOR=1 #GWSL
+export GDK_SCALE=0.5 #GWSL
+export QT_SCALE_FACTOR=1 #GWSL
+export GDK_DPI_SCALE=1
+
+## pyenv
+# export PYENV_ROOT="$HOME/.pyenv" >> ~/.zshrc
+# export PATH="$PYENV_ROOT/bin:$PATH" >> ~/.zshrc
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+# bash fzf
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/home/johnc/.sdkman"
+[[ -s "/home/johnc/.sdkman/bin/sdkman-init.sh" ]] && source "/home/johnc/.sdkman/bin/sdkman-init.sh"
+
