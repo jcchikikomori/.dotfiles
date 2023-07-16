@@ -1,6 +1,7 @@
 [user]
 	name = John Cyrill Corsanes
 	email = jccorsanes@protonmail.com
+	signingkey = CC3FAD00C862B8A6
 [diff]
 	tool = diffmerge
 [difftool "diffmerge"]
@@ -12,3 +13,5 @@
 	trustExitCode = true
 [init]
 	defaultBranch = main
+[commit]
+	gpgsign = true

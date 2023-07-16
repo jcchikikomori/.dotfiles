@@ -10,6 +10,9 @@ else
     export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 fi
 
+# Locally installed binaries
+export PATH="${HOME}/bin:${PATH}"
+
 export EDITOR=vim
 
 export PHPENV_ROOT="$HOME/.phpenv"
@@ -64,6 +67,12 @@ export SDKMAN_DIR="$HOME/.sdkman"
 #DOCKER_HOST=`echo "unix://${XDG_RUNTIME_DIR}/podman/podman.sock"`
 #export DOCKER_HOST
 
+# Gaming!
+# DXVK
+export DXVK_CONFIG_FILE=$HOME/.dxvk/dxvk.conf
+export DXVK_STATE_CACHE_PATH=$HOME/.dxvk/cache
+export DXVK_LOG_PATH=$HOME/.dxvk/log
+
 # Flatpak-related workarounds
 #export PATH=/var/lib/flatpak/exports/bin:$PATH
 alias code="flatpak run com.visualstudio.code"
@@ -73,11 +82,3 @@ alias code="flatpak run com.visualstudio.code"
 export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
 # Ensure path for GO programming language
 export GOPATH="${HOME}/go"
-
-# GWSL
-# This directory is non-WSL
-#export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
-#export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
-#export LIBGL_ALWAYS_INDIRECT=0 #GWSL
-#export GDK_SCALE=1 #GWSL
-#export QT_SCALE_FACTOR=1 #GWSL
