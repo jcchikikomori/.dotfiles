@@ -10,6 +10,9 @@ else
     export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 fi
 
+# Locally installed binaries
+export PATH="${HOME}/bin:${PATH}"
+
 export EDITOR=vim
 
 export PHPENV_ROOT="$HOME/.phpenv"
