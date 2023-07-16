@@ -5,3 +5,8 @@
 **/id_rsa.pub
 **/.ssh/*
 !**/.ssh/config
+
+# Specific files
+fedora/zsh/bin/nps_*.sh
+fedora/zsh/bin/pyNPU.py
+fedora/zsh/bin/t7z
