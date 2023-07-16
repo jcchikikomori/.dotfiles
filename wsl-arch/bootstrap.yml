@@ -1,4 +1,0 @@
-- message: Setting up
-  cmd: ./setup.sh
-- message: Installing VIM Plug
-  cmd: vim +'PlugInstall --sync' +qa
