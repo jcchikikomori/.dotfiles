@@ -2,3 +2,35 @@
 	name = John Cyrill Corsanes
 	email = jccorsanes@protonmail.com
 	signingkey = CC3FAD00C862B8A6
+[alias]
+    # View abbreviated SHA, description, and history graph of the latest 20 commits.
+    l = log --pretty=oneline -n 20 --graph --abbrev-commit
+
+    # List contributors with number of commits.
+    contributors = shortlog --summary --numbered
+
+    # Show the user email for the current repository.
+    whoami = config user.email
+
+[branch]
+    # Show most recently changed branches first.
+    sort = -committerdate
+
+[core]
+    pager = less -r
+
+[diff]
+    # Detect copies as well as renames.
+    renames = copies
+
+[filter "lfs"]
+    required = true
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+
+[help]
+    autoCorrect = 1
+
+[pull]
+	rebase = true
