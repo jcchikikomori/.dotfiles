@@ -76,6 +76,10 @@ export DXVK_LOG_PATH=$HOME/.dxvk/log
 # Flatpak-related workarounds
 #export PATH=/var/lib/flatpak/exports/bin:$PATH
 alias code="flatpak run com.visualstudio.code"
+alias chromium-browser="flatpak run org.chromium.Chromium"
+alias steam="flatpak run com.valvesoftware.Steam"
+alias PPSSPP="flatpak run org.ppsspp.PPSSPP"
+alias vlc="flatpak run org.videolan.VLC"
 
 # Fedora-related workarounds
 # Ensure include the installed libraries from system before compiling software
