@@ -82,3 +82,8 @@ alias code="flatpak run com.visualstudio.code"
 export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
 # Ensure path for GO programming language
 export GOPATH="${HOME}/go"
+
+# Check if the .wslprofile file exists, then source it
+if [[ -f ~/.wslprofile ]]; then
+    source ~/.wslprofile
+fi
