@@ -1,5 +1,9 @@
 #!/bin/sh
 
+echo "Symlinking state dir..."
+mkdir -p $HOME/.local/state/dotstow
+ln -s $HOME/.dotfiles $HOME/.local/state/dotstow/dotfiles
+
 echo 'Setting up bash fzf...'
 git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true; ~/.fzf/install;
 
