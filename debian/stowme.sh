@@ -5,5 +5,5 @@ cd ..
 ./cleanup.sh
 
 cd $HOME || return
-dotstow stow bash antigen tmux tmuxp vim vscode systems
-dotstow stow zsh git ssh
+dotstow stow bash antigen ssh tmux tmuxp vim vscode systems dxvk
+dotstow stow zsh git

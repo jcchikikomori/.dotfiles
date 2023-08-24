@@ -34,4 +34,6 @@ rm -f $HOME/.zsh
 rm -f $HOME/.zshrc
 rm -f $HOME/.zshrc.pre-oh-my-zsh
 rm -f $HOME/.git
-rm -f $HOME/.ssh
+# Avoid removing ssh directory
+rm -f $HOME/.ssh-backup
+mv $HOME/.ssh $HOME/.ssh-backup

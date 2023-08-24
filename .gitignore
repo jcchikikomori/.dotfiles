@@ -1,8 +1,8 @@
 /.vscode
 **/**/.zhistory
 **/**/.zsh_history
-**/id_rsa
-**/id_rsa.pub
+**/id_*
+**/id_*.pub
 **/.ssh/*
 !**/.ssh/config
 
