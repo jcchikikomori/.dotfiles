@@ -83,6 +83,9 @@ export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
 # Ensure path for GO programming language
 export GOPATH="${HOME}/go"
 
+# GPG-related TTY fix
+export GPG_TTY=$(tty)
+
 # Check if the .wslprofile file exists, then source it
 if [[ -f ~/.wslprofile ]]; then
     source ~/.wslprofile
