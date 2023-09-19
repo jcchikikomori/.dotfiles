@@ -74,14 +74,29 @@ export DXVK_STATE_CACHE_PATH=$HOME/.dxvk/cache
 export DXVK_LOG_PATH=$HOME/.dxvk/log
 
 # Flatpak-related workarounds
-#export PATH=/var/lib/flatpak/exports/bin:$PATH
-alias code="flatpak run com.visualstudio.code"
+# Note: Must be only for native RHEL distros. Currently unstable on WSL2
+if [ -z "$WSL_DISTRO_NAME" ]; then
+  #export PATH=/var/lib/flatpak/exports/bin:$PATH
+  alias code="flatpak run com.visualstudio.code"
+  alias chromium-browser="flatpak run org.chromium.Chromium"
+  alias steam="flatpak run com.valvesoftware.Steam"
+  alias PPSSPP="flatpak run org.ppsspp.PPSSPP"
+  alias vlc="flatpak run org.videolan.VLC"
+fi
 
 # Fedora-related workarounds
 # Ensure include the installed libraries from system before compiling software
 export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
 # Ensure path for GO programming language
 export GOPATH="${HOME}/go"
+
+# Disabling HiDPI
+#export GDK_SCALE=1
+
+# Resetting values for deprecated QT properties
+export QT_SCREEN_SCALE_FACTORS=
+export QT_SCALE_FACTOR=
+export QT_AUTO_SCREEN_SCALE_FACTOR=
 
 # GPG-related TTY fix
 export GPG_TTY=$(tty)
@@ -90,3 +105,4 @@ export GPG_TTY=$(tty)
 if [[ -f ~/.wslprofile ]]; then
     source ~/.wslprofile
 fi
+
