@@ -1,4 +1,4 @@
-name: CI
+name: CI - Ubuntu
 on:
   push:
     branches: ["master", "develop", "feature/*"]
@@ -16,9 +16,10 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-      # Runs a single command using the runners shell
-      - name: Negative testing - Installing dotstow
+      - name: Setup
+        run: |
+            sudo apt-get update
+            sudo apt-get install stow git build-essential -y
+      - name: Installing dotstow
         run: |
             ./install-dotstow.sh
-      - if: failure()
-        run: echo "Working"
