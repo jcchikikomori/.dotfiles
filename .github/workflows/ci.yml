@@ -20,7 +20,5 @@ jobs:
       - name: Negative testing - Installing dotstow
         run: |
             ./install-dotstow.sh
-            if [ $? -eq 1 ]; then
-                echo "The script returned exit code 1."
-                exit 0
-            fi
+      - if: failure()
+        run: echo "Working"
