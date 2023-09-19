@@ -1,4 +1,0 @@
-#/bin/sh
-amixer -c 0 set DAC playback 100% unmute
-amixer -c 0 set Headphone playback 100% unmute
-amixer -c 0 set Speaker playback 100% mute

@@ -11,3 +11,5 @@ fedora/zsh/bin/nps_*.sh
 fedora/zsh/bin/pyNPU.py
 fedora/zsh/bin/t7z
 **/.vscode/exports-autocomplete-cache/
+**/zsh/bin/huawei-headphone
+**/zsh/bin/huawei-speaker
