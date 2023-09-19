@@ -16,14 +16,14 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-      - name: Setup
+      - name: Initial Setup
         run: |
             sudo apt-get update
             sudo apt-get install stow git build-essential -y
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
-      - name: Setup
+      - name: Getting Started
         run: |
-            y | source debian/setup.sh 
-            source debian/stowme.sh
+            cd debian && ./setup.sh && ./stowme.sh
+            cd ..
