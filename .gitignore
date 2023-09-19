@@ -19,6 +19,7 @@ fedora/zsh/bin/t7z
 **/vscode/.vscode-server/data/machineid
 **/vscode/.vscode-server/data/User/History/*
 **/vscode/.vscode-server/data/User/workspaceStorage/*
+**/vscode/.vscode-server/data/CachedExtensionVSIXs/*
 **/vscode/.vscode-server/extensions/
 !**/vscode/.vscode-server/data/Machine/*
 !**/vscode/.vscode-server/data/User/*
