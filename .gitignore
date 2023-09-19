@@ -1,4 +1,3 @@
-/.vscode
 **/**/.zhistory
 **/**/.zsh_history
 **/id_*
@@ -10,4 +9,16 @@
 fedora/zsh/bin/nps_*.sh
 fedora/zsh/bin/pyNPU.py
 fedora/zsh/bin/t7z
-**/.vscode/exports-autocomplete-cache/
+
+# VSCode
+/.vscode
+/.vscode/exports-autocomplete-cache/
+**/vscode/.vscode-server/bin/*
+**/vscode/.vscode-server/data/CachedProfilesData/*
+**/vscode/.vscode-server/data/logs/*
+**/vscode/.vscode-server/data/machineid
+**/vscode/.vscode-server/data/User/History/*
+**/vscode/.vscode-server/data/User/workspaceStorage/*
+**/vscode/.vscode-server/extensions/
+!**/vscode/.vscode-server/data/Machine/*
+!**/vscode/.vscode-server/data/User/*
