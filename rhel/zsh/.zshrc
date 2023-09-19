@@ -336,3 +336,5 @@ eval "$(pyenv init -)"
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/home/johnc/.sdkman"
 [[ -s "/home/johnc/.sdkman/bin/sdkman-init.sh" ]] && source "/home/johnc/.sdkman/bin/sdkman-init.sh"
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
