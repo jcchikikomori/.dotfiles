@@ -23,3 +23,7 @@ jobs:
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
+      - name: Setup
+        run: |
+            y | source debian/setup.sh 
+            source debian/stowme.sh
