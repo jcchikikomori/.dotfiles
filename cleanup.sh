@@ -1,5 +1,6 @@
 #!/bin/sh
 
+rm -rf $HOME/.backups
 mkdir -p $HOME/.backups
 
 echo 'Cleaning up tmux...'
@@ -8,8 +9,8 @@ rm -f $HOME/.tmux.conf
 rm -f $HOME/.tmux.conf.local
 
 echo 'Cleaning up other files...'
-rm -f $HOME/.vimrc $HOME/.backups
-rm -f $HOME/.gitconfig $HOME/.backups
+rm -f $HOME/.vimrc
+rm -f $HOME/.gitconfig
 
 echo 'Unstowing...'
 # dotstow unstow bash antigen tmux tmuxp vim vscode systems dxvk
@@ -35,5 +36,5 @@ rm -f $HOME/.zshrc
 rm -f $HOME/.zshrc.pre-oh-my-zsh
 rm -f $HOME/.git
 # Avoid removing ssh directory
-rm -f $HOME/.ssh-backup
-mv $HOME/.ssh $HOME/.ssh-backup
+# rm -f $HOME/.ssh-backup
+# mv $HOME/.ssh $HOME/.ssh-backup
