@@ -94,3 +94,12 @@ export GOPATH="${HOME}/go"
 export QT_SCREEN_SCALE_FACTORS=
 export QT_SCALE_FACTOR=
 export QT_AUTO_SCREEN_SCALE_FACTOR=
+
+# GPG-related TTY fix
+export GPG_TTY=$(tty)
+
+# Check if the .wslprofile file exists, then source it
+if [[ -f ~/.wslprofile ]]; then
+    source ~/.wslprofile
+fi
+
