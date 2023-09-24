@@ -18,7 +18,7 @@ rm -f $HOME/.gitconfig
 
 echo 'Unstowing...'
 
-# dotstow stow bash antigen ssh gpg tmux tmuxp vim vscode systems dxvk
+# dotstow stow bash antigen tmux tmuxp vim vscode systems dxvk
 rm -f $HOME/.alacritty.yml
 rm -f $HOME/.antigenrc
 rm -f $HOME/bash_completion.d
@@ -29,14 +29,15 @@ rm -f $HOME/.hushlogin
 rm -f $HOME/.profile
 rm -f $HOME/.tmuxp
 rm -f $HOME/.vimrc
-rm -rf $HOME/.gnupg/*.conf
+rm -f $HOME/.gnupg/gpg.conf
+rm -f $HOME/.gnupg/gpg-agent.conf
 
 # dotstow unstow zsh git ssh
 cp -rf $HOME/.zsh $HOME/.backups
 cp -f $HOME/.zshrc $HOME/.backups
 cp -f $HOME/.zshrc.pre-oh-my-zsh $HOME/.backups
 cp -rf $HOME/.git $HOME/.backups
-cp -rf $HOME/.ssh $HOME/.backups
+# cp -rf $HOME/.ssh $HOME/.backups
 rm -f $HOME/.zsh
 rm -f $HOME/.zshrc
 rm -f $HOME/.zshrc.pre-oh-my-zsh
