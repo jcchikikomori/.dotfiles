@@ -25,5 +25,4 @@ jobs:
             ./install-dotstow.sh
       - name: Getting Started
         run: |
-            cd debian && ./setup.sh && ./stowme.sh
-            cd ..
+            cd debian && ./setup.sh

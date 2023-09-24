@@ -73,15 +73,24 @@ export DXVK_CONFIG_FILE=$HOME/.dxvk/dxvk.conf
 export DXVK_STATE_CACHE_PATH=$HOME/.dxvk/cache
 export DXVK_LOG_PATH=$HOME/.dxvk/log
 
-# Flatpak-related workarounds
-# Note: Must be only for native RHEL distros. Currently unstable on WSL2
+# WSL2-related
 if [ -z "$WSL_DISTRO_NAME" ]; then
+  # Flatpak-related workarounds
+  # Note: Must be only for native RHEL distros. Currently unstable on WSL2
   #export PATH=/var/lib/flatpak/exports/bin:$PATH
   alias code="flatpak run com.visualstudio.code"
   alias chromium-browser="flatpak run org.chromium.Chromium"
   alias steam="flatpak run com.valvesoftware.Steam"
   alias PPSSPP="flatpak run org.ppsspp.PPSSPP"
   alias vlc="flatpak run org.videolan.VLC"
+else
+  # GWSL
+  export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
+  export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
+  export LIBGL_ALWAYS_INDIRECT=0 #GWSL
+  export GDK_SCALE=0.5 #GWSL
+  export QT_SCALE_FACTOR=1 #GWSL
+  export GDK_DPI_SCALE=1
 fi
 
 # Fedora-related workarounds
