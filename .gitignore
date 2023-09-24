@@ -10,6 +10,14 @@ fedora/zsh/bin/nps_*.sh
 fedora/zsh/bin/pyNPU.py
 fedora/zsh/bin/t7z
 
+# GPG
+# Ignore all files and directories within ~/.gnupg
+linux/gpg/.gnupg/*
+
+# But track gpg.conf and gpg-agent.conf
+!linux/gpg/.gnupg/gpg.conf
+!linux/gpg/.gnupg/gpg-agent.conf
+
 # VSCode
 /.vscode
 /.vscode/exports-autocomplete-cache/
