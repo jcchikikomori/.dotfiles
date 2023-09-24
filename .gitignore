@@ -22,12 +22,7 @@ linux/gpg/.gnupg/*
 /.vscode
 /.vscode/exports-autocomplete-cache/
 **/vscode/.vscode-server/bin/*
-**/vscode/.vscode-server/data/CachedProfilesData/*
-**/vscode/.vscode-server/data/logs/*
-**/vscode/.vscode-server/data/machineid
-**/vscode/.vscode-server/data/User/History/*
-**/vscode/.vscode-server/data/User/workspaceStorage/*
-**/vscode/.vscode-server/data/CachedExtensionVSIXs/*
+**/vscode/.vscode-server/data/*
 **/vscode/.vscode-server/extensions/
 !**/vscode/.vscode-server/data/Machine/*
 !**/vscode/.vscode-server/data/User/*
