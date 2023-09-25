@@ -3,7 +3,7 @@
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
 sudo apt-get install -y git zsh
-sudo apt-get install -y stow git build-essential
+sudo apt-get install -y stow git build-essential sqlite3 ccache
 
 # New method on setting up systemctl
 # Source: https://github.com/nullpo-head/wsl-distrod

@@ -15,7 +15,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow
+sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite
 mkdir -p temp && cd temp/
 git clone https://aur.archlinux.org/yay.git
 cd yay
@@ -33,6 +33,9 @@ sudo pacman-key --lsign-key 3056513887B78AEB
 sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
 echo "[chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee /etc/pacman.conf
+
+# Compilation Cache
+yay -S --noconfirm --noprogressbar ccache
 
 # NVM
 yay -S --noconfirm --noprogressbar chaotic-aur/nvm
