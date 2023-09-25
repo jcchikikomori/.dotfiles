@@ -2,3 +2,9 @@
 	name = John Cyrill Corsanes
 	email = jccorsanes@protonmail.com
 	signingkey = CC3FAD00C862B8A6
+[init]
+	defaultBranch = main
+[commit]
+	gpgsign = false
+[credential]
+	helper = /mnt/c/Program\\ Files/Git/mingw64/bin/git-credential-manager.exe
