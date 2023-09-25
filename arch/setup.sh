@@ -15,7 +15,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh
+sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow
 mkdir -p temp && cd temp/
 git clone https://aur.archlinux.org/yay.git
 cd yay
