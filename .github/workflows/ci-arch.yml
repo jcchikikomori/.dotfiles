@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
 jobs:
   setup:
-    runs-on: archlinux:latest
+    runs-on: ubuntu-latest
+    container: archlinux:latest
     steps:
       - uses: actions/checkout@v3
       - name: Getting Started (First step)
