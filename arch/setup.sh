@@ -15,13 +15,16 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite
+sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux
 mkdir -p temp && cd temp/
 git clone https://aur.archlinux.org/yay.git
 cd yay
 makepkg -si --noconfirm
 cd ../..
 rm -rf temp/
+
+# pacman-related
+pacman-key --init
 
 # SSH Keys
 ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" || true
@@ -45,13 +48,9 @@ sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 
 # Programming languages
 sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
-pyenv install 3.11.4 -v
-pyenv global 3.11.4
-nvm install 18 --lts
-npm install -g dotstow
-
-# Programming languages: SDKMAN
-curl -s "https://get.sdkman.io" | bash
+# pyenv install 3.11.4 -v
+# pyenv global 3.11.4
+# nvm install 18 --lts
 
 echo 'Installing dependencies into your home directory...'
 cd ..

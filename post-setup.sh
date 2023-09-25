@@ -22,8 +22,21 @@ curl -sS https://starship.rs/install.sh | sh -s -- -y
 echo 'Setting up Antigen...'
 curl -L https://git.io/antigen > $HOME/antigen.zsh
 
-echo 'Installing pyenv...'
-curl https://pyenv.run | bash
+read -p "Do you want to install python with pyenv? (y/n): " choice
+if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
+    echo 'Installing pyenv...'
+    curl https://pyenv.run | bash
+else
+    echo 'Skipped. You can install SDKMAN manually on their website!'
+fi
+
+read -p "Do you want to install SDKMAN? (y/n): " choice
+if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
+    echo 'Installing SDKMAN...'
+    curl -s "https://get.sdkman.io" | bash
+else
+    echo 'Skipped. You can install SDKMAN manually on their website!'
+fi
 
 read -p "Do you want to install NodeJS with NVM? (y/n): " choice
 if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
