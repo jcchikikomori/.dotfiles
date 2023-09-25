@@ -23,9 +23,6 @@ makepkg -si --noconfirm
 cd ../..
 rm -rf temp/
 
-# pacman-related
-pacman-key --init
-
 # SSH Keys
 ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" || true
 ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" || true
