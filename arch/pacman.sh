@@ -4,7 +4,7 @@
 # Fork: https://gist.github.com/jcchikikomori/0984ae8111496ea7544b6452adbbe180
 
 # Init pacman mirror
-curl -s -L "https://www.archlinux.org/mirrorlist/?country=PH&country=SG&country=CN&country=JP&protocol=https&ip_version=4" | sed -e 's/^#Server/Server/' -e '/^#/d' > /etc/pacman.d/mirrorlist
+curl -s -L "https://archlinux.org/mirrorlist/?country=CN&country=JP&country=SG&country=KR&protocol=https&ip_version=4&use_mirror_status=on" | sed -e 's/^#Server/Server/' -e '/^#/d' > /etc/pacman.d/mirrorlist
 # Init key
 pacman-key --init
 # Init archlinux key
