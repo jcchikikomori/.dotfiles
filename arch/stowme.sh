@@ -13,5 +13,5 @@ echo 'Executing general workarounds...'
 ./manual.sh
 
 cd $HOME || return
-dotstow stow bash antigen tmux tmuxp vim vscode systems dxvk
-dotstow stow zsh git
+dotstow stow bash git antigen tmux tmuxp vim vscode systems dxvk
+dotstow stow zsh
