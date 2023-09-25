@@ -12,7 +12,7 @@ pacman-key --populate archlinux
 # Sync repo
 yes '' | pacman -Syyu
 # Install commom package
-yes '' | pacman -S sudo htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib
+yes '' | pacman -S sudo htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git
 # Sort repo by speed
 cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
 rankmirrors -n 5 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist
