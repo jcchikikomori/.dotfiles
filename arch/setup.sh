@@ -35,16 +35,16 @@ echo "[chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee /etc/pacman.conf
 
 # Compilation Cache
-yay -S --noconfirm --noprogressbar ccache
+sudo pacman -S --noconfirm --noprogressbar ccache
 
 # NVM
-yay -S --noconfirm --noprogressbar chaotic-aur/nvm
+sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 
 # Workarounds & Misc software
-yay -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
+sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 
 # Programming languages
-yay -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
+sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
 pyenv install 3.11.4 -v
 pyenv global 3.11.4
 nvm install 18 --lts
