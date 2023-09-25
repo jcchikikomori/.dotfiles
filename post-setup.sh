@@ -27,7 +27,7 @@ if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
     echo 'Installing pyenv...'
     curl https://pyenv.run | bash
 else
-    echo 'Skipped. You can install SDKMAN manually on their website!'
+    echo 'Skipped. You can install python manually on pyenv website!'
 fi
 
 read -p "Do you want to install SDKMAN? (y/n): " choice
