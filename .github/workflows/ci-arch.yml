@@ -25,15 +25,12 @@ jobs:
             cd arch && ./setup.sh
       - name: Post-Setup
         run: |
-            ./install-dotstow.sh
+            ./post-setup.sh
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
       - name: Simulate Stowing
         run: |
             mkdir -p /home/admin/.dotfiles
-            mkdir -p /home/admin/.dotfiles/arch
-            mkdir -p /home/admin/.dotfiles/linux
-            cp -r arch/* /home/admin/.dotfiles/arch/
-            cp -r linux/* /home/admin/.dotfiles/linux/
-            sudo -u admin bash -c '$HOME/.dotfiles/arch && ./stowme.sh'
+            cp -r $PWD /home/admin/.dotfiles
+            sudo -u admin bash -c 'cd $HOME/.dotfiles/arch && ./stowme.sh'
