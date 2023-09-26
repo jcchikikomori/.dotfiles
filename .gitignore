@@ -1,8 +1,7 @@
-/.vscode
 **/**/.zhistory
 **/**/.zsh_history
-**/id_rsa
-**/id_rsa.pub
+**/id_*
+**/id_*.pub
 **/.ssh/*
 !**/.ssh/config
 
@@ -10,4 +9,20 @@
 fedora/zsh/bin/nps_*.sh
 fedora/zsh/bin/pyNPU.py
 fedora/zsh/bin/t7z
-**/.vscode/exports-autocomplete-cache/
+
+# GPG
+# Ignore all files and directories within ~/.gnupg
+linux/gpg/.gnupg/*
+
+# But track gpg.conf and gpg-agent.conf
+!linux/gpg/.gnupg/gpg.conf
+!linux/gpg/.gnupg/gpg-agent.conf
+
+# VSCode
+/.vscode
+/.vscode/exports-autocomplete-cache/
+**/vscode/.vscode-server/bin/*
+**/vscode/.vscode-server/data/*
+**/vscode/.vscode-server/extensions/
+!**/vscode/.vscode-server/data/Machine/*
+!**/vscode/.vscode-server/data/User/*

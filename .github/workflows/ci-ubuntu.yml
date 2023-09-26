@@ -1,0 +1,25 @@
+name: CI - Ubuntu
+on:
+  push:
+    branches: ["master", "develop", "feature/*"]
+  pull_request:
+    branches: ["feature/*"]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "setup"
+  setup:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+      - name: Getting Started (First step)
+        run: |
+            cd debian && ./setup.sh
+      - name: Installing dotstow
+        run: |
+            ./install-dotstow.sh
+      

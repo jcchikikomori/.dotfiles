@@ -1,0 +1,39 @@
+name: CI - Arch Linux
+on:
+  push:
+    branches: ["master", "develop", "feature/*"]
+  pull_request:
+    branches: ["feature/*"]
+  workflow_dispatch:
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_POST_SETUP: true
+    steps:
+      - uses: actions/checkout@v3
+      - name: Initialize Pacman
+        run: |
+            cd arch && ./pacman.sh
+      - name: Simulate Setup
+        run: |
+            mkdir -p ~/.ssh
+            pacman -Syyu --noconfirm --noprogressbar
+            pacman -S --noconfirm --noprogressbar sudo
+            cd arch && ./setup.sh
+      - name: Post-Setup
+        run: |
+            ./post-setup.sh
+      - name: Installing dotstow
+        run: |
+            ./install-dotstow.sh
+      - name: Simulate Stowing
+        run: |
+            mkdir -p /home/admin/.dotfiles
+            mkdir -p /home/admin/.local/state/dotstow
+            ls -lah $PWD
+            cp -r $PWD/* /home/admin/.dotfiles/
+            sudo -u admin bash -c 'ls -lah $HOME/.dotfiles/'
+            sudo -u admin bash -c 'cd $HOME/.dotfiles/arch && ./stowme.sh'
