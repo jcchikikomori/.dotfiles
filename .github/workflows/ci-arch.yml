@@ -13,8 +13,10 @@ jobs:
       SKIP_ADDING_USER: true
     steps:
       - uses: actions/checkout@v3
-      # 'sudo' binary does not available on a docker image
-      - name: Getting Started (First step)
+      - name: Initialize Pacman
+        run: |
+            cd arch && ./pacman.sh
+      - name: Getting Started
         run: |
             pacman -Syyu --noconfirm --noprogressbar
             pacman -S --noconfirm --noprogressbar sudo
