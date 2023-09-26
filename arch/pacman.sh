@@ -18,15 +18,15 @@ cp -f /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
 rankmirrors -n 5 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist
 
 # Create non root user
-if [ -v SKIP_ADDING_USER ]; then
-  echo 'Skipped adding user';
+useradd admin -m
+# Using zsh shell
+chsh -s /usr/bin/zsh admin
+# Add admin to wheel group
+usermod -aG wheel admin
+# Allow wheel group sudo
+echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+if [ -v SKIP_SETTING_USER ]; then
+  echo 'Skipped setting password';
 else
-  useradd admin -m
   passwd admin
-  # Using zsh shell
-  chsh -s /usr/bin/zsh admin
-  # Add admin to wheel group
-  usermod -aG wheel admin
-  # Allow wheel group sudo
-  echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 fi
