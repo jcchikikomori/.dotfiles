@@ -32,6 +32,7 @@ jobs:
       - name: Simulate Stowing
         run: |
             mkdir -p /home/admin/.dotfiles
-            cp -r $PWD /home/admin/.dotfiles
+            ls -lah $PWD
+            cp -r $PWD/* /home/admin/.dotfiles/
             sudo -u admin bash -c 'ls -lah $HOME/.dotfiles/'
             sudo -u admin bash -c 'cd $HOME/.dotfiles/arch && ./stowme.sh'
