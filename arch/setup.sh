@@ -5,7 +5,7 @@
 echo "[boot]
 systemd=true
 [user]
-default=johnc" | sudo tee /etc/wsl.conf
+default=admin" | sudo tee /etc/wsl.conf
 
 # Setting default locale
 sudo loadkeys us
@@ -31,8 +31,10 @@ ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" || true
 sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 sudo pacman-key --lsign-key 3056513887B78AEB
 sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-echo "[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee /etc/pacman.conf
+sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+echo "
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
 
 # Compilation Cache
 sudo pacman -S --noconfirm --noprogressbar ccache
