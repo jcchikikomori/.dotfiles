@@ -19,8 +19,8 @@ sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi n
 mkdir -p temp && cd temp/
 # Reference: https://devicetests.com/running-commands-non-root-user-sudo
 sudo -u admin bash -c '\
- git clone https://aur.archlinux.org/yay.git
- cd yay
+ git clone https://aur.archlinux.org/yay.git $HOME/yay
+ cd $HOME/yay
  makepkg -si --noconfirm
 '
 cd ../..
@@ -32,9 +32,9 @@ ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N
 
 # Chaotic AUR
 echo 'Importing essential keys...'
-sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com --noconfirm
+sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
 echo 'Signing keys...'
-sudo pacman-key --lsign-key 3056513887B78AEB --noconfirm
+sudo pacman-key --lsign-key 3056513887B78AEB
 echo 'Begin installing Chaotic AUR...'
 sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
 # Backup the pacman.conf file
