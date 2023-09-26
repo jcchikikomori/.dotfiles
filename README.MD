@@ -15,10 +15,9 @@ And [dotstow](https://github.com/clayrisser/dotstow) must be installed on your s
 ## Supported Platforms
 
 - Windows Subsystem for Linux
-- Ubuntu/Debian (WIP)
-- Arch Linux (WIP)
-- RHEL Linux
-- Garuda
+- Ubuntu/Debian
+- Arch Linux
+- Fedora
 
 ## Installation
 
@@ -38,3 +37,5 @@ If you are using Windows Subsystem for Linux, please refer to the directory that
 ## Setup
 
 Execute `stowme.sh` on specific environment you've choose.
+
+For Arch Linux, please follow the [instructions here](arch/README.MD).
