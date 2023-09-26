@@ -18,7 +18,7 @@ cp -f /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
 rankmirrors -n 5 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist
 
 # Create non root user
-if [ -z "$SKIP_ADDING_USER" ]; then
+if [ -v SKIP_ADDING_USER ]; then
   echo 'Skipped adding user';
 else
   useradd admin -m
