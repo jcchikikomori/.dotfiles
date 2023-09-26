@@ -12,10 +12,10 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_POST_SETUP: true
     steps:
+      - uses: actions/checkout@v3
       - name: Initialize with Essentials
         run: |
             cd debian && ./init.sh
-      - uses: actions/checkout@v3
       - name: Getting Started
         run: |
             cd debian && ./setup.sh
