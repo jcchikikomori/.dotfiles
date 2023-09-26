@@ -29,3 +29,6 @@ jobs:
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
+      - name: Stowing
+        run: |
+            cd arch && ./stowme.sh
