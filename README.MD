@@ -15,11 +15,9 @@ And [dotstow](https://github.com/clayrisser/dotstow) must be installed on your s
 ## Supported Platforms
 
 - Windows Subsystem for Linux
-- Ubuntu (WIP)
+- Ubuntu/Debian (WIP)
 - Arch Linux (WIP)
-- Fedora 38 and up
-- MacOS (WIP)
-- Andronix (WIP)
+- RHEL Linux
 - Garuda
 
 ## Installation
@@ -33,8 +31,8 @@ If you are using Windows Subsystem for Linux, please refer to the directory that
 - Windows Subsystem for Linux `=>` `wsl-*`
 - Ubuntu `=>` `ubuntu`
 - Arch Linux `=>` `arch`
-- Garuda (Arch-based system) `=>` `garuda`
-- Fedora `=>` `fedora`
+- Garuda (Arch-based system) `=>` `arch`
+- Fedora `=>` `rhel`
 - Any Android Subsystem for Linux (Andronix, etc.) `=>` `andronix`
 
 ## Setup
