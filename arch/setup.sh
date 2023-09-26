@@ -28,13 +28,23 @@ ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" || true
 ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" || true
 
 # Chaotic AUR
-sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-sudo pacman-key --lsign-key 3056513887B78AEB
-sudo pacman -U 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+# Import the key without manual confirmation
+sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com --noconfirm
+
+# Sign the imported key without manual confirmation
+sudo pacman-key --lsign-key 3056513887B78AEB --noconfirm
+
+# Install packages without manual confirmation
+sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+
+# Backup the pacman.conf file
 sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+
+# Add the Chaotic AUR repository to pacman.conf without manual confirmation
 echo "
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
+# Synchronize and upgrade packages without manual confirmation
 sudo pacman -Syyu --noconfirm --noprogressbar
 
 # Compilation Cache
