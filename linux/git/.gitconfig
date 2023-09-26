@@ -8,3 +8,22 @@
 	gpgsign = true
 [credential]
 	helper = /mnt/c/Program\\ Files/Git/mingw64/bin/git-credential-manager.exe
+[alias]
+	l = log --pretty=oneline -n 20 --graph --abbrev-commit
+	contributors = shortlog --summary --numbered
+	whoami = config user.email
+[branch]
+	sort = -committerdate
+[core]
+	pager = less -r
+[diff]
+	renames = copies
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+[help]
+	autoCorrect = 1
+[pull]
+	rebase = true
