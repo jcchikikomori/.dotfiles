@@ -17,7 +17,7 @@ jobs:
       - name: Initialize Pacman
         run: |
             cd arch && ./pacman.sh
-      - name: Getting Started
+      - name: Simulate Setup
         run: |
             mkdir -p ~/.ssh
             pacman -Syyu --noconfirm --noprogressbar
@@ -29,6 +29,11 @@ jobs:
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
-      - name: Stowing
+      - name: Simulate Stowing
         run: |
-            sudo -u admin bash -c 'cd arch && ./init.sh && cd $HOME/.dotfiles/arch && ./stowme.sh'
+            mkdir -p /home/admin/.dotfiles
+            mkdir -p /home/admin/.dotfiles/arch
+            mkdir -p /home/admin/.dotfiles/linux
+            cp -r arch/* /home/admin/.dotfiles/arch/
+            cp -r linux/* /home/admin/.dotfiles/linux/
+            sudo -u admin bash -c '$HOME/.dotfiles/arch && ./stowme.sh'
