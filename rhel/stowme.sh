@@ -13,3 +13,5 @@ cd $HOME || return
 export LD_PRELOAD="/usr/lib64/libgcrypt.so.20"
 dotstow stow bash git antigen tmux tmuxp vim vscode systems dxvk
 dotstow stow zsh test-fedora
+
+exit 0
