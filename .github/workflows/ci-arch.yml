@@ -9,6 +9,8 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     container: archlinux:latest
+    env:
+      SKIP_ADDING_USER: true
     steps:
       - uses: actions/checkout@v3
       # 'sudo' binary does not available on a docker image

@@ -35,6 +35,7 @@ sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
 echo "
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
+sudo pacman -Syyu --noconfirm --noprogressbar
 
 # Compilation Cache
 sudo pacman -S --noconfirm --noprogressbar ccache
