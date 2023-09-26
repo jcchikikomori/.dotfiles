@@ -12,8 +12,8 @@ chsh -s /usr/bin/zsh admin
 # Add admin to sudo group
 usermod -aG sudo admin
 # Setting password
-if [ -v SKIP_SETTING_USER ]; then
-  echo 'Skipped setting password';
-else
+if [ -z "$SKIP_SETTING_USER" ]; then
   passwd admin
+else
+  echo 'Skipped setting password';
 fi
