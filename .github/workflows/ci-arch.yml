@@ -31,4 +31,4 @@ jobs:
             ./install-dotstow.sh
       - name: Stowing
         run: |
-            cd arch && ./stowme.sh
+            sudo -u admin bash -c 'cd arch && ./init.sh && cd $HOME/.dotfiles/arch ./stowme.sh'
