@@ -9,6 +9,8 @@ echo 'Executing general workarounds...'
 ./manual.sh
 
 cd $HOME || return
-dotstow stow bash zsh git antigen tmux tmuxp vim vscode systems dxvk
+
+# Generic
+dotstow stow zsh git antigen tmux tmuxp vim vscode systems dxvk
 
 exit 0
