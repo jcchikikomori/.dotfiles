@@ -20,8 +20,7 @@ mkdir -p temp && cd temp/
 # Reference: https://devicetests.com/running-commands-non-root-user-sudo
 sudo -u admin bash -c '\
  git clone https://aur.archlinux.org/yay.git $HOME/yay
- cd $HOME/yay
- makepkg -si --noconfirm
+ cd $HOME/yay && makepkg -si --noconfirm
 '
 cd ../..
 rm -rf temp/
@@ -57,12 +56,19 @@ sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 
 # Programming languages
 sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
-# pyenv install 3.11.4 -v
-# pyenv global 3.11.4
-# nvm install 18 --lts
+sudo -u admin bash -c '\
+ pyenv install 3.11.4 -v
+ pyenv global 3.11.4
+ nvm install 18 --lts
+'
 
-echo 'Installing dependencies into your home directory...'
-cd ..
-./post-setup.sh
+# Post-Setup
+if [ -v SKIP_SETTING_USER ]; then
+  echo 'Skipped post-setup script.';
+else
+  echo 'Installing dependencies into your home directory...'
+  cd ..
+  ./post-setup.sh
+fi
 
 echo 'Script execution completed.'
