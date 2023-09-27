@@ -32,4 +32,4 @@ jobs:
             ls -lah $PWD
             sudo cp -r $PWD/* /home/johnc/.dotfiles/
             sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
-            sudo -u johnc bash -c 'cd $HOME/.dotfiles/arch && ./stowme.sh'
+            sudo -u johnc bash -c 'cd $HOME/.dotfiles/debian && ./stowme.sh'
