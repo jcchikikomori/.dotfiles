@@ -4,8 +4,8 @@
 sudo useradd admin -m
 # Using zsh shell
 sudo chsh -s /usr/bin/zsh admin
-# Add admin to sudo group
-sudo usermod -aG sudo admin
+# Add admin to wheel group
+sudo usermod -aG wheel admin
 # Setting password
 if [ -z "$SKIP_SETTING_USER" ]; then
   sudo passwd admin
