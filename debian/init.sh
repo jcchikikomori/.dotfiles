@@ -3,4 +3,4 @@
 
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-apt-get install -y sudo htop iftop mtr dkms lz4 git zsh stow build-essential sqlite3 ccache tmux
+apt-get install -y sudo vim vi nano htop iftop mtr dkms lz4 git zsh stow build-essential sqlite3 ccache tmux
