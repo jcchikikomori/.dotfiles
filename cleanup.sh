@@ -18,7 +18,7 @@ rm -f $HOME/.gitconfig
 
 echo 'Unstowing...'
 
-# dotstow stow bash antigen tmux tmuxp vim vscode systems dxvk
+# dotstow stow antigen tmux tmuxp vim vscode systems dxvk
 rm -f $HOME/.alacritty.yml
 rm -f $HOME/.antigenrc
 rm -f $HOME/bash_completion.d
