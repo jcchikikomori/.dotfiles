@@ -4,7 +4,7 @@
 
 1. Execute `pacman.sh` first to initialize the pacakge manager
    ```properties
-   curl -O https://raw.githubusercontent.com/jcchikikomori/dotfiles/feature/dotstow-fix/arch/pacman.sh
+   curl -O https://raw.githubusercontent.com/jcchikikomori/dotfiles/master/arch/pacman.sh
    ```
    ```properties
    chmod +x pacman.sh

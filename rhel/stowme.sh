@@ -9,9 +9,15 @@ echo 'Executing general workarounds...'
 ./manual.sh
 
 cd $HOME || return
+
 # Workaround for Fedora
 export LD_PRELOAD="/usr/lib64/libgcrypt.so.20"
-dotstow stow bash zsh git antigen tmux tmuxp vim vscode systems dxvk
+
+# Generic
+dotstow stow zsh git antigen tmux tmuxp vim vscode systems dxvk
+
+# Fedora-related
 dotstow stow test-fedora
 
+export LD_PRELOAD=
 exit 0

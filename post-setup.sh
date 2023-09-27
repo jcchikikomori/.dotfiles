@@ -13,6 +13,12 @@ git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
 echo 'Setting up Vim Plug...'
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
+echo 'Setting up Tmux configuration...'
+git clone https://github.com/jcchikikomori/.tmux.git ~/.tmux || true
+cd .tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8 && ..
+ln -s -f .tmux/.tmux.conf ~/.tmux.conf
+# cp -f .tmux/.tmux.conf.local ~/.
+
 echo 'Setting up Tmux TPM...'
 git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 
