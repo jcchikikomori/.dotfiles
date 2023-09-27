@@ -23,7 +23,7 @@ jobs:
             cd rhel && ./setup.sh
       - name: Post-Setup
         run: |
-            ./post-setup.sh
+            echo "Post-Setup: Skipped. Already executed on the previous step..."
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
