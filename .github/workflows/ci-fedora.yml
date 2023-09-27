@@ -1,0 +1,29 @@
+name: CI - Fedora
+on:
+  push:
+    branches: ["master", "develop", "feature/*"]
+  pull_request:
+    branches: ["feature/*"]
+  workflow_dispatch:
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_POST_SETUP: true
+    steps:
+      - uses: actions/checkout@v3
+      - name: Initialize
+        run: |
+            echo "Initialize: Currently working on it..."
+      - name: Simulate Setup
+        run: |
+            mkdir -p ~/.ssh
+            cd rhel && ./setup.sh
+      - name: Post-Setup
+        run: |
+            ./post-setup.sh
+      - name: Installing dotstow
+        run: |
+            ./install-dotstow.sh
