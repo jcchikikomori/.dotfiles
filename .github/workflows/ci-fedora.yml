@@ -16,14 +16,25 @@ jobs:
       - uses: actions/checkout@v3
       - name: Initialize
         run: |
-            echo "Initialize: Currently working on it..."
-      - name: Simulate Setup
+            echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
+      - name: Getting Started
         run: |
             mkdir -p ~/.ssh
             cd rhel && ./setup.sh
+      - name: Add User
+        run: |
+            cd rhel && ./adduser.sh
       - name: Post-Setup
         run: |
             echo "Post-Setup: Skipped. Already executed on the previous step..."
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
+      - name: Simulate Stowing
+        run: |
+            mkdir -p /home/johnc/.dotfiles
+            mkdir -p /home/johnc/.local/state/dotstow
+            ls -lah $PWD
+            cp -r $PWD/* /home/johnc/.dotfiles/
+            sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
+            sudo -u johnc bash -c 'cd $HOME/.dotfiles/rhel && ./stowme.sh'
