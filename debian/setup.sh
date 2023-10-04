@@ -34,7 +34,7 @@ ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N
 # fi
 
 # Programming languages
-if [ -v SKIP_SETTING_USER ]; then
+if [ -v SKIP_INSTALL_PROGLANG ]; then
   echo 'Skipped installing programming languages.';
 else
   sudo apt-get install -y ruby-build

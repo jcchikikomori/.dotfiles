@@ -55,10 +55,10 @@ sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 
 # Programming languages
-sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
-if [ -v SKIP_SETTING_USER ]; then
+if [ -v SKIP_INSTALL_PROGLANG ]; then
   echo 'Skipped installing programming languages.';
 else
+  sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
   sudo -u admin bash -c '\
    yay -S ruby-build --noconfirm --noprogressbar
    pyenv install 3.11.4 -v

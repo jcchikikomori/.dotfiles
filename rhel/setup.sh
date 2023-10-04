@@ -8,7 +8,7 @@ sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel
 sudo dnf install -y python3-tmuxp
 
 # Programming languages
-if [ -v SKIP_SETTING_USER ]; then
+if [ -v SKIP_INSTALL_PROGLANG ]; then
   echo 'Skipped installing programming languages.';
 else
   sudo dnf install -y ruby-build
