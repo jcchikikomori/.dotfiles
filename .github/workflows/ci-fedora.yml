@@ -1,4 +1,4 @@
-name: CI - Arch Linux
+name: CI - Fedora
 on:
   push:
     branches: ["master", "develop", "feature/*"]
@@ -8,25 +8,26 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    container: archlinux:latest
+    container: fedora:latest
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       SKIP_POST_SETUP: true
     steps:
       - uses: actions/checkout@v3
-      - name: Initialize Pacman
+      - name: Initialize
         run: |
-            cd arch && ./init.sh
-      - name: Simulate Setup
+            echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
+      - name: Getting Started
         run: |
             mkdir -p ~/.ssh
-            pacman -Syyu --noconfirm --noprogressbar
-            pacman -S --noconfirm --noprogressbar sudo
-            cd arch && ./setup.sh
+            cd rhel && ./setup.sh
+      - name: Add User
+        run: |
+            cd rhel && ./adduser.sh
       - name: Post-Setup
         run: |
-            ./post-setup.sh
+            echo "Post-Setup: Skipped. Already executed on the previous step..."
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
@@ -37,4 +38,4 @@ jobs:
             ls -lah $PWD
             cp -r $PWD/* /home/admin/.dotfiles/
             sudo -u admin bash -c 'ls -lah $HOME/.dotfiles/'
-            sudo -u admin bash -c 'cd $HOME/.dotfiles/arch && ./stowme.sh'
+            sudo -u admin bash -c 'cd $HOME/.dotfiles/rhel && ./stowme.sh'

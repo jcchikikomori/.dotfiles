@@ -14,6 +14,10 @@ fi
 export PATH="${HOME}/bin:${PATH}"
 export EDITOR=nano
 
+# rbenv
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+
 # phpenv
 export PHPENV_ROOT="$HOME/.phpenv"
 if [ -d "${PHPENV_ROOT}" ]; then
