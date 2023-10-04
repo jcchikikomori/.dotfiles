@@ -33,6 +33,18 @@ ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N
 #     /opt/distrod/bin/distrod enable
 # fi
 
+# Programming languages
+if [ -v SKIP_INSTALL_PROGLANG ]; then
+  echo 'Skipped installing programming languages.';
+else
+  sudo apt-get install -y ruby-build
+  sudo -u johnc bash -c '\
+   pyenv install 3.11.4 -v
+   pyenv global 3.11.4
+   nvm install 18 --lts
+  '
+fi
+
 # Post-Setup
 if [ -v SKIP_POST_SETUP ]; then
   echo 'Skipped post-setup script.';

@@ -11,6 +11,7 @@ jobs:
     container: linuxconfig/lemp:latest
     env:
       SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
       SKIP_POST_SETUP: true
     steps:
       - uses: actions/checkout@v3
