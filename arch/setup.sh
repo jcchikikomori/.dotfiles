@@ -60,6 +60,7 @@ if [ -v SKIP_SETTING_USER ]; then
   echo 'Skipped installing programming languages.';
 else
   sudo -u admin bash -c '\
+   yay -S ruby-build --noconfirm --noprogressbar
    pyenv install 3.11.4 -v
    pyenv global 3.11.4
    nvm install 18 --lts
