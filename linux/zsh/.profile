@@ -113,6 +113,10 @@ if [ -z "$WSL_DISTRO_NAME" ]; then
   # alias PPSSPP="flatpak run org.ppsspp.PPSSPP"
   # alias vlc="flatpak run org.videolan.VLC"
 else
+  # Include custom mesa libraries for WSL2
+  # Reference: https://devblogs.microsoft.com/commandline/d3d12-gpu-video-acceleration-in-the-windows-subsystem-for-linux-now-available/
+  export LIBVA_DRIVER_NAME=d3d12
+  export LIBVA_DRIVERS_PATH=/usr/local/lib/dri/d3d12_drv_video.so
   # Execute WSL-related workarounds
   export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
   export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
