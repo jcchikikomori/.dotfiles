@@ -116,11 +116,11 @@ else
   # Include custom mesa libraries for WSL2
   # Reference: https://devblogs.microsoft.com/commandline/d3d12-gpu-video-acceleration-in-the-windows-subsystem-for-linux-now-available/
   export LIBVA_DRIVER_NAME=d3d12
-  export LIBVA_DRIVERS_PATH=/usr/local/lib/dri/d3d12_drv_video.so
+  export LIBVA_DRIVERS_PATH=/usr/local/lib/dri
   # Execute WSL-related workarounds
-  export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
-  export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
-  export LIBGL_ALWAYS_INDIRECT=0 #GWSL
+  # export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 # For GWSL only which is already deprecated on Win 11
+  # export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') # For GWSL only which is already deprecated on Win 11
+  # export LIBGL_ALWAYS_INDIRECT=0 # For GWSL only which is already deprecated on Win 11
   export GDK_SCALE=0.5 #GWSL
   export QT_SCALE_FACTOR=1 #GWSL
   export GDK_DPI_SCALE=1
