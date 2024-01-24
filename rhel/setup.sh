@@ -12,7 +12,7 @@ if [ -v SKIP_INSTALL_PROGLANG ]; then
   echo 'Skipped installing programming languages.';
 else
   sudo dnf install -y ruby-build
-  sudo -u admin bash -c '\
+  sudo -u johnc bash -c '\
    pyenv install 3.11.4 -v
    pyenv global 3.11.4
    nvm install 18 --lts

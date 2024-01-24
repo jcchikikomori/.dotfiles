@@ -5,7 +5,7 @@
 echo "[boot]
 systemd=true
 [user]
-default=admin" | sudo tee /etc/wsl.conf
+default=johnc" | sudo tee /etc/wsl.conf
 
 # Setting default locale
 sudo loadkeys us
@@ -18,7 +18,7 @@ sudo pacman -Syyu --noconfirm --noprogressbar
 sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux
 mkdir -p temp && cd temp/
 # Reference: https://devicetests.com/running-commands-non-root-user-sudo
-sudo -u admin bash -c '\
+sudo -u johnc bash -c '\
  git clone https://aur.archlinux.org/yay.git $HOME/yay
  cd $HOME/yay && makepkg -si --noconfirm
 '
@@ -59,7 +59,7 @@ if [ -v SKIP_INSTALL_PROGLANG ]; then
   echo 'Skipped installing programming languages.';
 else
   sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
-  sudo -u admin bash -c '\
+  sudo -u johnc bash -c '\
    yay -S ruby-build --noconfirm --noprogressbar
    pyenv install 3.11.4 -v
    pyenv global 3.11.4
