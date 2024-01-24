@@ -24,5 +24,6 @@ linux/gpg/.gnupg/*
 **/vscode/.vscode-server/bin/*
 **/vscode/.vscode-server/data/*
 **/vscode/.vscode-server/extensions/
+!**/vscode/.vscode-server/extensions/extensions.json
 !**/vscode/.vscode-server/data/Machine/*
 !**/vscode/.vscode-server/data/User/*
