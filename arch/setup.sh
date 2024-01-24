@@ -5,7 +5,7 @@
 echo "[boot]
 systemd=true
 [user]
-default=admin" | sudo tee /etc/wsl.conf
+default=johnc" | sudo tee /etc/wsl.conf
 
 # Setting default locale
 sudo loadkeys us
