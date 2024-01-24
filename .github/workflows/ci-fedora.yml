@@ -33,9 +33,9 @@ jobs:
             ./install-dotstow.sh
       - name: Simulate Stowing
         run: |
-            mkdir -p /home/admin/.dotfiles
-            mkdir -p /home/admin/.local/state/dotstow
+            mkdir -p /home/johnc/.dotfiles
+            mkdir -p /home/johnc/.local/state/dotstow
             ls -lah $PWD
-            cp -r $PWD/* /home/admin/.dotfiles/
-            sudo -u admin bash -c 'ls -lah $HOME/.dotfiles/'
-            sudo -u admin bash -c 'cd $HOME/.dotfiles/rhel && ./stowme.sh'
+            cp -r $PWD/* /home/johnc/.dotfiles/
+            sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
+            sudo -u johnc bash -c 'cd $HOME/.dotfiles/rhel && ./stowme.sh'
