@@ -2,11 +2,11 @@
 
 echo 'Cleaning up...'
 cd ..
-./cleanup.sh
+dotfiles-cleanup
 
 echo 'Executing general workarounds...'
 # cp -f $PWD/rhel/ssh/.ssh/config $HOME/.ssh/config
-./manual.sh
+dotfiles-ssh
 
 cd $HOME || return
 

@@ -28,6 +28,7 @@ jobs:
             ./install-dotstow.sh
       - name: Simulate Stowing
         run: |
+            ./start.sh
             sudo mkdir -p /home/johnc/.dotfiles
             sudo mkdir -p /home/johnc/.local/state/dotstow
             ls -lah $PWD

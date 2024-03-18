@@ -3,7 +3,6 @@
 echo 'Backing up...'
 rm -rf $HOME/.backups
 mkdir -p $HOME/.backups
-# cp -rf $HOME/.ssh $HOME/.backups
 cp -rf $HOME/.zsh $HOME/.backups
 cp -f $HOME/.zshrc $HOME/.backups
 cp -f $HOME/.zshrc.pre-oh-my-zsh $HOME/.backups

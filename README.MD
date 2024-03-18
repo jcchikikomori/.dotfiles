@@ -21,9 +21,9 @@ And [dotstow](https://github.com/clayrisser/dotstow) must be installed on your s
 
 ## Installation
 
-Go to the environment (folder) then execute the `setup.sh` to began installing & setting up necessary dependencies.
+Go to the platform (folder) then execute the `setup.sh` to began installing & setting up necessary dependencies.
 
-### Choosing Environment
+### Choosing the Platform
 
 If you are using Windows Subsystem for Linux, please refer to the directory that starts with `wsl-`, due to different method of booting the Linux subsystem in Windows 10 and higher, including workarounds such as X server, Domain Resolutions, `$PATH` resolutions, etc.
 
@@ -36,6 +36,6 @@ If you are using Windows Subsystem for Linux, please refer to the directory that
 
 ## Setup
 
-Execute `stowme.sh` on specific environment you've choose.
+Execute `stowme.sh` on specific platform you've choose.
 
 For Arch Linux, please follow the [instructions here](arch/README.MD).

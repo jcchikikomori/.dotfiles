@@ -30,6 +30,7 @@ jobs:
             echo "Post-Setup: Skipped. Already executed on the previous step..."
       - name: Installing dotstow
         run: |
+            ./start.sh
             ./install-dotstow.sh
       - name: Simulate Stowing
         run: |
