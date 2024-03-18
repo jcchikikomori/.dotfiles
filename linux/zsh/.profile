@@ -2,13 +2,14 @@
 # References:
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
 # https://owensgl.github.io/biol525D/Topic_1/configure_ssh_agent
-if [ -z "$(pgrep ssh-agent)" ]; then
-    rm -rf '/tmp/ssh-*'
-    eval "$(ssh-agent -s)" > /dev/null
-else
-    export SSH_AGENT_PID=$(pgrep ssh-agent)
-    export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
-fi
+# https://bbs.archlinux.org/viewtopic.php?id=281324
+
+# if ! pgrep -u "$USER" ssh-agent > /dev/null; then
+#   ssh-agent -t 1h > "$XDG_RUNTIME_DIR/ssh-agent.env"
+# fi
+# if [[ ! -f "$SSH_AUTH_SOCK" ]]; then
+#   source "$XDG_RUNTIME_DIR/ssh-agent.env" >/dev/null
+# fi
 
 # Locally installed binaries
 export PATH="${HOME}/bin:${PATH}"
