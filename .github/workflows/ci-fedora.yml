@@ -21,6 +21,7 @@ jobs:
       - name: Getting Started
         run: |
             mkdir -p ~/.ssh
+            ./start.sh
             cd rhel && ./setup.sh
       - name: Add User
         run: |
@@ -30,8 +31,7 @@ jobs:
             echo "Post-Setup: Skipped. Already executed on the previous step..."
       - name: Installing dotstow
         run: |
-            ./start.sh
-            ./install-dotstow.sh
+            dotfiles-dotstow
       - name: Simulate Stowing
         run: |
             mkdir -p /home/johnc/.dotfiles

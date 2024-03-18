@@ -18,6 +18,9 @@ jobs:
       - name: Initialize Pacman
         run: |
             cd arch && ./init.sh
+      - name: Getting Started
+        run: |
+            ./start.sh
       - name: Simulate Setup
         run: |
             mkdir -p ~/.ssh
@@ -29,10 +32,9 @@ jobs:
             ./post-setup.sh
       - name: Installing dotstow
         run: |
-            ./install-dotstow.sh
+            dotfiles-dotstow
       - name: Simulate Stowing
         run: |
-            ./start.sh
             mkdir -p /home/johnc/.dotfiles
             mkdir -p /home/johnc/.local/state/dotstow
             ls -lah $PWD

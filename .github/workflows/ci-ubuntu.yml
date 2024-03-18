@@ -19,16 +19,16 @@ jobs:
             cd debian && sudo bash init.sh
       - name: Getting Started
         run: |
+            ./start.sh
             cd debian && ./setup.sh
       - name: Add User
         run: |
             cd debian && ./adduser.sh
       - name: Installing dotstow
         run: |
-            ./install-dotstow.sh
+            dotfiles-dotstow
       - name: Simulate Stowing
         run: |
-            ./start.sh
             sudo mkdir -p /home/johnc/.dotfiles
             sudo mkdir -p /home/johnc/.local/state/dotstow
             ls -lah $PWD
