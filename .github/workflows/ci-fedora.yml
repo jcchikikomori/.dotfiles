@@ -34,11 +34,12 @@ jobs:
           sh linux/systems/bin/dotfiles-dotstow
       - name: Simulate Stowing
         run: |
-          mkdir -p /home/johnc/bin
-          cp linux/systems/bin/dotfiles-cleanup /home/johnc/bin
           mkdir -p /home/johnc/.dotfiles
           mkdir -p /home/johnc/.local/state/dotstow
           ls -lah $PWD
           cp -r $PWD/* /home/johnc/.dotfiles/
+          sudo -u johnc bash -c 'mkdir -p $HOME/bin'
+          sudo -u johnc bash -c 'cp $HOME/.dotfiles/linux/systems/bin/dotfiles-cleanup $HOME/bin/'
+          sudo -u johnc bash -c 'cp $HOME/.dotfiles/linux/systems/bin/dotfiles-ssh $HOME/bin/'
           sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
           sudo -u johnc bash -c 'cd $HOME/.dotfiles/rhel && ./stowme.sh'
