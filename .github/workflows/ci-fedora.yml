@@ -17,26 +17,28 @@ jobs:
       - uses: actions/checkout@v3
       - name: Initialize
         run: |
-            echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
+          echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
       - name: Getting Started
         run: |
-            mkdir -p ~/.ssh
-            ./start.sh
-            cd rhel && ./setup.sh
+          mkdir -p ~/.ssh
+          ./start.sh
+          cd rhel && ./setup.sh
       - name: Add User
         run: |
-            cd rhel && ./adduser.sh
+          cd rhel && ./adduser.sh
       - name: Post-Setup
         run: |
-            echo "Post-Setup: Skipped. Already executed on the previous step..."
+          echo "Post-Setup: Skipped. Already executed on the previous step..."
       - name: Installing dotstow
         run: |
-            sh linux/systems/bin/dotfiles-dotstow
+          sh linux/systems/bin/dotfiles-dotstow
       - name: Simulate Stowing
         run: |
-            mkdir -p /home/johnc/.dotfiles
-            mkdir -p /home/johnc/.local/state/dotstow
-            ls -lah $PWD
-            cp -r $PWD/* /home/johnc/.dotfiles/
-            sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
-            sudo -u johnc bash -c 'cd $HOME/.dotfiles/rhel && ./stowme.sh'
+          mkdir -p /home/johnc/bin
+          cp linux/systems/bin/dotfiles-cleanup /home/johnc/bin
+          mkdir -p /home/johnc/.dotfiles
+          mkdir -p /home/johnc/.local/state/dotstow
+          ls -lah $PWD
+          cp -r $PWD/* /home/johnc/.dotfiles/
+          sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
+          sudo -u johnc bash -c 'cd $HOME/.dotfiles/rhel && ./stowme.sh'
