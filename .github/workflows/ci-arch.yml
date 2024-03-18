@@ -32,7 +32,7 @@ jobs:
             ./post-setup.sh
       - name: Installing dotstow
         run: |
-            dotfiles-dotstow
+            sh linux/systems/bin/dotfiles-dotstow
       - name: Simulate Stowing
         run: |
             mkdir -p /home/johnc/.dotfiles
