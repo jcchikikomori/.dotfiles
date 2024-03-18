@@ -24,6 +24,9 @@ jobs:
       - name: Add User
         run: |
           cd debian && ./adduser.sh
+      - name: Post-Setup
+        run: |
+          sh linux/systems/bin/dotfiles-dotstow-post-setup
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow

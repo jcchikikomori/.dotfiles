@@ -29,7 +29,7 @@ jobs:
           cd arch && ./setup.sh
       - name: Post-Setup
         run: |
-          ./post-setup.sh
+          sh linux/systems/bin/dotfiles-dotstow-post-setup
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow

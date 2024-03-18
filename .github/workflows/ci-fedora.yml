@@ -28,7 +28,7 @@ jobs:
           cd rhel && ./adduser.sh
       - name: Post-Setup
         run: |
-          echo "Post-Setup: Skipped. Already executed on the previous step..."
+          sh linux/systems/bin/dotfiles-dotstow-post-setup
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow

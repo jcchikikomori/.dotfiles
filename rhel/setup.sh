@@ -19,8 +19,12 @@ else
   '
 fi
 
-echo 'Installing dependencies into your home directory...'
-cd ..
-./post-setup.sh
+# Post-Setup
+if [ -v SKIP_POST_SETUP ]; then
+  echo 'Skipped post-setup script.';
+else
+  echo 'Please install dependencies into your home directory...'
+  echo 'Execute: dotfiles-dotstow-post-setup'
+fi
 
 echo 'Script execution completed.'
