@@ -4,22 +4,33 @@ on:
     branches: ["master", "develop", "feature/*"]
   pull_request:
     branches: ["feature/*"]
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "setup"
   setup:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
+      SKIP_POST_SETUP: true
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-      - name: Getting Started (First step)
+      - name: Initialize with Essentials
+        run: |
+            cd debian && sudo bash init.sh
+      - name: Getting Started
         run: |
             cd debian && ./setup.sh
+      - name: Add User
+        run: |
+            cd debian && ./adduser.sh
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
-      
+      - name: Simulate Stowing
+        run: |
+            sudo mkdir -p /home/johnc/.dotfiles
+            sudo mkdir -p /home/johnc/.local/state/dotstow
+            ls -lah $PWD
+            sudo cp -r $PWD/* /home/johnc/.dotfiles/
+            sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
+            sudo -u johnc bash -c 'cd $HOME/.dotfiles/debian && ./stowme.sh'
