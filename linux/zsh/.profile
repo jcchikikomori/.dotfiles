@@ -25,13 +25,6 @@ fi
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
 
-# Start TMUX
-# To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
-# export TMUX_DISABLE_AT_BOOT=1
-if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
-  tmux attach || tmux new
-fi
-
 # TMUX
 export DISABLE_AUTO_TITLE=1
 
@@ -122,3 +115,14 @@ fi
 # if [[ -f ~/.wslprofile ]]; then
 #     source ~/.wslprofile
 # fi
+
+# Check if the .dotprofile file exists, then source it
+if [[ -f ~/.dotprofile ]]; then
+    source ~/.dotprofile
+fi
+
+# Start TMUX on the end after executing everything...
+# To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
+if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
+  tmux attach || tmux new
+fi
