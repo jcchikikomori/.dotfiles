@@ -21,6 +21,7 @@ linux/gpg/.gnupg/*
 # VSCode
 /.vscode
 /.vscode/exports-autocomplete-cache/
+linux/vscode/.vscode/argv.json
 **/vscode/.vscode-server/bin/*
 **/vscode/.vscode-server/data/*
 **/vscode/.vscode-server/extensions/
