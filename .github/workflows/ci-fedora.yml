@@ -1,9 +1,6 @@
 name: CI - Fedora
 on:
-  push:
-    branches: ["master", "develop", "feature/*"]
   pull_request:
-    branches: ["feature/*"]
   workflow_dispatch:
 jobs:
   setup:
