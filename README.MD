@@ -2,8 +2,7 @@
 
 To ease setting up your favorite Terminal shell.. on various systems
 
-Forked from another [repository](https://github.com/sreerajkksd/dotfiles).\
-And [dotstow](https://github.com/clayrisser/dotstow) must be installed on your system.
+Forked from another [repository](https://github.com/sreerajkksd/dotfiles).
 
 ## Features
 
@@ -22,6 +21,13 @@ And [dotstow](https://github.com/clayrisser/dotstow) must be installed on your s
 ## Installation
 
 Go to the environment (folder) then execute the `setup.sh` to began installing & setting up necessary dependencies.
+
+### Requirements
+
+Packages below must be installed on your system.
+
+1. Package called `stow`
+2. Package called [dotstow](https://github.com/jcchikikomori/dotstow)
 
 ### Choosing Environment
 
