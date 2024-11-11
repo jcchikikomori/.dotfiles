@@ -14,6 +14,7 @@ check_command stow
 check_command git
 
 # Clone dotstow repository and install
-git clone https://github.com/clayrisser/dotstow ~/.dotstow
+git clone https://github.com/jcchikikomori/dotstow ~/.dotstow
 cd ~/.dotstow
+git checkout b013bfefec0b52254e8faaa77427ae31ef04dcfa
 sudo make install
