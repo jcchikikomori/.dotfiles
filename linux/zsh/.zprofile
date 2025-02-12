@@ -32,6 +32,7 @@ export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || pr
 
 # TMUX
 export DISABLE_AUTO_TITLE=1
+export TMUX_DISABLE_AT_BOOT=1
 
 # sdkman
 export SDKMAN_DIR="$HOME/.sdkman"
