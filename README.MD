@@ -45,3 +45,12 @@ If you are using Windows Subsystem for Linux, please refer to the directory that
 Execute `stowme.sh` on specific environment you've choose.
 
 For Arch Linux, please follow the [instructions here](arch/README.MD).
+
+### Custom profile
+
+Just create `.dotprofile` on home directory,
+then you can do anything EXCEPT `tmux`, `byobu`, & `tmuxp`!!
+
+```shell
+touch ~/.dotprofile
+```
