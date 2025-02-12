@@ -11,4 +11,7 @@ echo 'Executing general workarounds...'
 cd $HOME || return
 dotstow stow systems zsh git antigen tmux tmuxp vim vscode dxvk
 
+echo 'Linking profile...'
+ln -s ~/.zprofile ~/.profile
+
 exit 0
