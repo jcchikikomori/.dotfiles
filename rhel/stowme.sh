@@ -20,7 +20,7 @@ dotstow stow systems zsh git antigen tmux tmuxp vim vscode dxvk
 dotstow stow test-fedora
 
 echo 'Linking profile...'
-ln -s ~/.zprofile ~/.profile
+ln -sf ~/.zprofile ~/.profile
 
 export LD_PRELOAD=
 exit 0
