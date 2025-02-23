@@ -24,6 +24,12 @@ jobs:
       - name: Verify ccache
         run: |
             ccache -s
+      - name: Install python3 with pyenv (installation test)
+        run: |
+            ./python.sh
+      - name: Verify python3
+        run: |
+            sudo -u johnc bash -c 'python3 --version'
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
