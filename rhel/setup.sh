@@ -6,6 +6,7 @@ sudo dnf install -y gcc-c++ make
 sudo dnf install -y vim nano htop iftop stow git zsh unzip
 sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel
 sudo dnf install -y python3-tmuxp
+sudo dnf install -y php composer
 
 # PHP dependencies
 sudo dnf install -y \

@@ -25,6 +25,9 @@ jobs:
       - name: Post-Setup
         run: |
             echo "Post-Setup: Skipped. Already executed on the previous step..."
+      - name: Installing Visual Studio Code
+        run: |
+            cd rhel && ./vscode.sh
       - name: Installing nodejs
         run: |
             ./nodejs.sh
