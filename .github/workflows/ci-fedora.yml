@@ -15,16 +15,22 @@ jobs:
       - name: Initialize
         run: |
             echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
+      - name: Add User
+        run: |
+            cd rhel && ./adduser.sh johnc
       - name: Getting Started
         run: |
             mkdir -p ~/.ssh
             cd rhel && ./setup.sh
-      - name: Add User
-        run: |
-            cd rhel && ./adduser.sh
       - name: Post-Setup
         run: |
             echo "Post-Setup: Skipped. Already executed on the previous step..."
+      - name: Installing nodejs
+        run: |
+            ./nodejs.sh
+      - name: Installing php
+        run: |
+            ./php.sh
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
