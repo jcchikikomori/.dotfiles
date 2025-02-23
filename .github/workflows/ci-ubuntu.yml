@@ -23,6 +23,10 @@ jobs:
       - name: Verify ccache
         run: |
             ccache -s
+      - name: Verify python (version 3)
+        run: |
+            ./python.sh
+            pyenv rehash && python3 --version
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh

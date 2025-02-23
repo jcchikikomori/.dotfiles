@@ -32,7 +32,7 @@ curl -L https://git.io/antigen >$HOME/antigen.zsh
 read -p "Do you want to install python with pyenv? (y/n): " choice
 if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
     echo 'Installing pyenv...'
-    curl https://pyenv.run | bash
+    ./python.sh
 else
     echo 'Skipped. You can install python manually on pyenv website!'
 fi
