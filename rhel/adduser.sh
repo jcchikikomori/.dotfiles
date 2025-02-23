@@ -28,7 +28,6 @@ confirm_and_set_password() {
 
 if [ -z "$SKIP_SETTING_USER" ]; then
   confirm_and_set_password
-fi
 else
   echo 'Skipped setting password';
 fi
