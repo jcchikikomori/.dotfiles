@@ -20,6 +20,9 @@ jobs:
       - name: Add User
         run: |
             cd debian && ./adduser.sh
+      - name: Verify ccache
+        run: |
+            ccache -s
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh

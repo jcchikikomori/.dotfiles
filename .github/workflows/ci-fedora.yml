@@ -34,6 +34,9 @@ jobs:
       - name: Installing php
         run: |
             ./php.sh
+      - name: Verify ccache
+        run: |
+            ccache -s
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
