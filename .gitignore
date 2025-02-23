@@ -28,3 +28,4 @@ linux/vscode/.vscode/argv.json
 !**/vscode/.vscode-server/extensions/extensions.json
 !**/vscode/.vscode-server/data/Machine/*
 !**/vscode/.vscode-server/data/User/*
+**/vscode/.vscode/extensions/
