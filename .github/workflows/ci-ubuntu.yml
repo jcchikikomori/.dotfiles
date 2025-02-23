@@ -26,6 +26,7 @@ jobs:
       - name: Install python3 with pyenv
         run: |
             ./python.sh
+            which pyenv
       - name: Verify python3
         run: |
             sudo -u johnc bash -c 'pyenv global 3.11.4 && pyenv rehash && python3 --version'
