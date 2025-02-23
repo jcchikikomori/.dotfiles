@@ -5,7 +5,8 @@ mkdir -p $HOME/.local/state/dotstow
 ln -s $HOME/.dotfiles $HOME/.local/state/dotstow/dotfiles
 
 echo 'Setting up bash fzf...'
-git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true; ~/.fzf/install;
+git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true
+~/.fzf/install
 
 echo 'Setting up bash fasd...'
 git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
@@ -15,8 +16,8 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.c
 
 echo 'Setting up Tmux configuration...'
 git clone https://github.com/jcchikikomori/.tmux.git ~/.tmux || true
-cd .tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8 && ..
-ln -s -f .tmux/.tmux.conf ~/.tmux.conf
+cd ~/.tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8 && ..
+ln -s -f ~/.tmux/.tmux.conf ~/.tmux.conf
 # cp -f .tmux/.tmux.conf.local ~/.
 
 echo 'Setting up Tmux TPM...'
@@ -26,12 +27,12 @@ echo 'Setting up Starship prompt...'
 curl -sS https://starship.rs/install.sh | sh -s -- -y
 
 echo 'Setting up Antigen...'
-curl -L https://git.io/antigen > $HOME/antigen.zsh
+curl -L https://git.io/antigen >$HOME/antigen.zsh
 
 read -p "Do you want to install python with pyenv? (y/n): " choice
 if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
     echo 'Installing pyenv...'
-    curl https://pyenv.run | bash
+    ./python.sh
 else
     echo 'Skipped. You can install python manually on pyenv website!'
 fi
@@ -52,8 +53,16 @@ else
     echo 'Skipped. You can execute nodejs.sh later if you wanted to.'
 fi
 
+read -p "Do you want to install PHP with phpenv? (y/n): " choice
+if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
+    echo 'Installing phpenv...'
+    ./php.sh
+else
+    echo 'Skipped. You can execute php.sh later if you wanted to.'
+fi
+
 echo 'Installing VIM Plugins...'
-vim +'PlugInstall --sync' +qall > /dev/null 2>&1
+vim +'PlugInstall --sync' +qall >/dev/null 2>&1
 
 echo 'Setting up oh-my-zsh'
 curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
