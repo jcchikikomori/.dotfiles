@@ -26,8 +26,9 @@ Go to the environment (folder) then execute the `setup.sh` to began installing &
 
 Packages below must be installed on your system.
 
-1. Package called `stow`
-2. Package called [dotstow](https://github.com/jcchikikomori/dotstow)
+1. A 64-bit operating system (for specific OS, please look [this section](#choosing-environment))
+2. Package called `stow`
+3. Package called [dotstow](https://github.com/jcchikikomori/dotstow)
 
 ### Choosing Environment
 
