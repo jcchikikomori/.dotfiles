@@ -53,7 +53,7 @@ sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 
 # Workarounds & Misc software
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
-sudo pacman -S --noconfirm --noprogressbar xsel
+sudo pacman -S --noconfirm --noprogressbar xsel ncdu
 
 # Programming languages
 if [ -v SKIP_INSTALL_PROGLANG ]; then

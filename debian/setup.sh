@@ -14,7 +14,7 @@ sudo locale-gen en_US.UTF-8
 sudo localectl set-locale LANG=en_US.UTF-8
 
 # Installing essentials (additional)
-sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel
+sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu
 
 # SSH Keys
 ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
