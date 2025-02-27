@@ -29,6 +29,9 @@ curl -sS https://starship.rs/install.sh | sh -s -- -y
 echo 'Setting up Antigen...'
 curl -L https://git.io/antigen >$HOME/antigen.zsh
 
+echo 'Setting up git flow...'
+./git.sh
+
 read -p "Do you want to install python with pyenv? (y/n): " choice
 if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
     echo 'Installing pyenv...'
@@ -63,9 +66,6 @@ fi
 
 echo 'Installing VIM Plugins...'
 vim +'PlugInstall --sync' +qall >/dev/null 2>&1
-
-echo 'Setting up git flow...'
-./git-flow.sh
 
 echo 'Setting up oh-my-zsh'
 curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
