@@ -15,7 +15,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux
+sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget
 mkdir -p temp && cd temp/
 # Reference: https://devicetests.com/running-commands-non-root-user-sudo
 sudo -u johnc bash -c '\
