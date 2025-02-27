@@ -24,7 +24,7 @@ jobs:
             cd rhel && ./setup.sh
       - name: Post-Setup
         run: |
-            echo "Post-Setup: Skipped. Already executed on the previous step..."
+            ./post-setup.sh
       - name: Installing Visual Studio Code
         run: |
             cd rhel && ./vscode.sh
