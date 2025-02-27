@@ -1,5 +1,21 @@
 #!/bin/sh
 
+echo "Current directory: $PWD"
+ls -lah .
+
+# Error handling
+# Check if required scripts are present
+required_scripts=("git.sh" "python.sh" "nodejs.sh" "php.sh")
+for script in "${required_scripts[@]}"; then
+    if [ ! -f ./$script ]; then
+        echo "Error: $script not found in the current directory ($PWD)"
+        exit 1
+    fi
+done
+
+echo 'Setting up git flow...'
+./git.sh
+
 echo "Symlinking state dir..."
 mkdir -p $HOME/.local/state/dotstow
 ln -s $HOME/.dotfiles $HOME/.local/state/dotstow/dotfiles
@@ -28,9 +44,6 @@ curl -sS https://starship.rs/install.sh | sh -s -- -y
 
 echo 'Setting up Antigen...'
 curl -L https://git.io/antigen >$HOME/antigen.zsh
-
-echo 'Setting up git flow...'
-./git.sh
 
 read -p "Do you want to install python with pyenv? (y/n): " choice
 if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
