@@ -15,7 +15,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux
+sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget
 mkdir -p temp && cd temp/
 # Reference: https://devicetests.com/running-commands-non-root-user-sudo
 sudo -u johnc bash -c '\
@@ -69,12 +69,18 @@ else
 fi
 
 # Post-Setup
-if [ -v SKIP_POST_SETUP ]; then
-  echo 'Skipped post-setup script.';
+# if [ -v SKIP_POST_SETUP ]; then
+#   echo 'Skipped post-setup script.';
+# else
+#   echo 'Installing dependencies into your home directory...'
+#   cd ..
+#   ./post-setup.sh
+# fi
+
+if command -v zenity >/dev/null 2>&1; then
+  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
 else
-  echo 'Installing dependencies into your home directory...'
-  cd ..
-  ./post-setup.sh
+  echo "Setup Completed. Please execute post-setup.sh to complete the setup."
 fi
 
 echo 'Script execution completed.'

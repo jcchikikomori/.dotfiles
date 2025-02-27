@@ -14,7 +14,7 @@ sudo locale-gen en_US.UTF-8
 sudo localectl set-locale LANG=en_US.UTF-8
 
 # Installing essentials (additional)
-sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu
+sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu wget
 
 # SSH Keys
 ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
@@ -46,12 +46,18 @@ else
 fi
 
 # Post-Setup
-if [ -v SKIP_POST_SETUP ]; then
-  echo 'Skipped post-setup script.';
+# if [ -v SKIP_POST_SETUP ]; then
+#   echo 'Skipped post-setup script.';
+# else
+#   echo 'Installing dependencies into your home directory...'
+#   cd ..
+#   ./post-setup.sh
+# fi
+
+if command -v zenity >/dev/null 2>&1; then
+  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
 else
-  echo 'Installing dependencies into your home directory...'
-  cd ..
-  ./post-setup.sh
+  echo "Setup Completed. Please execute post-setup.sh to complete the setup."
 fi
 
 echo 'Script execution completed.'

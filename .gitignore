@@ -29,3 +29,6 @@ linux/vscode/.vscode/argv.json
 !**/vscode/.vscode-server/data/Machine/*
 !**/vscode/.vscode-server/data/User/*
 **/vscode/.vscode/extensions/
+
+# Tentative adjustments due to a symlink bug
+.dotfiles/

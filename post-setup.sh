@@ -1,4 +1,28 @@
-#!/bin/sh
+#!/bin/bash
+
+echo "Current directory: $PWD"
+ls -lah .
+
+# Error handling
+if [ ! -f ./git.sh ]; then
+    echo "Error: git.sh not found in the current directory ($PWD)"
+    exit 1
+fi
+if [ ! -f ./python.sh ]; then
+    echo "Error: python.sh not found in the current directory ($PWD)"
+    exit 1
+fi
+if [ ! -f ./nodejs.sh ]; then
+    echo "Error: nodejs.sh not found in the current directory ($PWD)"
+    exit 1
+fi
+if [ ! -f ./php.sh ]; then
+    echo "Error: php.sh not found in the current directory ($PWD)"
+    exit 1
+fi
+
+echo 'Setting up git flow...'
+./git.sh
 
 echo "Symlinking state dir..."
 mkdir -p $HOME/.local/state/dotstow
@@ -66,3 +90,4 @@ vim +'PlugInstall --sync' +qall >/dev/null 2>&1
 
 echo 'Setting up oh-my-zsh'
 curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
+git clone https://github.com/bobthecow/git-flow-completion ~/.oh-my-zsh/custom/plugins/git-flow-completion

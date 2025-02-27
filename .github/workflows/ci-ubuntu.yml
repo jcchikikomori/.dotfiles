@@ -14,9 +14,12 @@ jobs:
       - name: Initialize with Essentials
         run: |
             cd debian && sudo bash init.sh
-      - name: Getting Started
+      - name: Simulate Setup
         run: |
             cd debian && ./setup.sh
+      - name: Post-Setup
+        run: |
+            ./post-setup.sh
       - name: Add User
         run: |
             cd debian && ./adduser.sh
