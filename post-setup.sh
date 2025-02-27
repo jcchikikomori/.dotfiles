@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "Current directory: $PWD"
 ls -lah .
