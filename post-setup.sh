@@ -66,3 +66,6 @@ vim +'PlugInstall --sync' +qall >/dev/null 2>&1
 
 echo 'Setting up oh-my-zsh'
 curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
+
+echo 'Setting up zsh plugins...'
+./git-flow.sh
