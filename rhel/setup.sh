@@ -49,8 +49,14 @@ else
   echo 'Skipped installing programming languages.'
 fi
 
-echo 'Installing dependencies into your home directory...'
-cd ..
-./post-setup.sh
+# echo 'Installing dependencies into your home directory...'
+# cd ..
+# ./post-setup.sh
+
+if command -v zenity >/dev/null 2>&1; then
+  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
+else
+  echo "Setup Completed. Please execute post-setup.sh to complete the setup."
+fi
 
 echo 'Script execution completed.'

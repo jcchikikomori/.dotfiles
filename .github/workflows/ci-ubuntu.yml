@@ -13,10 +13,13 @@ jobs:
       - uses: actions/checkout@v3
       - name: Initialize with Essentials
         run: |
-            cd debian && sudo bash init.sh
-      - name: Getting Started
+            cd debian && ./init.sh
+      - name: Simulate Setup
         run: |
             cd debian && ./setup.sh
+      - name: Post-Setup
+        run: |
+            ./post-setup.sh
       - name: Add User
         run: |
             cd debian && ./adduser.sh
