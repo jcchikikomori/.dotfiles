@@ -4,14 +4,22 @@ echo "Current directory: $PWD"
 ls -lah .
 
 # Error handling
-# Check if required scripts are present
-required_scripts=("git.sh" "python.sh" "nodejs.sh" "php.sh")
-for script in "${required_scripts[@]}"; then
-    if [ ! -f ./$script ]; then
-        echo "Error: $script not found in the current directory ($PWD)"
-        exit 1
-    fi
-done
+if [ ! -f ./git.sh ]; then
+    echo "Error: git.sh not found in the current directory ($PWD)"
+    exit 1
+fi
+if [ ! -f ./python.sh ]; then
+    echo "Error: python.sh not found in the current directory ($PWD)"
+    exit 1
+fi
+if [ ! -f ./nodejs.sh ]; then
+    echo "Error: nodejs.sh not found in the current directory ($PWD)"
+    exit 1
+fi
+if [ ! -f ./php.sh ]; then
+    echo "Error: php.sh not found in the current directory ($PWD)"
+    exit 1
+fi
 
 echo 'Setting up git flow...'
 ./git.sh
