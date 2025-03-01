@@ -55,3 +55,7 @@ then you can do anything EXCEPT `tmux`, `byobu`, & `tmuxp`!!
 ```shell
 touch ~/.dotprofile
 ```
+
+## Disclaimer & Legal Notices
+
+Please refer to this [article here](DISCLAIMER.md).
