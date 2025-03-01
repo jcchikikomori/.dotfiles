@@ -4,7 +4,7 @@ setup_directory() {
     ORIGINAL_DIR=$(pwd)
     WORKDIR=$(mktemp -d)
     trap 'rm -rf "$WORKDIR"' EXIT
-    cp -r python.sh nodejs.sh php.sh "$WORKDIR"
+    cp -r python.sh nodejs.sh php.sh java.sh vim.sh "$WORKDIR"
     cd "$WORKDIR"
 }
 
@@ -38,7 +38,7 @@ prompt_installation() {
 
 main() {
     setup_directory
-    for SCRIPT in python.sh nodejs.sh php.sh; do
+    for SCRIPT in python.sh nodejs.sh php.sh java.sh vim.sh; do
         check_script "$SCRIPT"
     done
     
@@ -48,9 +48,6 @@ main() {
     
     echo 'Setting up bash fasd...'
     git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
-    
-    echo 'Setting up Vim Plug...'
-    curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
     
     echo 'Setting up Tmux configuration...'
     git clone https://github.com/jcchikikomori/.tmux.git ~/.tmux || true
@@ -68,12 +65,12 @@ main() {
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
     
     prompt_installation "python with pyenv" "python.sh"
-    prompt_installation "SDKMAN" "" "sdkman.sh"
+    prompt_installation "SDKMAN" "" "java.sh"
     prompt_installation "NodeJS with NVM" "nodejs.sh"
     prompt_installation "PHP with phpenv" "php.sh"
     
     echo 'Installing VIM Plugins...'
-    vim +'PlugInstall --sync' +qall >/dev/null 2>&1
+    ./vim.sh
     
     echo 'Setting up oh-my-zsh'
     curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended

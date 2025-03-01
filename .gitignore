@@ -32,3 +32,4 @@ linux/vscode/.vscode/argv.json
 
 # Tentative adjustments due to a symlink bug
 .dotfiles/
+.dotfiles
