@@ -54,7 +54,8 @@ main() {
     
     echo 'Setting up Tmux configuration...'
     git clone https://github.com/jcchikikomori/.tmux.git ~/.tmux || true
-    cd ~/.tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8 && ..
+    cd ~/.tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8
+    cd "$ORIGINAL_DIR"
     ln -s -f ~/.tmux/.tmux.conf ~/.tmux.conf
     
     echo 'Setting up Tmux TPM...'
