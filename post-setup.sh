@@ -1,25 +1,23 @@
 #!/bin/bash
 
-echo "Current directory: $PWD"
-ls -lah .
+# Store original directory
+ORIGINAL_DIR=$(pwd)
 
-# Error handling
-if [ ! -f ./git.sh ]; then
-    echo "Error: git.sh not found in the current directory ($PWD)"
-    exit 1
-fi
-if [ ! -f ./python.sh ]; then
-    echo "Error: python.sh not found in the current directory ($PWD)"
-    exit 1
-fi
-if [ ! -f ./nodejs.sh ]; then
-    echo "Error: nodejs.sh not found in the current directory ($PWD)"
-    exit 1
-fi
-if [ ! -f ./php.sh ]; then
-    echo "Error: php.sh not found in the current directory ($PWD)"
-    exit 1
-fi
+# Create temporary working directory
+WORKDIR=$(mktemp -d)
+trap 'rm -rf "$WORKDIR"' EXIT
+
+# Display current directory
+echo "Current directory: $PWD"
+# ls -lah .
+
+# Check for required scripts
+for SCRIPT in git.sh python.sh nodejs.sh php.sh; do
+    if [ ! -f "./$SCRIPT" ]; then
+        echo "Error: $SCRIPT not found in the current directory ($PWD)"
+        exit 1
+    fi
+done
 
 echo 'Setting up git flow...'
 ./git.sh
@@ -38,11 +36,14 @@ git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
 echo 'Setting up Vim Plug...'
 curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 
+# This code has directory changes!
 echo 'Setting up Tmux configuration...'
 git clone https://github.com/jcchikikomori/.tmux.git ~/.tmux || true
 cd ~/.tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8 && ..
+# Return to original directory
+cd "$ORIGINAL_DIR"
+# Final changes for tmux
 ln -s -f ~/.tmux/.tmux.conf ~/.tmux.conf
-# cp -f .tmux/.tmux.conf.local ~/.
 
 echo 'Setting up Tmux TPM...'
 git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
@@ -53,6 +54,7 @@ curl -sS https://starship.rs/install.sh | sh -s -- -y
 echo 'Setting up Antigen...'
 curl -L https://git.io/antigen >$HOME/antigen.zsh
 
+# Interactive installations
 read -p "Do you want to install python with pyenv? (y/n): " choice
 if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
     echo 'Installing pyenv...'
@@ -91,3 +93,9 @@ vim +'PlugInstall --sync' +qall >/dev/null 2>&1
 echo 'Setting up oh-my-zsh'
 curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
 git clone https://github.com/bobthecow/git-flow-completion ~/.oh-my-zsh/custom/plugins/git-flow-completion
+
+# Return to original directory
+cd "$ORIGINAL_DIR"
+
+# Clean up temporary directory
+rm -rf "$WORKDIR"
