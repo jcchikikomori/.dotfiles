@@ -5,6 +5,7 @@ setup_directory() {
     ORIGINAL_DIR=$(pwd)
     WORKDIR=$(mktemp -d)
     trap 'rm -rf "$WORKDIR"' EXIT
+    cp -r git.sh python.sh nodejs.sh php.sh $WORKDIR
     cd "$WORKDIR"
 }
 
