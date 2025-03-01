@@ -17,14 +17,11 @@ else
     curl --silent --location https://raw.githubusercontent.com/petervanderdoes/gitflow-avh/develop/contrib/gitflow-installer.sh --output ./gitflow-installer.sh
 fi
 
-# Install gitflow
-sudo bash gitflow-installer.sh install develop
-
-# Clean up installer
-rm -f gitflow-installer.sh
-
 # Return to original directory
 cd "$ORIGINAL_DIR"
 
-# Clean up temporary directory
-# rm -rf "$WORKDIR"
+# Install gitflow
+sudo bash $WORKDIR/gitflow-installer.sh install develop
+
+# Clean up installer
+rm -f $WORKDIR/gitflow-installer.sh
