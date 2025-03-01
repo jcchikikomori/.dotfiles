@@ -20,19 +20,6 @@ sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu wget
 ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
 ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
 
-# New method on setting up systemctl
-# Source: https://github.com/nullpo-head/wsl-distrod
-# if [ -n "$WSL_DISTRO_NAME" ]; then
-#     curl -L -O "https://raw.githubusercontent.com/nullpo-head/wsl-distrod/main/install.sh"
-#     chmod +x install.sh
-#     sudo ./install.sh install
-
-#     # If you want to automatically start your distro on Windows startup, enable distrod by the following command
-#     #/opt/distrod/bin/distrod enable --start-on-windows-boot
-#     # Otherwise
-#     /opt/distrod/bin/distrod enable
-# fi
-
 # Programming languages
 if [ -v SKIP_INSTALL_PROGLANG ]; then
   echo 'Skipped installing programming languages.';
@@ -46,14 +33,6 @@ else
 fi
 
 # Post-Setup
-# if [ -v SKIP_POST_SETUP ]; then
-#   echo 'Skipped post-setup script.';
-# else
-#   echo 'Installing dependencies into your home directory...'
-#   cd ..
-#   ./post-setup.sh
-# fi
-
 if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
 else
