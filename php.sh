@@ -30,7 +30,7 @@ git clone https://github.com/php-build/php-build $(phpenv root)/plugins/php-buil
 cd "$ORIGINAL_DIR"
 
 # Clean up temporary directory
-rm -rf "$WORKDIR"
+# rm -rf "$WORKDIR"
 
 # Always the updated version of PHP, due to dependency issue on C compiler.
 # phpenv install 8.3.13

@@ -27,4 +27,4 @@ rm -f gitflow-installer.sh
 cd "$ORIGINAL_DIR"
 
 # Clean up temporary directory
-rm -rf "$WORKDIR"
+# rm -rf "$WORKDIR"
