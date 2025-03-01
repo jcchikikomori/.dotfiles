@@ -90,6 +90,7 @@ ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
 
 echo 'Few more steps before executing...'
 cp -f linux/vim/.vimrc ~/.vimrc
+cp -f linux/vim/.virc ~/.virc
 
 echo 'Executing post-setup...'
 main
