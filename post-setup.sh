@@ -88,5 +88,8 @@ echo "Symlinking state dir..."
 mkdir -p "$HOME/.local/state/dotstow"
 ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
 
+echo 'Few more steps before executing...'
+cp -f linux/vim/.vimrc ~/.vimrc
+
 echo 'Executing post-setup...'
 main

@@ -1,52 +1,65 @@
 #!/bin/bash
 
-# Set timeout (in seconds)
+# Configuration
 TIMEOUT=300
-
-# Create lock file to prevent concurrent installations
 LOCK_FILE="/tmp/vim-plugin-install.lock"
-
-# Store original directory
+WORKDIR="$HOME"
 ORIGINAL_DIR=$(pwd)
 
-# Create temporary working directory
-WORKDIR=$HOME
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
 
-# Change to temporary directory
-cd "$WORKDIR"
+cleanup() {
+    rm -f "/tmp/vim-verbose.log"
+    cd "$ORIGINAL_DIR" || true
+}
 
-# Dependency
-echo "Installing vim-plug plugin manager"
-curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-# Ensure .vimrc is loaded
-cp -f linux/vim/.vimrc ~/.vimrc
-
-# Acquire lock
-(
-    flock -n 200 || { 
-        echo "Error: Another plugin installation is in progress"
-        exit 1
-    }
-
-    # Install plugins with verbose logging
-    echo "Starting plugin installation..."
-    timeout $TIMEOUT vim +"set verbosefile=/tmp/vim-verbose.log" \
-        +"silent! PlugUpdate --sync" \
-        +"redir >> /tmp/vim-verbose.log | silent! PlugStatus | redir END" \
-        +qa!
-
-    STATUS=$?
-
-    # Check installation status
-    if [ $STATUS -eq 124 ]; then
-        echo "Error: Installation timed out!"
-    elif [ $STATUS -ne 0 ]; then
-        echo "Error: Plugin installation failed!"
-    else
-        echo "Plugins installed successfully"
+# Main installation function
+install_plugins() {
+    log_message "Installing vim-plug..."
+    mkdir -p ~/.vim/autoload
+    curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
+        https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    
+    if [ $? -ne 0 ]; then
+        log_message "Failed to download vim-plug"
+        return 1
     fi
+    
+    (
+        flock -n 200 || {
+            log_message "Another installation is in progress"
+            exit 1
+        }
+        
+        log_message "Starting plugin installation..."
+        timeout $TIMEOUT vim +"set verbosefile=/tmp/vim-verbose.log" \
+            +"silent! PlugUpdate --sync" \
+            +"redir >> /tmp/vim-verbose.log | silent! PlugStatus | redir END" \
+            +qa!
+        
+        STATUS=$?
+        case $STATUS in
+            124)
+                log_message "Installation timed out!"
+                ;;
+            0)
+                log_message "Plugins installed successfully"
+                ;;
+            *)
+                log_message "Plugin installation failed with status $STATUS"
+                ;;
+        esac
+        
+        exit $STATUS
+    ) 200>$LOCK_FILE
+}
 
-) 200>$LOCK_FILE
+# Main execution
+trap cleanup EXIT
+install_plugins
+EXIT_STATUS=$?
 
-# Return to original directory
-cd "$ORIGINAL_DIR"
+log_message "Final status: $EXIT_STATUS"
+exit $EXIT_STATUS
