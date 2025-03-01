@@ -4,7 +4,7 @@ setup_directory() {
     ORIGINAL_DIR=$(pwd)
     WORKDIR=$(mktemp -d)
     trap 'rm -rf "$WORKDIR"' EXIT
-    cp -r git.sh python.sh nodejs.sh php.sh "$WORKDIR"
+    cp -r python.sh nodejs.sh php.sh "$WORKDIR"
     cd "$WORKDIR"
 }
 
@@ -38,15 +38,9 @@ prompt_installation() {
 
 main() {
     setup_directory
-    for SCRIPT in git.sh python.sh nodejs.sh php.sh; do
+    for SCRIPT in python.sh nodejs.sh php.sh; do
         check_script "$SCRIPT"
     done
-    
-    echo 'Setting up git flow...'
-    ./"git.sh"
-    echo "Symlinking state dir..."
-    mkdir -p "$HOME/.local/state/dotstow"
-    ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
     
     echo 'Setting up bash fzf...'
     git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true
@@ -88,4 +82,13 @@ main() {
     rm -rf "$WORKDIR"
 }
 
+
+echo 'Setting up git flow...'
+check_script "./git.sh"
+./"git.sh"
+echo "Symlinking state dir..."
+mkdir -p "$HOME/.local/state/dotstow"
+ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
+
+echo 'Executing post-setup...'
 main
