@@ -13,6 +13,8 @@ curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer
 
 # Verify rbenv installation
 echo "Verifying rbenv installation..."
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
 type rbenv
 
 # Install ruby-build plugin
