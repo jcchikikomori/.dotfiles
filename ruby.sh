@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit on any error
-set -e
+# set -e
 
 # Suppress progress bars and interactive prompts
 export DEBIAN_FRONTEND=noninteractive
