@@ -55,19 +55,6 @@ sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 sudo pacman -S --noconfirm --noprogressbar xsel ncdu
 
-# Programming languages
-if [ -v SKIP_INSTALL_PROGLANG ]; then
-  echo 'Skipped installing programming languages.';
-else
-  sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
-  sudo -u johnc bash -c '\
-   yay -S ruby-build --noconfirm --noprogressbar
-   pyenv install 3.11.4 -v
-   pyenv global 3.11.4
-   nvm install 18 --lts
-  '
-fi
-
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
