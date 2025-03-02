@@ -45,10 +45,6 @@ jobs:
       - name: Verify python3
         run: |
             sudo -u johnc bash -c 'python3 --version'
-      - name: Verify ruby
-        run: |
-            sudo -u johnc bash -c 'rbenv versions'
-            sudo -u johnc bash -c 'ruby -v'
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh
