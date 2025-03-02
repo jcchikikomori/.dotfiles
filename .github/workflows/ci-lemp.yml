@@ -29,9 +29,16 @@ jobs:
       - name: Install python3 with pyenv (installation test)
         run: |
             ./python.sh
+      - name: Install ruby with rbenv (installation test)
+        run: |
+            ./ruby.sh
       - name: Verify python3
         run: |
             sudo -u johnc bash -c 'python3 --version'
+      - name: Verify ruby
+        run: |
+            sudo -u johnc bash -c 'rbenv versions'
+            sudo -u johnc bash -c 'ruby -v'
       - name: Installing dotstow
         run: |
             ./install-dotstow.sh

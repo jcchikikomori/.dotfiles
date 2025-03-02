@@ -71,7 +71,7 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 # Note: Ensure to execute ~/.dotfiles/git-flow.sh before using other plugins
-plugins=(git git-flow-completion)
+plugins=(git git-flow-completion zsh-autosuggestions fast-syntax-highlighting)
 
 
 # User configuration
@@ -113,6 +113,11 @@ ZSH_CACHE_DIR=$HOME/.cache/oh-my-zsh
 if [[ ! -d $ZSH_CACHE_DIR ]]; then
   mkdir $ZSH_CACHE_DIR
 fi
+
+# histdb for zsh
+# https://github.com/larkery/zsh-histdb?tab=readme-ov-file#installation
+source $HOME/.oh-my-zsh/custom/plugins/zsh-histdb/sqlite-history.zsh
+autoload -Uz add-zsh-hook
 
 source $ZSH/oh-my-zsh.sh
 

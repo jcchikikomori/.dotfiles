@@ -4,7 +4,7 @@ setup_directory() {
     ORIGINAL_DIR=$(pwd)
     WORKDIR=$(mktemp -d)
     trap 'rm -rf "$WORKDIR"' EXIT
-    cp -r install-dotstow.sh python.sh nodejs.sh php.sh java.sh vim.sh "$WORKDIR"
+    cp -r install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh "$WORKDIR"
     cd "$WORKDIR"
 }
 
@@ -38,7 +38,7 @@ prompt_installation() {
 
 main() {
     setup_directory
-    for SCRIPT in install-dotstow.sh python.sh nodejs.sh php.sh java.sh vim.sh; do
+    for SCRIPT in install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh; do
         check_script "$SCRIPT"
     done
 
@@ -68,14 +68,23 @@ main() {
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
     
     prompt_installation "python with pyenv" "python.sh"
+    prompt_installation "Ruby with rbenv" "ruby.sh"
     prompt_installation "SDKMAN" "" "java.sh"
     prompt_installation "NodeJS with NVM" "nodejs.sh"
     prompt_installation "PHP with phpenv" "php.sh"
     prompt_installation "Vim with plugins" "vim.sh"
     
-    echo 'Setting up oh-my-zsh'
+    echo 'Setting up oh-my-zsh...'
     curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
-    git clone https://github.com/bobthecow/git-flow-completion ~/.ohmyzsh/custom/plugins/git-flow-completion
+    echo 'Installing zsh plugins...'
+    local ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
+    local ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
+    git clone https://github.com/bobthecow/git-flow-completion.git $ZSH_CUSTOM_PLUGINS_DIR/git-flow-completion
+    git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autosuggestions
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-syntax-highlighting
+    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting
+    git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete
+    git clone https://github.com/larkery/zsh-histdb.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb
     
     cd "$ORIGINAL_DIR"
     rm -rf "$WORKDIR"
