@@ -4,7 +4,7 @@ setup_directory() {
     ORIGINAL_DIR=$(pwd)
     WORKDIR=$(mktemp -d)
     trap 'rm -rf "$WORKDIR"' EXIT
-    cp -r python.sh nodejs.sh php.sh java.sh vim.sh "$WORKDIR"
+    cp -r install-dotstow.sh python.sh nodejs.sh php.sh java.sh vim.sh "$WORKDIR"
     cd "$WORKDIR"
 }
 
@@ -38,9 +38,12 @@ prompt_installation() {
 
 main() {
     setup_directory
-    for SCRIPT in python.sh nodejs.sh php.sh java.sh vim.sh; do
+    for SCRIPT in install-dotstow.sh python.sh nodejs.sh php.sh java.sh vim.sh; do
         check_script "$SCRIPT"
     done
+
+    echo 'Installing dotstow...'
+    ./install-dotstow.sh
     
     echo 'Setting up bash fzf...'
     git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true
@@ -68,9 +71,7 @@ main() {
     prompt_installation "SDKMAN" "" "java.sh"
     prompt_installation "NodeJS with NVM" "nodejs.sh"
     prompt_installation "PHP with phpenv" "php.sh"
-    
-    echo 'Installing VIM Plugins...'
-    ./vim.sh
+    prompt_installation "Vim with plugins" "vim.sh"
     
     echo 'Setting up oh-my-zsh'
     curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended

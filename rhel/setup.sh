@@ -35,24 +35,6 @@ sudo dnf install -y \
       zlib-devel \
       cmake3
 
-# Programming languages
-read -p "Do you want to install programming languages? (y/n): " install_proglang
-if [ "$install_proglang" != "${install_proglang#[Yy]}" ]; then
-  user=$(whoami)
-  sudo dnf install -y ruby-build
-  sudo -u "$user" bash -c '\
-   pyenv install 3.11.4 -v
-   pyenv global 3.11.4
-   nvm install 18 --lts
-  '
-else
-  echo 'Skipped installing programming languages.'
-fi
-
-# echo 'Installing dependencies into your home directory...'
-# cd ..
-# ./post-setup.sh
-
 if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
 else
