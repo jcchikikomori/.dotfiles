@@ -150,8 +150,8 @@ y = 1
 history = 5000
 
 [window]
-dynamic_padding = false
-opacity = 0.8
+dynamic_padding = true
+opacity = 0.90
 title = "Alacritty"
 
 [window.class]
@@ -163,7 +163,7 @@ columns = 98
 lines = 28
 
 [window.padding]
-x = 6
-y = 6
+x = 1
+y = 3
 
 [keyboard]
