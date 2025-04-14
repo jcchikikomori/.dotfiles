@@ -129,11 +129,6 @@ fi
 #     source ~/.wslprofile
 # fi
 
-# Check if the .dotprofile file exists, then source it
-if [[ -f ~/.dotprofile ]]; then
-  source ~/.dotprofile
-fi
-
 # Start TMUX on the end after executing everything...
 # To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
 if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then

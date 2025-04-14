@@ -9,7 +9,6 @@ jobs:
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
-      SKIP_POST_SETUP: true
     steps:
       - uses: actions/checkout@v3
       - name: Initialize
@@ -40,6 +39,9 @@ jobs:
       - name: Install python3 with pyenv (installation test)
         run: |
             ./python.sh
+      - name: Install ruby with rbenv (installation test)
+        run: |
+            ./ruby.sh
       - name: Verify python3
         run: |
             sudo -u johnc bash -c 'python3 --version'
