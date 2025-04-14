@@ -16,6 +16,9 @@ fi
 if [ -f "$HOME/.zprofile" ]; then
   cp -f $HOME/.zprofile $HOME/.backups
 fi
+if [ -f "$HOME/.profile" ]; then
+  cp -f $HOME/.profile $HOME/.backups
+fi
 if [ -f "$HOME/.zshrc.pre-oh-my-zsh" ]; then
   cp -f $HOME/.zshrc.pre-oh-my-zsh $HOME/.backups
 fi
@@ -45,6 +48,7 @@ rm -f $HOME/default.yml
 rm -f $HOME/.dxvk
 rm -f $HOME/.hushlogin
 rm -f $HOME/.zprofile
+rm -f $HOME/.profile
 rm -f $HOME/.tmuxp
 rm -f $HOME/.vimrc
 rm -f $HOME/.gnupg/gpg.conf
