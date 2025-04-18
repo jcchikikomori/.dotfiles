@@ -9,7 +9,9 @@ setup_directory() {
     trap 'rm -rf "$WORKDIR"' EXIT
     echo "Copying files to $WORKDIR ..."
     cd $WORKFILES_DIR
-    cp -r "$WORKFILES" "$WORKDIR"
+    for SCRIPT in $WORKFILES; do
+        cp -r "$SCRIPT" "$WORKDIR"
+    done
     cd "$WORKDIR"
 }
 
