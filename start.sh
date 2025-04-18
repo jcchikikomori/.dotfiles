@@ -72,7 +72,7 @@ if [ -n "$DETECTED_DISTRO" ]; then
   case $DETECTED_DISTRO in
   debian)
     echo "Executing Debian-related workarounds..."
-    sudo sh debian/init.sh
+    sh debian/init.sh
     sh debian/setup.sh
     sh linux/systems/bin/dotfiles-post-setup
     ;;
