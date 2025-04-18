@@ -11,24 +11,12 @@ sudo localectl set-locale LANG=en_US.UTF-8
 # - vim-gtk3 = gvim
 sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu wget vim-gtk3
 
-# Programming languages
-if [ -v SKIP_INSTALL_PROGLANG ]; then
-  echo 'Skipped installing programming languages.';
-else
-  sudo apt-get install -y ruby-build
-  sudo -u johnc bash -c '\
-   pyenv install 3.11.4 -v
-   pyenv global 3.11.4
-   nvm install 18 --lts
-  '
-fi
-
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
-  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
+  zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
-  echo 'Please install dependencies into your home directory...'
-  echo 'Execute: dotfiles-post-setup'
+  echo "Setup Completed."
+  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
 fi
 
 echo 'Script execution completed.'

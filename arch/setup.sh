@@ -48,6 +48,7 @@ sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 sudo pacman -S --noconfirm --noprogressbar xsel ncdu
 
+# Post-Setup
 if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else

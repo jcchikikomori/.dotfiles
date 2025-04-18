@@ -11,9 +11,6 @@ jobs:
       SKIP_INSTALL_PROGLANG: false
     steps:
       - uses: actions/checkout@v3
-      - name: Initialize with Essentials
-        run: |
-          cd debian && ./init.sh
       - name: Getting Started
         run: |
           ./start.sh

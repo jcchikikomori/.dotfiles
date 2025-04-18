@@ -7,8 +7,9 @@ WORKDIR=$(mktemp -d)
 setup_directory() {
     ORIGINAL_DIR=$(pwd)
     trap 'rm -rf "$WORKDIR"' EXIT
-    echo "Copying files to $WORKDIR"
-    cp -r "$WORKFILES_DIR/$WORKFILES" "$WORKDIR"
+    echo "Copying files to $WORKDIR ..."
+    cd $WORKFILES_DIR
+    cp -r "$WORKFILES" "$WORKDIR"
     cd "$WORKDIR"
 }
 
