@@ -5,6 +5,9 @@ echo "Welcome! Beginning setup..."
 export DOTFILES_PATH=$(pwd)
 echo $DOTFILES_PATH >> .currentdir
 
+export DOTFILES_USERNAME=$(whoami)
+echo $DOTFILES_USERNAME >> .currentuser
+
 mkdir -p $HOME/bin
 echo "Copying binaries to ~/bin..."
 cp -rf ./linux/systems/bin/* $HOME/bin/
@@ -12,7 +15,7 @@ cp -rf ./linux/systems/bin/* $HOME/bin/
 # OS-related workarounds
 export DETECTED_DISTRO="unknown"
 if [ -f /etc/os-release ]; then
-  source /etc/os-release
+  . /etc/os-release
   case $ID in
   ubuntu)
     echo "You are using Ubuntu"
@@ -64,12 +67,14 @@ fi
 
 echo "Preliminary setup done! Proceeding with the rest of the setup..."
 
-if [ -f DETECTED_DISTRO ]; then
+if [ -n "$DETECTED_DISTRO" ]; then
   echo "Detected distro: $DETECTED_DISTRO"
   case $DETECTED_DISTRO in
   debian)
     echo "Executing Debian-related workarounds..."
-    # Add your Debian-specific commands here
+    sudo sh debian/init.sh
+    sh debian/setup.sh
+    sh linux/systems/bin/dotfiles-post-setup
     ;;
   arch)
     echo "Executing Arch-related workarounds..."
@@ -84,6 +89,6 @@ if [ -f DETECTED_DISTRO ]; then
     ;;
   esac
 else
-  echo "No detected distro file found. Skipping distro-specific workarounds."
+  echo "No detected distro found. Halting the process."
   exit 1
 fi

@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# WSL-related setup
-# Note: Will take effect on next boot
-echo "[boot]
-systemd=true
-[user]
-default=johnc" | sudo tee /etc/wsl.conf
-
 # Setting default locale
 sudo loadkeys us
 sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
@@ -55,12 +48,11 @@ sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 sudo pacman -S --noconfirm --noprogressbar xsel ncdu
 
-# Post-Setup
 if command -v zenity >/dev/null 2>&1; then
-  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
+  zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
-  echo 'Please install dependencies into your home directory...'
-  echo 'Execute: dotfiles-post-setup'
+  echo "Setup Completed."
+  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
 fi
 
-echo 'Script execution completed.'
+exit 0

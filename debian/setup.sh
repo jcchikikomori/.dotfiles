@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# WSL-related setup
-# Note: Will take effect on next boot
-echo "[boot]
-systemd=true
-[user]
-default=johnc" | sudo tee /etc/wsl.conf
-
 # Setting default locale
 sudo loadkeys us
 sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
@@ -17,10 +10,6 @@ sudo localectl set-locale LANG=en_US.UTF-8
 # NOTES:
 # - vim-gtk3 = gvim
 sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu wget vim-gtk3
-
-# SSH Keys
-ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
-ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
 
 # Programming languages
 if [ -v SKIP_INSTALL_PROGLANG ]; then

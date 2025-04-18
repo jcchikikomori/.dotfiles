@@ -17,13 +17,9 @@ jobs:
       - name: Getting Started
         run: |
           ./start.sh
-          cd debian && ./setup.sh
       - name: Add User
         run: |
-          cd debian && ./adduser.sh
-      - name: Post-Setup
-        run: |
-          sh linux/systems/bin/dotfiles-post-setup
+          sh linux/systems/bin/dotfiles-adduser johnc
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow

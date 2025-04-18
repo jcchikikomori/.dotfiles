@@ -12,26 +12,22 @@ jobs:
       - uses: actions/checkout@v3
       - name: Initialize with Essentials
         run: |
-          cd debian && sudo bash init.sh
+          cd debian && ./init.sh
       - name: Getting Started
         run: |
           ./start.sh
-          cd debian && ./setup.sh
       - name: Add User
         run: |
-          cd debian && ./adduser.sh
-      - name: Post-Setup
-        run: |
-          sh linux/systems/bin/dotfiles-post-setup
+          sh linux/systems/bin/dotfiles-adduser johnc
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow
       - name: Simulate Stowing
         run: |
-          sudo mkdir -p /home/johnc/.dotfiles
-          sudo mkdir -p /home/johnc/.local/state/dotstow
+          mkdir -p /home/johnc/.dotfiles
+          mkdir -p /home/johnc/.local/state/dotstow
           ls -lah $PWD
-          sudo cp -r $PWD/* /home/johnc/.dotfiles/
+          cp -r $PWD/* /home/johnc/.dotfiles/
           sudo -u johnc bash -c 'mkdir -p $HOME/bin'
           sudo -u johnc bash -c 'cp $HOME/.dotfiles/linux/systems/bin/dotfiles-cleanup $HOME/bin/'
           sudo -u johnc bash -c 'cp $HOME/.dotfiles/linux/systems/bin/dotfiles-ssh $HOME/bin/'

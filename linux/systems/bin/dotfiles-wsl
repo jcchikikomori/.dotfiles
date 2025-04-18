@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "Executing workarounds for WSL (Windows Subsystem for Linux)..."
+
+echo "[boot]
+systemd=true
+[user]
+default=johnc" | sudo tee /etc/wsl.conf

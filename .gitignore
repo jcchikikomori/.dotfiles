@@ -36,3 +36,4 @@ linux/vscode/.vscode/argv.json
 
 # Temporary files related to dotfiles setup
 .currentdir
+.currentuser
