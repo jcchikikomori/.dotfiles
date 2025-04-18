@@ -1,0 +1,6 @@
+#/bin/bash
+sudo tuned --profile balanced-tweaked -d
+sudo systemctl enable --now docker.socket
+sudo systemctl enable --now docker.service
+
+zenity --info --title "Docker Status" --text "You just ENABLED the Docker service. Please DISABLE the service before going back to Gaming Mode to maximize performance\!\n\nExecute 'docker-disable' to disable the service." --width 480 2>/dev/null

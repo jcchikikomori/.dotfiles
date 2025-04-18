@@ -2,8 +2,7 @@
 
 To ease setting up your favorite Terminal shell.. on various systems
 
-Forked from another [repository](https://github.com/sreerajkksd/dotfiles).\
-And [dotstow](https://github.com/clayrisser/dotstow) must be installed on your system.
+Forked from another [repository](https://github.com/sreerajkksd/dotfiles).
 
 ## Features
 
@@ -23,7 +22,15 @@ And [dotstow](https://github.com/clayrisser/dotstow) must be installed on your s
 
 Go to the platform (folder) then execute the `setup.sh` to began installing & setting up necessary dependencies.
 
-### Choosing the Platform
+### Requirements
+
+Packages below must be installed on your system.
+
+1. A 64-bit operating system (for specific OS, please look [this section](#choosing-environment))
+2. Package called `stow`
+3. Package called [dotstow](https://github.com/jcchikikomori/dotstow)
+
+### Choosing Environment
 
 If you are using Windows Subsystem for Linux, please refer to the directory that starts with `wsl-`, due to different method of booting the Linux subsystem in Windows 10 and higher, including workarounds such as X server, Domain Resolutions, `$PATH` resolutions, etc.
 
@@ -39,3 +46,16 @@ If you are using Windows Subsystem for Linux, please refer to the directory that
 Execute `stowme.sh` on specific platform you've choose.
 
 For Arch Linux, please follow the [instructions here](arch/README.MD).
+
+### Custom profile
+
+Just create `.dotprofile` on home directory,
+then you can do anything EXCEPT `tmux`, `byobu`, & `tmuxp`!!
+
+```shell
+touch ~/.dotprofile
+```
+
+## Disclaimer & Legal Notices
+
+Please refer to this [article here](DISCLAIMER.md).

@@ -1,0 +1,6 @@
+#/bin/bash
+sudo systemctl disable --now docker.socket
+sudo systemctl disable --now docker.service
+sudo tuned --profile performance -d
+
+zenity --info --title "Docker Status" --text "Docker has now DISABLED" --width 300 2>/dev/null

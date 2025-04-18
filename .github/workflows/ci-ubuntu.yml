@@ -1,9 +1,6 @@
 name: CI - Ubuntu
 on:
-  push:
-    branches: ["master", "develop", "feature/*"]
   pull_request:
-    branches: ["feature/*"]
   workflow_dispatch:
 jobs:
   setup:
@@ -11,7 +8,6 @@ jobs:
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
-      SKIP_POST_SETUP: true
     steps:
       - uses: actions/checkout@v3
       - name: Initialize with Essentials
@@ -26,7 +22,7 @@ jobs:
           cd debian && ./adduser.sh
       - name: Post-Setup
         run: |
-          sh linux/systems/bin/dotfiles-dotstow-post-setup
+          sh linux/systems/bin/dotfiles-post-setup
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow

@@ -1,9 +1,6 @@
 name: CI - Fedora
 on:
-  push:
-    branches: ["master", "develop", "feature/*"]
   pull_request:
-    branches: ["feature/*"]
   workflow_dispatch:
 jobs:
   setup:
@@ -12,23 +9,42 @@ jobs:
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
-      SKIP_POST_SETUP: true
     steps:
       - uses: actions/checkout@v3
       - name: Initialize
         run: |
-          echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
-      - name: Getting Started
-        run: |
-          mkdir -p ~/.ssh
-          ./start.sh
-          cd rhel && ./setup.sh
+            echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
       - name: Add User
         run: |
-          cd rhel && ./adduser.sh
+            cd rhel && ./adduser.sh johnc
+      - name: Getting Started
+        run: |
+            mkdir -p ~/.ssh
+            cd rhel && ./setup.sh
       - name: Post-Setup
         run: |
-          sh linux/systems/bin/dotfiles-dotstow-post-setup
+            ./post-setup.sh
+      - name: Installing Visual Studio Code
+        run: |
+            cd rhel && ./vscode.sh
+      - name: Installing nodejs
+        run: |
+            ./nodejs.sh
+      - name: Installing php
+        run: |
+            ./php.sh
+      - name: Verify ccache
+        run: |
+            ccache -s
+      - name: Install python3 with pyenv (installation test)
+        run: |
+            ./python.sh
+      - name: Install ruby with rbenv (installation test)
+        run: |
+            ./ruby.sh
+      - name: Verify python3
+        run: |
+            sudo -u johnc bash -c 'python3 --version'
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow

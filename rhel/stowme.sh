@@ -16,8 +16,5 @@ export LD_PRELOAD="/usr/lib64/libgcrypt.so.20"
 # Generic
 dotstow stow systems zsh git antigen tmux tmuxp vim vscode dxvk
 
-# Fedora-related
-dotstow stow test-fedora
-
 export LD_PRELOAD=
 exit 0

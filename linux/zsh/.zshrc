@@ -70,7 +70,8 @@ COMPLETION_WAITING_DOTS="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+# Note: Ensure to execute ~/.dotfiles/git-flow.sh before using other plugins
+plugins=(git git-flow-completion zsh-autosuggestions fast-syntax-highlighting)
 
 
 # User configuration
@@ -113,6 +114,11 @@ if [[ ! -d $ZSH_CACHE_DIR ]]; then
   mkdir $ZSH_CACHE_DIR
 fi
 
+# histdb for zsh
+# https://github.com/larkery/zsh-histdb?tab=readme-ov-file#installation
+source $HOME/.oh-my-zsh/custom/plugins/zsh-histdb/sqlite-history.zsh
+autoload -Uz add-zsh-hook
+
 source $ZSH/oh-my-zsh.sh
 
 ## Path section
@@ -147,7 +153,7 @@ setopt pushdminus
 autoload -Uz compinit
 compinit
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'       # Case insensitive tab completion
-zstyle ':completion:*' rehash true                              # automatically find new executables in path 
+zstyle ':completion:*' rehash true                              # automatically find new executables in path
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"         # Colored completion (different colors for dirs/files/etc)
 zstyle ':completion:*' completer _expand _complete _ignored _approximate
 zstyle ':completion:*' menu select

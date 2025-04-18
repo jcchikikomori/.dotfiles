@@ -1,30 +1,56 @@
 #!/bin/sh
 
 echo 'Installing dependencies from system...'
-sudo dnf groupinstall -y 'Development Tools'
-sudo dnf install -y gcc-c++ make
-sudo dnf install -y vim nano htop iftop stow git zsh unzip
+sudo dnf group install -y "development-tools"
+sudo dnf install -y gcc-c++ make ccache
+sudo dnf install -y vim gvim nano htop iftop stow git zsh unzip xsel ncdu wget
 sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel
 sudo dnf install -y python3-tmuxp
+sudo dnf install -y perl
+sudo dnf install -y php composer
 
-# Programming languages
-if [ -v SKIP_INSTALL_PROGLANG ]; then
-  echo 'Skipped installing programming languages.';
+# PHP dependencies
+sudo dnf install -y \
+      bash \
+      bison \
+      bzip2 \
+      bzip2-devel \
+      curl \
+      diffutils \
+      findutils \
+      gcc \
+      libarchive \
+      libcurl-devel \
+      libicu-devel \
+      libjpeg-turbo-devel \
+      libmcrypt-devel \
+      libpng-devel \
+      libtidy-devel \
+      libxml2-devel \
+      libxslt-devel \
+      openssl-devel \
+      patch \
+      pkgconf \
+      readline-devel \
+      sqlite-devel \
+      zlib-devel \
+      cmake3
+
+if command -v zenity >/dev/null 2>&1; then
+  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
 else
-  sudo dnf install -y ruby-build
-  sudo -u johnc bash -c '\
-   pyenv install 3.11.4 -v
-   pyenv global 3.11.4
-   nvm install 18 --lts
-  '
+  echo "Setup Completed. Please execute post-setup.sh to complete the setup."
 fi
 
+<<<<<<< HEAD
 # Post-Setup
 if [ -v SKIP_POST_SETUP ]; then
   echo 'Skipped post-setup script.';
 else
   echo 'Please install dependencies into your home directory...'
-  echo 'Execute: dotfiles-dotstow-post-setup'
+  echo 'Execute: dotfiles-post-setup'
 fi
 
+=======
+>>>>>>> origin/develop
 echo 'Script execution completed.'

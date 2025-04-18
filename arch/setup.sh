@@ -15,7 +15,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux
+sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget
 mkdir -p temp && cd temp/
 # Reference: https://devicetests.com/running-commands-non-root-user-sudo
 sudo -u johnc bash -c '\
@@ -53,26 +53,14 @@ sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 
 # Workarounds & Misc software
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
-
-# Programming languages
-if [ -v SKIP_INSTALL_PROGLANG ]; then
-  echo 'Skipped installing programming languages.';
-else
-  sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
-  sudo -u johnc bash -c '\
-   yay -S ruby-build --noconfirm --noprogressbar
-   pyenv install 3.11.4 -v
-   pyenv global 3.11.4
-   nvm install 18 --lts
-  '
-fi
+sudo pacman -S --noconfirm --noprogressbar xsel ncdu
 
 # Post-Setup
-if [ -v SKIP_POST_SETUP ]; then
-  echo 'Skipped post-setup script.';
+if command -v zenity >/dev/null 2>&1; then
+  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
 else
   echo 'Please install dependencies into your home directory...'
-  echo 'Execute: dotfiles-dotstow-post-setup'
+  echo 'Execute: dotfiles-post-setup'
 fi
 
 echo 'Script execution completed.'
