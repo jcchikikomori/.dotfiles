@@ -13,7 +13,7 @@ setup_directory() {
 check_script() {
     local script_name=$1
     echo "Checking for $script_name..."
-    if [ ! -f "./$script_name" ]; then
+    if [ ! -f "$WORKDIR/$script_name" ]; then
         echo "Error: $script_name not found in the current directory ($PWD)" >&2
         exit 1
     fi
@@ -95,8 +95,8 @@ main() {
 
 
 echo 'Setting up git flow...'
-check_script "./git.sh"
-./"git.sh"
+check_script "$WORKDIR/git.sh"
+$WORKDIR/git.sh
 echo "Symlinking state dir..."
 mkdir -p "$HOME/.local/state/dotstow"
 ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
