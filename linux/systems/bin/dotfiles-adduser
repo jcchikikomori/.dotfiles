@@ -1,0 +1,50 @@
+#!/bin/sh
+
+SKIP_SETTING_USER=0
+
+# Check if you are not using administrative privileges
+if [ "$EUID" -ne 0 ]; then
+  # Check if a username is provided as an argument
+  if [ -n "$1" ]; then
+    USERNAME=$1
+  else
+    echo "No username provided. Using your current username."
+    USERNAME=$(whoami)
+    SKIP_SETTING_USER=1
+  fi
+
+  # Check if useradd or adduser exists
+  if command -v useradd >/dev/null 2>&1; then
+    USER_COMMAND="useradd"
+  elif command -v adduser >/dev/null 2>&1; then
+    USER_COMMAND="adduser"
+  else
+    echo "Neither useradd nor adduser is available on this system."
+    exit 1
+  fi
+
+  # Create non-root user
+  sudo $USER_COMMAND $USERNAME -m
+  # Using zsh shell
+  sudo usermod -s /bin/zsh $USERNAME
+  # Add user to wheel group
+  sudo usermod -aG wheel $USERNAME
+  # Setting password
+  confirm_and_set_password() {
+    read -p "Do you want to set a password for $USERNAME? (y/n): " confirm
+    if [ "$confirm" = "y" ]; then
+      sudo passwd $USERNAME
+    else
+      echo 'Skipped setting password'
+    fi
+  }
+
+  if [ -z "$SKIP_SETTING_USER" ]; then
+    confirm_and_set_password
+  else
+    echo 'Skipped setting password'
+  fi
+else
+  echo "This script should not be run as root. Please run it as a normal user."
+  exit 1
+fi

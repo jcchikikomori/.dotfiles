@@ -1,12 +1,13 @@
 #!/bin/sh
 
+WORKFILES="install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh git.sh"
 WORKDIR=$(mktemp -d)
 
 setup_directory() {
     ORIGINAL_DIR=$(pwd)
     trap 'rm -rf "$WORKDIR"' EXIT
     echo "Copying files to $WORKDIR"
-    cp -r install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh "$WORKDIR"
+    cp -r "$WORKFILES" "$WORKDIR"
     cd "$WORKDIR"
 }
 
@@ -41,9 +42,21 @@ prompt_installation() {
 
 main() {
     setup_directory
-    for SCRIPT in install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh; do
+    for SCRIPT in $WORKFILES; do
         check_script $WORKDIR/$SCRIPT
     done
+
+    echo 'Setting up git flow...'
+    check_script "$WORKDIR/git.sh"
+    $WORKDIR/git.sh
+
+    echo "Symlinking state dir..."
+    mkdir -p "$HOME/.local/state/dotstow"
+    ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
+
+    echo 'Symlinking vim rc files...'
+    cp -f linux/vim/.vimrc ~/.vimrc
+    cp -f linux/vim/.virc ~/.virc
 
     echo 'Installing dotstow...'
     $WORKDIR/install-dotstow.sh
@@ -92,18 +105,6 @@ main() {
     cd "$ORIGINAL_DIR"
     rm -rf "$WORKDIR"
 }
-
-
-echo 'Setting up git flow...'
-check_script "$WORKDIR/git.sh"
-$WORKDIR/git.sh
-echo "Symlinking state dir..."
-mkdir -p "$HOME/.local/state/dotstow"
-ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
-
-echo 'Few more steps before executing...'
-cp -f linux/vim/.vimrc ~/.vimrc
-cp -f linux/vim/.virc ~/.virc
 
 echo 'Executing post-setup...'
 main

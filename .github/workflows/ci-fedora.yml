@@ -16,7 +16,7 @@ jobs:
             echo "Initialize: Skipped. Fedora is working enough out-of-the-box..."
       - name: Add User
         run: |
-            cd rhel && ./adduser.sh johnc
+            cd linux/systems/bin && ./dotfiles-adduser
       - name: Getting Started
         run: |
             mkdir -p ~/.ssh
