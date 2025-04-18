@@ -1,13 +1,14 @@
 #!/bin/sh
 
-WORKFILES="python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh git.sh"
+WORKFILES_DIR="linux/systems/bin"
+WORKFILES="dotfiles-python dotfiles-nodejs dotfiles-php dotfiles-java-sdkman dotfiles-ruby dotfiles-vim dotfiles-git"
 WORKDIR=$(mktemp -d)
 
 setup_directory() {
     ORIGINAL_DIR=$(pwd)
     trap 'rm -rf "$WORKDIR"' EXIT
     echo "Copying files to $WORKDIR"
-    cp -r "$WORKFILES" "$WORKDIR"
+    cp -r "$WORKFILES_DIR/$WORKFILES" "$WORKDIR"
     cd "$WORKDIR"
 }
 
@@ -47,8 +48,8 @@ main() {
     done
 
     echo 'Setting up git flow...'
-    check_script "$WORKDIR/git.sh"
-    $WORKDIR/git.sh
+    check_script "$WORKDIR/dotfiles-git"
+    sh $WORKDIR/dotfiles-git
 
     echo "Symlinking state dir..."
     mkdir -p "$HOME/.local/state/dotstow"
@@ -78,20 +79,20 @@ main() {
     git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 
     echo 'Setting up Starship prompt...'
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    curl -sS https://starship.rs/install | sh -s -- -y
 
     echo 'Setting up Antigen...'
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
 
-    prompt_installation "python with pyenv" "python.sh"
-    prompt_installation "Ruby with rbenv" "ruby.sh"
-    prompt_installation "SDKMAN" "" "java.sh"
-    prompt_installation "NodeJS with NVM" "nodejs.sh"
-    prompt_installation "PHP with phpenv" "php.sh"
-    prompt_installation "Vim with plugins" "vim.sh"
+    prompt_installation "python with pyenv" "python"
+    prompt_installation "Ruby with rbenv" "ruby"
+    prompt_installation "SDKMAN" "" "java"
+    prompt_installation "NodeJS with NVM" "nodejs"
+    prompt_installation "PHP with phpenv" "php"
+    prompt_installation "Vim with plugins" "vim"
 
     echo 'Setting up oh-my-zsh...'
-    curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
+    curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install | sh -s -- --unattended
     echo 'Installing zsh plugins...'
     local ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
     local ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
