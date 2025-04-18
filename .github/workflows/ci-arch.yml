@@ -11,18 +11,12 @@ jobs:
       SKIP_INSTALL_PROGLANG: false
     steps:
       - uses: actions/checkout@v3
-      - name: Initialize Pacman
-        run: |
-          cd arch && ./init.sh
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Simulate Setup
+      - name: Setup
         run: |
-          mkdir -p ~/.ssh
-          pacman -Syyu --noconfirm --noprogressbar
-          pacman -S --noconfirm --noprogressbar sudo
-          cd arch && ./setup.sh
+
       - name: Post-Setup
         run: |
           sh linux/systems/bin/dotfiles-post-setup

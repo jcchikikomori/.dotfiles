@@ -18,16 +18,3 @@ pacman -S --noconfirm --noprogressbar sudo gvim nano htop iftop mtr dkms lz4 bas
 cp -f /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
 rankmirrors -n 5 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist
 
-# Create non root user
-useradd johnc -m
-# Using zsh shell
-chsh -s /usr/bin/zsh johnc
-# Add johnc to wheel group
-usermod -aG wheel johnc
-# Allow wheel group sudo
-echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-if [ -v SKIP_SETTING_USER ]; then
-  echo 'Skipped setting password';
-else
-  passwd johnc
-fi

@@ -33,3 +33,12 @@ else
   echo "Error: gpgconf and/or gpg-connect-agent commands not found." >&2
   exit 1
 fi
+
+read -p "Enter your email address for the SSH key (or press Enter to cancel): " EMAIL
+if [ -z "$EMAIL" ]; then
+    echo "No email provided. SSH key creation will be skipped. Exiting..."
+    exit 0
+fi
+
+ssh-keygen -t ed25519 -C "$EMAIL" -f $HOME/.ssh/id_ed25519 -N ""
+ssh-keygen -t rsa -b 4096 -C "$EMAIL" -f $HOME/.ssh/id_rsa -N ""

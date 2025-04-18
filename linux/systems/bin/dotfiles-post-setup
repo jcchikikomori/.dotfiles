@@ -1,6 +1,6 @@
 #!/bin/sh
 
-WORKFILES="install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh git.sh"
+WORKFILES="python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh git.sh"
 WORKDIR=$(mktemp -d)
 
 setup_directory() {
@@ -59,7 +59,7 @@ main() {
     cp -f linux/vim/.virc ~/.virc
 
     echo 'Installing dotstow...'
-    $WORKDIR/install-dotstow.sh
+    ./dotfiles-dotstow
 
     echo 'Setting up bash fzf...'
     git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true
