@@ -12,6 +12,8 @@ setup_directory() {
     for SCRIPT in $WORKFILES; do
         cp -r "$SCRIPT" "$WORKDIR"
     done
+    ls -lah "$WORKDIR"
+    echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
 
