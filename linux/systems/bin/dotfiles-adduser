@@ -15,7 +15,7 @@ confirm_and_set_password() {
 # Check if running in CI/CD environment
 if [ -n "$CI" ]; then
     echo "Running in CI/CD environment. Skipping non-root user check."
-    SKIP_CREATING_USER=1
+    SKIP_CREATING_USER=0
     SKIP_SETTING_USER=1
     USERNAME=$(whoami)
 else

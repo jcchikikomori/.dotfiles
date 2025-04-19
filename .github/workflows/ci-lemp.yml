@@ -11,23 +11,21 @@ jobs:
       SKIP_INSTALL_PROGLANG: false
     steps:
       - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/bin
+          cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |
           ./start.sh
       - name: Add User
         run: |
-          sh linux/systems/bin/dotfiles-adduser johnc
+          sh linux/systems/bin/dotfiles-adduser
       - name: Installing dotstow
         run: |
           sh linux/systems/bin/dotfiles-dotstow
       - name: Simulate Stowing
         run: |
-          mkdir -p /home/johnc/.dotfiles
-          mkdir -p /home/johnc/.local/state/dotstow
-          ls -lah $PWD
-          cp -r $PWD/* /home/johnc/.dotfiles/
-          sudo -u johnc bash -c 'mkdir -p $HOME/bin'
-          sudo -u johnc bash -c 'cp $HOME/.dotfiles/linux/systems/bin/dotfiles-cleanup $HOME/bin/'
-          sudo -u johnc bash -c 'cp $HOME/.dotfiles/linux/systems/bin/dotfiles-ssh $HOME/bin/'
-          sudo -u johnc bash -c 'ls -lah $HOME/.dotfiles/'
-          sudo -u johnc bash -c 'cd $HOME/.dotfiles/debian && ./stowme.sh'
+          sh debian/stowme.sh
