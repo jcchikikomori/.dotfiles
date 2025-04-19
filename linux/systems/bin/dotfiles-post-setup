@@ -15,6 +15,10 @@ setup_directory() {
     ls -lah "$WORKDIR"
     echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
+    echo "Checking for required scripts..."
+    for SCRIPT in $WORKFILES; do
+        check_script $SCRIPT
+    done
 }
 
 check_script() {
@@ -23,6 +27,8 @@ check_script() {
     if [ ! -f "$WORKDIR/$script_name" ]; then
         echo "Error: $script_name not found in the current directory ($PWD)" >&2
         exit 1
+    else
+        echo "$script_name found."
     fi
 }
 
@@ -47,10 +53,6 @@ prompt_installation() {
 }
 
 main() {
-    for SCRIPT in $WORKFILES; do
-        check_script $WORKDIR/$SCRIPT
-    done
-
     echo 'Setting up git flow...'
     check_script "$WORKDIR/dotfiles-git"
     sh $WORKDIR/dotfiles-git
