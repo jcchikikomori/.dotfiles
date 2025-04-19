@@ -84,13 +84,17 @@ if [ -n "$DETECTED_DISTRO" ]; then
     ;;
   rhel)
     echo "Executing RHEL-related workarounds..."
-    # Add your RHEL-specific commands here
+    sh rhel/setup.sh
+    echo "Installing VSCode..."
+    sh rhel/vscode.sh
+    sh linux/systems/bin/dotfiles-post-setup
     ;;
   *)
-    echo "No specific workarounds for this distro."
+    echo "Unable to identify the distro to begin! Exiting..."
+    exit 1
     ;;
   esac
 else
-  echo "No detected distro found. Halting the process."
+  echo "Unable to identify the distro. Exiting..."
   exit 1
 fi
