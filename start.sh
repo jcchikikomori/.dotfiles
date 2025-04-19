@@ -78,7 +78,9 @@ if [ -n "$DETECTED_DISTRO" ]; then
     ;;
   arch)
     echo "Executing Arch-related workarounds..."
-    # Add your Arch-specific commands here
+    sh arch/init.sh
+    sh arch/setup.sh
+    sh linux/systems/bin/dotfiles-post-setup
     ;;
   rhel)
     echo "Executing RHEL-related workarounds..."
