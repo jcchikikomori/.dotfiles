@@ -47,7 +47,6 @@ prompt_installation() {
 }
 
 main() {
-    setup_directory
     for SCRIPT in $WORKFILES; do
         check_script $WORKDIR/$SCRIPT
     done
@@ -112,5 +111,13 @@ main() {
     rm -rf "$WORKDIR"
 }
 
+echo 'Setting up scripts...'
+setup_directory
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to complete setting up scripts! Exiting..." >&2
+    exit 1
+fi
+
 echo 'Executing post-setup...'
 main
+
