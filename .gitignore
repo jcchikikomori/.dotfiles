@@ -30,6 +30,9 @@ linux/vscode/.vscode/argv.json
 !**/vscode/.vscode-server/data/User/*
 **/vscode/.vscode/extensions/
 
+# DXVK
+linux/dxvk/.dxvk/cache/
+
 # Tentative adjustments due to a symlink bug
 .dotfiles/
 .dotfiles
