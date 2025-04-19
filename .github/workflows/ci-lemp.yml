@@ -28,4 +28,6 @@ jobs:
           sh linux/systems/bin/dotfiles-dotstow
       - name: Simulate Stowing
         run: |
-          sh debian/stowme.sh
+          sh linux/systems/bin/dotfiles-cleanup
+          sh linux/systems/bin/dotfiles-ssh
+          sh arch/stowme.sh
