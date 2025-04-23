@@ -25,4 +25,4 @@ jobs:
           sh linux/zsh/bin/dotfiles-adduser
       - name: Simulate Stowing
         run: |
-          sh arch/stowme.sh
+          sh rhel/stowme.sh
