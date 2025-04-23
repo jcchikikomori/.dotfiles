@@ -98,7 +98,7 @@ main() {
     prompt_installation "Vim with plugins" "dotfiles-vim"
 
     echo 'Setting up oh-my-zsh...'
-    curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install | sh -s -- --unattended
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     echo 'Installing zsh plugins...'
     local ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
     local ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
