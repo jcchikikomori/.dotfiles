@@ -12,9 +12,9 @@ check_command() {
 }
 
 # Prelim checks
-# check_command make
-# check_command stow
-# check_command git
+check_command make
+check_command stow
+check_command git
 
 # Clone dotstow repository and install
 git clone https://github.com/jcchikikomori/dotstow $WORKDIR/.dotstow
