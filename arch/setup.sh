@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# WSL-related setup
-# Note: Will take effect on next boot
-echo "[boot]
-systemd=true
-[user]
-default=johnc" | sudo tee /etc/wsl.conf
-
 # Setting default locale
 sudo loadkeys us
 sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
@@ -26,8 +19,8 @@ cd ../..
 rm -rf temp/
 
 # SSH Keys
-ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
-ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
+# ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
+# ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
 
 # Chaotic AUR
 echo 'Importing essential keys...'
@@ -57,9 +50,10 @@ sudo pacman -S --noconfirm --noprogressbar xsel ncdu
 
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
-  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
+  zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
-  echo "Setup Completed. Please execute post-setup.sh to complete the setup."
+  echo "Setup Completed."
+  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
 fi
 
-echo 'Script execution completed.'
+exit 0

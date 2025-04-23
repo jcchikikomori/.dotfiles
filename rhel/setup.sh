@@ -8,6 +8,7 @@ sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel
 sudo dnf install -y python3-tmuxp
 sudo dnf install -y perl
 sudo dnf install -y php composer
+sudo dnf install -y zenity
 
 # PHP dependencies
 sudo dnf install -y \
@@ -37,9 +38,10 @@ sudo dnf install -y \
       cmake3
 
 if command -v zenity >/dev/null 2>&1; then
-  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
+  zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
-  echo "Setup Completed. Please execute post-setup.sh to complete the setup."
+  echo "Setup Completed."
+  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
 fi
 
-echo 'Script execution completed.'
+exit 0

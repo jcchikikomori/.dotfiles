@@ -1,60 +1,81 @@
-# dotfiles
+# .dotfiles
 
-To ease setting up your favorite Terminal shell.. on various systems
+A collection of configuration files and scripts to streamline setting up your favorite terminal shell across various systems.
 
-Forked from another [repository](https://github.com/sreerajkksd/dotfiles).
+Forked from another [repository](https://github.com/sreerajkksd/dotfiles), with additional customizations and improvements.
 
 ## Features
 
-- Programmer-focused dotfiles
-- My personal chosen setups, beside the forked files
-- Included specific patches/workarounds
-- Aim to prevent messing up the system
+- Programmer-focused dotfiles.
+- Personal customizations alongside the forked files.
+- Includes specific patches and workarounds for various platforms.
+- Designed to minimize the risk of system misconfiguration.
 
 ## Supported Platforms
 
-- Windows Subsystem for Linux
-- Ubuntu/Debian
-- Arch Linux
-- Fedora
+- Windows Subsystem for Linux (WSL)
+- Ubuntu/Debian-based distributions
+- Arch Linux and its derivatives (e.g., Garuda, Manjaro)
+- Fedora/RHEL-based distributions
 
 ## Installation
 
-Go to the environment (folder) then execute the `setup.sh` to began installing & setting up necessary dependencies.
+The setup process is now fully automated using the `start.sh` script. This script detects your operating system and applies the appropriate configurations and workarounds.
 
 ### Requirements
 
-Packages below must be installed on your system.
+Ensure the following prerequisites are met before running the setup:
 
-1. A 64-bit operating system (for specific OS, please look [this section](#choosing-environment))
-2. Package called `stow`
-3. Package called [dotstow](https://github.com/jcchikikomori/dotstow)
+1. A 64-bit operating system.
+2. The `stow` package installed on your system.
+3. [dotstow](https://github.com/jcchikikomori/dotstow) installed for managing dotfiles.
 
-### Choosing Environment
+### Setup Instructions
 
-If you are using Windows Subsystem for Linux, please refer to the directory that starts with `wsl-`, due to different method of booting the Linux subsystem in Windows 10 and higher, including workarounds such as X server, Domain Resolutions, `$PATH` resolutions, etc.
-
-- Windows Subsystem for Linux `=>` `wsl-*`
-- Ubuntu `=>` `ubuntu`
-- Arch Linux `=>` `arch`
-- Garuda (Arch-based system) `=>` `arch`
-- Fedora `=>` `rhel`
-- Any Android Subsystem for Linux (Andronix, etc.) `=>` `andronix`
+Clone this repository to your system by executing the following...
+```bash
+git clone https://github.com/jcchikikomori/.dotfiles.git $HOME/.dotfiles
+cd $HOME/.dotfiles
+```
 
 ## Setup
 
-Execute `stowme.sh` on specific environment you've choose.
+Execute `start.sh` to get started.
+
+The script will:
+Detect your operating system (e.g., Debian-based, Arch-based, RHEL-based).
+Apply the appropriate configurations and workarounds.
+Execute platform-specific setup scripts.
+
+Then follow any additional prompts during the setup process.
+
+### Stowing
+
+Execute `stowme.sh` to finally symlink the files properly.
+Then reboot your machine, and let the magic happen!
+
+## Post-Setup
+After running the setup, the dotfiles-post-setup script will handle additional configurations, including:
+
+Installing essential tools like fzf, fasd, and oh-my-zsh.
+Setting up programming environments (e.g., Python, Ruby, Node.js, PHP).
+Configuring vim with plugins and tmux with TPM.
+Installing the Starship prompt and Antigen for Zsh.
+Refer to the `dotfiles-post-setup script` for more details.
+
+## CI Integration
+
+This repository includes a CI workflow; For example: Ubuntu, located in `.github/ci-ubuntu.yml`. The workflow automates the following tasks
+
+Initializes essential dependencies.
+Executes the `start.sh` script.
+Adds a user and simulates stowing dotfiles.
+
+## Workarounds
+
+### Arch Linux
 
 For Arch Linux, please follow the [instructions here](arch/README.MD).
-
-### Custom profile
-
-Just create `.dotprofile` on home directory,
-then you can do anything EXCEPT `tmux`, `byobu`, & `tmuxp`!!
-
-```shell
-touch ~/.dotprofile
-```
 
 ## Disclaimer & Legal Notices
 
