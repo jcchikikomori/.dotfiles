@@ -26,4 +26,4 @@ jobs:
         run: |
           sh linux/systems/bin/dotfiles-cleanup
           sh linux/systems/bin/dotfiles-ssh
-          sh arch/stowme.sh
+          sh ubuntu/stowme.sh

@@ -19,7 +19,7 @@ if [ -f /etc/os-release ]; then
   case $ID in
   ubuntu)
     echo "You are using Ubuntu"
-    export DETECTED_DISTRO="debian"
+    export DETECTED_DISTRO="ubuntu"
     ;;
   debian)
     echo "You are using Debian"
@@ -73,6 +73,11 @@ if [ -n "$DETECTED_DISTRO" ]; then
   debian)
     echo "Executing Debian-related workarounds..."
     sh debian/setup.sh
+    sh linux/systems/bin/dotfiles-post-setup
+    ;;
+  ubuntu)
+    echo "Executing Ubuntu-related workarounds..."
+    sh ubuntu/setup.sh
     sh linux/systems/bin/dotfiles-post-setup
     ;;
   arch)

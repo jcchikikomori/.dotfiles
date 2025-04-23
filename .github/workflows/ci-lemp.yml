@@ -9,25 +9,22 @@ jobs:
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
-      TEST_USER: johnc
-      TEST_USER_HOME: /home/johnc
     steps:
       - uses: actions/checkout@v3
-      - name: Add User
-        run: |
-          sh linux/systems/bin/dotfiles-adduser $TEST_USER
       - name: Setup some directories
         run: |
-          mkdir -p $TEST_USER_HOME/.dotfiles
-          mkdir -p $TEST_USER_HOME/.local/state/dotstow
-          mkdir -p $TEST_USER_HOME/bin
-          cp -r $PWD/* $TEST_USER_HOME/.dotfiles/
-          chown -R $TEST_USER:$TEST_USER $TEST_USER_HOME
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/bin
+          cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |
-          sudo -u $TEST_USER sh -c "cd $TEST_USER_HOME/.dotfiles && ./start.sh"
+          ./start.sh
+      - name: Add User
+        run: |
+          sh linux/systems/bin/dotfiles-adduser
       - name: Simulate Stowing
         run: |
-          sudo -u $TEST_USER sh -c "cd $TEST_USER_HOME/.dotfiles && sh linux/systems/bin/dotfiles-cleanup"
-          sudo -u $TEST_USER sh -c "cd $TEST_USER_HOME/.dotfiles && sh linux/systems/bin/dotfiles-ssh"
-          sudo -u $TEST_USER sh -c "cd $TEST_USER_HOME/.dotfiles && sh arch/stowme.sh"
+          sh linux/systems/bin/dotfiles-cleanup
+          sh linux/systems/bin/dotfiles-ssh
+          sh debian/stowme.sh

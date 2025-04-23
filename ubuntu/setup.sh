@@ -1,20 +1,20 @@
 #!/bin/sh
 
 # Init setup
-apt-get update
-apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-apt-get install -y vim nano htop iftop mtr dkms lz4 git zsh build-essential sqlite3 ccache tmux unzip
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+sudo apt-get install -y sudo vim nano htop iftop mtr dkms lz4 git zsh build-essential sqlite3 ccache tmux unzip
 
 # Setting default locale
-loadkeys us
-sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
-locale-gen en_US.UTF-8
-localectl set-locale LANG=en_US.UTF-8
+sudo loadkeys us
+sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
+sudo locale-gen en_US.UTF-8
+sudo localectl set-locale LANG=en_US.UTF-8
 
 # Installing essentials (additional)
 # NOTES:
 # - vim-gtk3 = gvim
-apt-get install -y stow python3 zip unzip vi nano openssh ccache xsel ncdu wget vim-gtk3
+sudo apt-get install -y stow python3 zip unzip vi nano openssh ccache xsel ncdu wget vim-gtk3
 
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then

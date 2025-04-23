@@ -17,7 +17,6 @@ Forked from another [repository](https://github.com/sreerajkksd/dotfiles), with 
 - Ubuntu/Debian-based distributions
 - Arch Linux and its derivatives (e.g., Garuda, Manjaro)
 - Fedora/RHEL-based distributions
-- Android Subsystems for Linux (e.g., Andronix)
 
 ## Installation
 
@@ -69,7 +68,7 @@ Refer to the `dotfiles-post-setup script` for more details.
 This repository includes a CI workflow; For example: Ubuntu, located in `.github/ci-ubuntu.yml`. The workflow automates the following tasks
 
 Initializes essential dependencies.
-Executes the start.sh script.
+Executes the `start.sh` script.
 Adds a user and simulates stowing dotfiles.
 
 ## Workarounds
