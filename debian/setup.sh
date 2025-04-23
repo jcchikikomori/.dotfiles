@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Init setup
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+sudo apt-get install -y sudo vim nano htop iftop mtr dkms lz4 git zsh build-essential sqlite3 ccache tmux unzip
+
 # Setting default locale
 sudo loadkeys us
 sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
