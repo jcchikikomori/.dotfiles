@@ -1,0 +1,34 @@
+# https://github.com/linuxserver/docker-steamos
+name: CI - Steam Deck (SteamOS)
+on:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    container: lscr.io/linuxserver/steamos:latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
+      PUID: 1000
+      PGID: 1000
+      TZ: Etc/UTC
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/bin
+          cp -r $PWD/* $HOME/.dotfiles/
+      - name: Getting Started
+        run: |
+          ./start.sh
+      - name: Add User
+        run: |
+          sh linux/systems/bin/dotfiles-adduser
+      - name: Simulate Stowing
+        run: |
+          sh linux/systems/bin/dotfiles-cleanup
+          sh linux/systems/bin/dotfiles-ssh
+          sh arch/stowme.sh
