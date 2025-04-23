@@ -1,4 +1,6 @@
 #!/bin/sh
+sh $HOME/bin/dotfiles-cleanup
+sh $HOME/bin/dotfiles-ssh
 cd $HOME || return
 dotstow stow systems zsh git antigen tmux tmuxp vim vscode dxvk
 exit 0
