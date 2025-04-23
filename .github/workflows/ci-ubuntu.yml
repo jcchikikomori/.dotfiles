@@ -22,9 +22,6 @@ jobs:
       - name: Add User
         run: |
           sh linux/systems/bin/dotfiles-adduser
-      - name: Installing dotstow
-        run: |
-          sh linux/systems/bin/dotfiles-dotstow
       - name: Simulate Stowing
         run: |
           sh linux/systems/bin/dotfiles-cleanup

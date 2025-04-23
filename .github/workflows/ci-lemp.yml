@@ -26,9 +26,6 @@ jobs:
       - name: Getting Started
         run: |
           sudo -u $TEST_USER sh -c "cd $TEST_USER_HOME/.dotfiles && ./start.sh"
-      - name: Installing dotstow
-        run: |
-          sudo -u $TEST_USER sh -c "cd $TEST_USER_HOME/.dotfiles && sh linux/systems/bin/dotfiles-dotstow"
       - name: Simulate Stowing
         run: |
           sudo -u $TEST_USER sh -c "cd $TEST_USER_HOME/.dotfiles && sh linux/systems/bin/dotfiles-cleanup"
