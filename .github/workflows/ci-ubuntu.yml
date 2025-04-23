@@ -24,6 +24,7 @@ jobs:
           sh linux/systems/bin/dotfiles-adduser
       - name: Simulate Stowing
         run: |
+          ls -lah $HOME/bin
           sh linux/systems/bin/dotfiles-cleanup
           sh linux/systems/bin/dotfiles-ssh
           sh ubuntu/stowme.sh

@@ -62,8 +62,8 @@ main() {
     ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
 
     echo 'Symlinking vim rc files...'
-    cp -f linux/vim/.vimrc ~/.vimrc
-    cp -f linux/vim/.virc ~/.virc
+    cp -f $HOME/.dotfiles/linux/vim/.vimrc ~/.vimrc
+    cp -f $HOME/.dotfiles/linux/vim/.virc ~/.virc
 
     echo 'Installing dotstow...'
     ./dotfiles-dotstow
