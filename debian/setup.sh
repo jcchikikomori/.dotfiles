@@ -9,7 +9,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 # Installing essentials (additional)
 # NOTES:
 # - vim-gtk3 = gvim
-sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu wget vim-gtk3
+sudo apt-get install -y stow python3 zip unzip vi nano openssh ccache xsel ncdu wget vim-gtk3
 
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
