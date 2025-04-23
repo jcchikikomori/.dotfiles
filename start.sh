@@ -10,7 +10,7 @@ echo $DOTFILES_USERNAME >> .currentuser
 
 mkdir -p $HOME/bin
 echo "Copying binaries to ~/bin..."
-cp -rf ./linux/systems/bin/* $HOME/bin/
+cp -rf ./linux/zsh/bin/* $HOME/bin/
 
 # OS-related workarounds
 export DETECTED_DISTRO="unknown"
@@ -73,25 +73,25 @@ if [ -n "$DETECTED_DISTRO" ]; then
   debian)
     echo "Executing Debian-related workarounds..."
     sh debian/setup.sh
-    sh linux/systems/bin/dotfiles-post-setup
+    sh linux/zsh/bin/dotfiles-post-setup
     ;;
   ubuntu)
     echo "Executing Ubuntu-related workarounds..."
     sh ubuntu/setup.sh
-    sh linux/systems/bin/dotfiles-post-setup
+    sh linux/zsh/bin/dotfiles-post-setup
     ;;
   arch)
     echo "Executing Arch-related workarounds..."
     sh arch/init.sh
     sh arch/setup.sh
-    sh linux/systems/bin/dotfiles-post-setup
+    sh linux/zsh/bin/dotfiles-post-setup
     ;;
   rhel)
     echo "Executing RHEL-related workarounds..."
     sh rhel/setup.sh
     echo "Installing VSCode..."
     sh rhel/vscode.sh
-    sh linux/systems/bin/dotfiles-post-setup
+    sh linux/zsh/bin/dotfiles-post-setup
     ;;
   *)
     echo "Unable to identify the distro to begin! Exiting..."

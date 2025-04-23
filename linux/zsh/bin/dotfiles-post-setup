@@ -1,6 +1,6 @@
 #!/bin/sh
 
-WORKFILES_DIR="linux/systems/bin"
+WORKFILES_DIR="linux/zsh/bin"
 WORKDIR=$(mktemp -d)
 
 setup_directory() {
@@ -89,6 +89,11 @@ main() {
 
     echo 'Setting up Antigen...'
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
+
+    # https://github.com/alacritty/alacritty-theme
+    echo 'Setting up Alacritty themes...'
+    mkdir -p ~/.config/alacritty/themes
+    git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
 
     prompt_installation "python with pyenv" "dotfiles-python"
     prompt_installation "Ruby with rbenv" "dotfiles-ruby"
