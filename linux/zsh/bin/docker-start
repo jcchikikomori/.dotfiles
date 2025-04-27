@@ -1,7 +1,0 @@
-#/bin/bash
-sudo tuned --profile balanced-tweaked -d
-sudo systemctl start docker.socket
-sudo systemctl start docker.service
-
-zenity --info --title "Docker Status" --text "You just started the Docker service. Please stop the service before going back to Gaming Mode to maximize performance\!\n\nExecute 'docker-disable' or 'docker-stop' to kill the service." --width 480 2>/dev/null
-

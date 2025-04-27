@@ -1,42 +1,30 @@
 #!/bin/sh
 
-# WSL-related setup
-# Note: Will take effect on next boot
-echo "[boot]
-systemd=true
-[user]
-default=johnc" | sudo tee /etc/wsl.conf
-
-# Setting default locale
-sudo loadkeys us
-sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
-sudo locale-gen en_US.UTF-8
-sudo localectl set-locale LANG=en_US.UTF-8
+# Init setup
+apt update
+apt install -y apt-transport-https ca-certificates curl software-properties-common
+apt install -y stow vim nano htop iftop mtr dkms lz4 git zsh build-essential sqlite3 ccache tmux unzip
 
 # Installing essentials (additional)
-sudo apt-get install -y python3 zip unzip vi nano openssh ccache xsel ncdu wget
+# NOTES:
+# - vim-gtk3 = gvim
+apt install -y python3 zip vi openssh xsel ncdu wget vim-gtk3
 
-# SSH Keys
-ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
-ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
+# Installing additional packages (for building others such as pyenv)
+apt install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 
-# Programming languages
-if [ -v SKIP_INSTALL_PROGLANG ]; then
-  echo 'Skipped installing programming languages.';
-else
-  sudo apt-get install -y ruby-build
-  sudo -u johnc bash -c '\
-   pyenv install 3.11.4 -v
-   pyenv global 3.11.4
-   nvm install 18 --lts
-  '
-fi
+# Setting default locale
+loadkeys us
+sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
+locale-gen en_US.UTF-8
+localectl set-locale LANG=en_US.UTF-8
 
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
-  zenity --info --title="Setup Completed" --text="Please execute post-setup.sh to complete the setup."
+  zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
-  echo "Setup Completed. Please execute post-setup.sh to complete the setup."
+  echo "Setup Completed."
+  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
 fi
 
 echo 'Script execution completed.'

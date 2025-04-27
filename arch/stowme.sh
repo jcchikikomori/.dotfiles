@@ -4,15 +4,9 @@
 # locale-gen en_US.UTF-8
 # localectl set-locale LANG=en_US.UTF-8
 
-echo 'Cleaning up...'
-cd ..
-./cleanup.sh
-
-echo 'Executing general workarounds...'
-# cp -f $PWD/rhel/ssh/.ssh/config $HOME/.ssh/config
-./manual.sh
-
+sh $HOME/bin/dotfiles-cleanup
+sh $HOME/bin/dotfiles-ssh
 cd $HOME || return
-dotstow stow systems zsh git antigen tmux tmuxp vim vscode dxvk
+dotstow stow zsh git antigen tmux tmuxp vim vscode dxvk systems
 
 exit 0
