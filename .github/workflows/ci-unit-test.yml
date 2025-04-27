@@ -23,11 +23,15 @@ jobs:
       - name: Add User
         run: |
           sh linux/zsh/bin/dotfiles-adduser
-      - name: Install Dependencies
+      - name: Execute post-setup (git)
         run: |
-          sh linux/zsh/bin/dotfiles-git
-          sh linux/zsh/bin/dotfiles-python
-          sh linux/zsh/bin/dotfiles-python--pre-commit
+          ./linux/zsh/bin/dotfiles-git
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python
+      - name: Execute post-setup (pre-commit)
+        run: |
+          ./linux/zsh/bin/dotfiles-python--pre-commit
       - name: Simulate Stowing
         run: |
           sh arch/stowme.sh
