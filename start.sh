@@ -2,6 +2,9 @@
 
 echo "Welcome! Beginning setup..."
 
+echo "Copying files needed to your home directory..."
+cp .pythonversion $HOME/.dotfiles-python-version
+
 export DOTFILES_PATH=$(pwd)
 echo $DOTFILES_PATH >> .currentdir
 

@@ -1,5 +1,23 @@
 #!/bin/sh
 
+if [ "$1" = "update" ]; then
+  if [ -f "$HOME/.dotfiles-python-version" ]; then
+    REQUIRED_VERSION=$(cat "$HOME/.dotfiles-python-version")
+    if pyenv versions --bare | grep -q "^$REQUIRED_VERSION$"; then
+      echo "Setting Python $REQUIRED_VERSION as the global version..."
+      pyenv global "$REQUIRED_VERSION"
+      pyenv rehash
+    else
+      echo "Error: Python version $REQUIRED_VERSION not found in pyenv. Please install it first." >&2
+      exit 1
+    fi
+  else
+    echo "Error: Version file $HOME/.dotfiles-python-version not found." >&2
+    exit 1
+  fi
+  exit 0
+fi
+
 if [ -d "$HOME/.pyenv" ]; then
   rm -rf "$HOME/.pyenv"
 fi

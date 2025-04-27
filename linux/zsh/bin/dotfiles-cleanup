@@ -69,5 +69,15 @@ rm -f $HOME/.zshrc
 rm -f $HOME/.zshrc.pre-oh-my-zsh
 rm -f $HOME/.git
 
+# Python version tag cleanup. Ensure to get values from .pythonversion
+echo 'Cleaning up Python version tag...'
+rm -f $HOME/.dotfiles-python-version
+if [ -d "$HOME/.dotfiles" ]; then
+  cp -f $HOME/.dotfiles/.pythonversion $HOME/linux/systems/.dotfiles-python-version
+else
+  # Add a warning if the directory doesn't exist
+  echo "Warning: $HOME/.dotfiles directory does not exist!"
+fi
+
 # Avoid removing ssh
 echo 'y' || cp -rf $HOME/.ssh $HOME/.ssh-backup

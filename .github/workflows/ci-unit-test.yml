@@ -18,7 +18,6 @@ jobs:
           mkdir -p $HOME/.local/state/dotstow
           mkdir -p $HOME/bin
           cp -r $PWD/* $HOME/.dotfiles/
-          echo $PYTHON_VERSION > $HOME/.pythonversion
       - name: Getting Started
         run: |
           ./start.sh
