@@ -1,0 +1,72 @@
+name: CI - Unit Test
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/bin
+          cp -r $PWD/* $HOME/.dotfiles/
+      - name: Getting Started
+        run: |
+          ./start.sh
+      - name: Add User
+        run: |
+          sh linux/zsh/bin/dotfiles-adduser
+      - name: Execute post-setup (git)
+        run: |
+          ./linux/zsh/bin/dotfiles-git
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python
+      - name: Execute post-setup (pre-commit)
+        run: |
+          ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Simulate Stowing
+        run: |
+          sh ubuntu/stowme.sh
+  arch:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
+      PYTHON_VERSION: 3.11.4
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/bin
+          cp -r $PWD/* $HOME/.dotfiles/
+      - name: Getting Started
+        run: |
+          ./start.sh
+      - name: Add User
+        run: |
+          sh linux/zsh/bin/dotfiles-adduser
+      - name: Execute post-setup (git)
+        run: |
+          ./linux/zsh/bin/dotfiles-git
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python
+      - name: Execute post-setup (pre-commit)
+        run: |
+          ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Simulate Stowing
+        run: |
+          sh arch/stowme.sh

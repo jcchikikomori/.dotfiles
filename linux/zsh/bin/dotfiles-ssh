@@ -1,11 +1,18 @@
 #!/bin/sh
 
+# This script is used to stow and manage dotfiles for SSH and GNUPG configurations.
+DOTFILES_PATH="$HOME/.dotfiles"
+if [ ! -d "$DOTFILES_PATH" ]; then
+  echo "Error: $DOTFILES_PATH does not exist. Please clone the dotfiles repository first." >&2
+  exit 1
+fi
+
 # Manually stow SSH configs
 mkdir -p $HOME/.ssh
 if [ -f $HOME/.ssh/config ]; then
   mv $HOME/.ssh/config $HOME/.ssh/config.bak
 fi
-ln -sf $PWD/linux/ssh/.ssh/config $HOME/.ssh/config
+ln -sf $DOTFILES_PATH/linux/ssh/.ssh/config $HOME/.ssh/config
 
 # Manually stow GNUPG configs
 # https://gist.github.com/oseme-techguy/bae2e309c084d93b75a9b25f49718f85
@@ -18,14 +25,14 @@ fi
 if [ -f $HOME/.gnupg/gpg-agent.conf ]; then
   mv $HOME/.gnupg/gpg-agent.conf $HOME/.gnupg/gpg-agent.conf.bak
 fi
-ln -sf $PWD/linux/gpg/.gnupg/gpg.conf $HOME/.gnupg/gpg.conf
-ln -sf $PWD/linux/gpg/.gnupg/gpg-agent.conf $HOME/.gnupg/gpg-agent.conf
+ln -sf $DOTFILES_PATH/linux/gpg/.gnupg/gpg.conf $HOME/.gnupg/gpg.conf
+ln -sf $DOTFILES_PATH/linux/gpg/.gnupg/gpg-agent.conf $HOME/.gnupg/gpg-agent.conf
 
 # Check if gpgconf and gpg-connect-agent commands exist
 if command -v gpgconf >/dev/null 2>&1 && command -v gpg-connect-agent >/dev/null 2>&1; then
   # Kill and restart gpg-agent
   gpgconf --kill gpg-agent
-  echo RELOADAGENT | gpg-connect-agent
+  echo RELOADAGENT | gpg-connect-agent >/dev/null 2>&1
 
   # Set TTY environment variable
   export GPG_TTY=$(tty)

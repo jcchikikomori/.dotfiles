@@ -1,81 +1,111 @@
 #!/bin/sh
 
+WORKFILES_DIR="linux/zsh/bin"
+WORKDIR=$(mktemp -d)
+
 setup_directory() {
     ORIGINAL_DIR=$(pwd)
-    WORKDIR=$(mktemp -d)
     trap 'rm -rf "$WORKDIR"' EXIT
-    cp -r install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh "$WORKDIR"
+    echo "Copying files to $WORKDIR ..."
+    cd $WORKFILES_DIR
+    cp -r "dotfiles-dotstow" "$WORKDIR"
+    cp -r "dotfiles-python" "$WORKDIR"
+    cp -r "dotfiles-python--pre-commit" "$WORKDIR"
+    cp -r "dotfiles-nodejs" "$WORKDIR"
+    cp -r "dotfiles-php" "$WORKDIR"
+    cp -r "dotfiles-java-sdkman" "$WORKDIR"
+    cp -r "dotfiles-ruby" "$WORKDIR"
+    cp -r "dotfiles-vim" "$WORKDIR"
+    cp -r "dotfiles-git" "$WORKDIR"
+    echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
 
-check_script() {
-    local script_name=$1
-    if [ ! -f "./$script_name" ]; then
-        echo "Error: $script_name not found in the current directory ($PWD)" >&2
-        exit 1
-    fi
-}
+# check_script() {
+#     local script_name=$1
+#     echo "Checking for $script_name..."
+#     if [ ! -f "$WORKDIR/$script_name" ]; then
+#         echo "Error: $script_name not found in the current directory ($PWD)" >&2
+#         exit 1
+#     else
+#         echo "$script_name found."
+#     fi
+# }
 
 prompt_installation() {
     local name=$1
     local script=$2
     local default_choice="y"
-    
+
     if [ -n "${SKIP_INSTALL_PROGLANG}" ]; then
         echo "Unattended mode: Skipping $name installation"
         return
     fi
-    
+
     echo "Do you want to install $name? (y/n): " >&2
     read choice
     if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
         echo "Installing $name..."
-        ./"$script"
+        $WORKDIR/$script
     else
         echo "Skipped. You can install $name later."
     fi
 }
 
 main() {
-    setup_directory
-    for SCRIPT in install-dotstow.sh python.sh nodejs.sh php.sh java.sh ruby.sh vim.sh; do
-        check_script "$SCRIPT"
-    done
+    ls -lah "$WORKDIR"
+
+    echo 'Setting up git flow...'
+    sh $WORKDIR/dotfiles-git
+
+    echo "Symlinking state dir..."
+    mkdir -p "$HOME/.local/state/dotstow"
+    ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
+
+    echo 'Symlinking vim rc files...'
+    cp -f $HOME/.dotfiles/linux/vim/.vimrc ~/.vimrc
+    cp -f $HOME/.dotfiles/linux/vim/.virc ~/.virc
 
     echo 'Installing dotstow...'
-    ./install-dotstow.sh
-    
+    ./dotfiles-dotstow
+
     echo 'Setting up bash fzf...'
     git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true
     ~/.fzf/install
-    
+
     echo 'Setting up bash fasd...'
     git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
-    
+
     echo 'Setting up Tmux configuration...'
     git clone https://github.com/jcchikikomori/.tmux.git ~/.tmux || true
     cd ~/.tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8
     cd "$ORIGINAL_DIR"
     ln -s -f ~/.tmux/.tmux.conf ~/.tmux.conf
-    
+
     echo 'Setting up Tmux TPM...'
     git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
-    
+
     echo 'Setting up Starship prompt...'
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
-    
+    curl -sS https://starship.rs/install | sh -s -- -y
+
     echo 'Setting up Antigen...'
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
-    
-    prompt_installation "python with pyenv" "python.sh"
-    prompt_installation "Ruby with rbenv" "ruby.sh"
-    prompt_installation "SDKMAN" "" "java.sh"
-    prompt_installation "NodeJS with NVM" "nodejs.sh"
-    prompt_installation "PHP with phpenv" "php.sh"
-    prompt_installation "Vim with plugins" "vim.sh"
-    
+
+    # https://github.com/alacritty/alacritty-theme
+    echo 'Setting up Alacritty themes...'
+    mkdir -p ~/.config/alacritty/themes
+    git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
+
+    prompt_installation "python with pyenv" "dotfiles-python"
+    prompt_installation "pre-commit" "dotfiles-python--pre-commit"
+    prompt_installation "Ruby with rbenv" "dotfiles-ruby"
+    prompt_installation "SDKMAN" "dotfiles-java-sdkman"
+    prompt_installation "NodeJS with NVM" "dotfiles-nodejs"
+    prompt_installation "PHP with phpenv" "dotfiles-php"
+    prompt_installation "Vim with plugins" "dotfiles-vim"
+
     echo 'Setting up oh-my-zsh...'
-    curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh -s -- --unattended
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     echo 'Installing zsh plugins...'
     local ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
     local ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
@@ -85,22 +115,18 @@ main() {
     git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting
     git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete
     git clone https://github.com/larkery/zsh-histdb.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb
-    
+
     cd "$ORIGINAL_DIR"
     rm -rf "$WORKDIR"
 }
 
-
-echo 'Setting up git flow...'
-check_script "./git.sh"
-./"git.sh"
-echo "Symlinking state dir..."
-mkdir -p "$HOME/.local/state/dotstow"
-ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
-
-echo 'Few more steps before executing...'
-cp -f linux/vim/.vimrc ~/.vimrc
-cp -f linux/vim/.virc ~/.virc
+echo 'Setting up scripts...'
+setup_directory
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to complete setting up scripts! Exiting..." >&2
+    exit 1
+fi
 
 echo 'Executing post-setup...'
 main
+
