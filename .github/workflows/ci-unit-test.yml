@@ -9,6 +9,7 @@ jobs:
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      PYTHON_VERSION: 3.11.4
     steps:
       - uses: actions/checkout@v3
       - name: Setup some directories
@@ -17,6 +18,7 @@ jobs:
           mkdir -p $HOME/.local/state/dotstow
           mkdir -p $HOME/bin
           cp -r $PWD/* $HOME/.dotfiles/
+          echo $PYTHON_VERSION > $HOME/.pythonversion
       - name: Getting Started
         run: |
           ./start.sh
