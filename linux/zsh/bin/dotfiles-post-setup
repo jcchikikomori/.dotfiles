@@ -10,6 +10,7 @@ setup_directory() {
     cd $WORKFILES_DIR
     cp -r "dotfiles-dotstow" "$WORKDIR"
     cp -r "dotfiles-python" "$WORKDIR"
+    cp -r "dotfiles-python--pre-commit" "$WORKDIR"
     cp -r "dotfiles-nodejs" "$WORKDIR"
     cp -r "dotfiles-php" "$WORKDIR"
     cp -r "dotfiles-java-sdkman" "$WORKDIR"
@@ -96,6 +97,7 @@ main() {
     git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
 
     prompt_installation "python with pyenv" "dotfiles-python"
+    prompt_installation "pre-commit" "dotfiles-python--pre-commit"
     prompt_installation "Ruby with rbenv" "dotfiles-ruby"
     prompt_installation "SDKMAN" "dotfiles-java-sdkman"
     prompt_installation "NodeJS with NVM" "dotfiles-nodejs"

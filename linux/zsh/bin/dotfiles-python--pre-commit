@@ -1,0 +1,38 @@
+#!/bin/sh
+
+echo "Installing pre-commit hooks..."
+WORKDIR=$(mktemp -d)
+ORIGINAL_DIR=$(pwd)
+trap 'rm -rf "$WORKDIR"' EXIT
+cd $HOME
+
+# Ensure pip or pip3 is installed. Otherwise tell the user to execure dotfiles-python
+if ! command -v pip &> /dev/null && ! command -v pip3 &> /dev/null; then
+    echo "pip or pip3 not found. Please install Python and pip first."
+    exit 1
+fi
+
+# Check if pip is installed
+if command -v pip &> /dev/null; then
+    echo "pip found."
+else
+    echo "pip not found. Please install Python and pip first."
+    exit 1
+fi
+
+# Check if pip3 is installed
+if command -v pip3 &> /dev/null; then
+    echo "pip3 found."
+else
+    echo "pip3 not found. Please install Python and pip first."
+    exit 1
+fi
+
+# Check if pre-commit is installed
+if command -v pre-commit &> /dev/null; then
+    echo "pre-commit is installed. Exiting..."
+    ecit 0
+else
+    echo "pre-commit not found. Installing pre-commit..."
+    pip install --user pre-commit
+fi
