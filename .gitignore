@@ -32,6 +32,7 @@ linux/vscode/.vscode/argv.json
 
 # DXVK
 linux/dxvk/.dxvk/cache/
+linux/dxvk/.dxvk/log/
 
 # Tentative adjustments due to a symlink bug
 .dotfiles/

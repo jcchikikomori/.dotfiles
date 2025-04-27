@@ -1,6 +1,0 @@
-#/bin/bash
-sudo systemctl stop docker.socket
-sudo systemctl stop docker.service
-sudo tuned --profile performance -d
-
-zenity --info --title "Docker Status" --text "You just stopped the Docker service. But, please consider DISABLE the service before going back to Gaming Mode to maximize performance\!\n\nExecute 'docker-disable' to disable the service." --width 480 2>/dev/null
