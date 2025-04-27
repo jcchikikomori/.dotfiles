@@ -41,3 +41,4 @@ linux/dxvk/.dxvk/log/
 # Temporary files related to dotfiles setup
 .currentdir
 .currentuser
+linux/systems/.dotfiles-python-version

@@ -38,6 +38,8 @@ git clone https://github.com/jcchikikomori/.dotfiles.git $HOME/.dotfiles
 cd $HOME/.dotfiles
 ```
 
+**NOTE: Do not install this on somewhere else!**
+
 ## Setup
 
 Execute `start.sh` to get started.
