@@ -10,6 +10,9 @@ apt install -y stow vim nano htop iftop mtr dkms lz4 git zsh build-essential sql
 # - vim-gtk3 = gvim
 apt install -y python3 zip vi openssh xsel ncdu wget vim-gtk3
 
+# Installing additional packages (for building others such as pyenv)
+apt install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+
 # Setting default locale
 loadkeys us
 sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
