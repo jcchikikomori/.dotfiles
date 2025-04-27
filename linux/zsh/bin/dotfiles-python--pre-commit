@@ -3,36 +3,47 @@
 echo "Installing pre-commit hooks..."
 WORKDIR=$(mktemp -d)
 ORIGINAL_DIR=$(pwd)
+PYENV_FOUND=0
 trap 'rm -rf "$WORKDIR"' EXIT
 cd $HOME
 
+setup() {
+  # Check if pre-commit is installed
+  if command -v pre-commit &> /dev/null; then
+      echo "pre-commit is installed. Exiting..."
+      exit 0
+  else
+      echo "pre-commit not found. Installing pre-commit..."
+      pip install --user pre-commit
+  fi
+}
+
 # Ensure pip or pip3 is installed. Otherwise tell the user to execure dotfiles-python
 if ! command -v pip &> /dev/null && ! command -v pip3 &> /dev/null; then
-    echo "pip or pip3 not found. Please install Python and pip first."
-    exit 1
-fi
-
-# Check if pip is installed
-if command -v pip &> /dev/null; then
-    echo "pip found."
+    echo "pip or pip3 not found."
+    echo "Checking pyenv installation..."
+    if [ -d "$HOME/.pyenv" ]; then
+        echo "pyenv found."
+        # Temporarily load pyenv
+        export PHPENV_ROOT="$HOME/.phpenv"
+        if [ -d "$PHPENV_ROOT" ]; then
+          PYENV_FOUND=1
+          export PATH="$PHPENV_ROOT/bin:$PATH"
+          eval "$(phpenv init -)"
+        fi
+        if [ $PYENV_FOUND -eq 1 ]; then
+            # Use python from system
+            pyenv global system
+            pyenv rehash
+            setup
+        else
+            echo "ERROR Level 2: pyenv not found. Please install pyenv first."
+            exit 1
+        fi
+    else
+        echo "ERROR Level 1: pyenv not found. Please install pyenv first."
+        exit 1
+    fi
 else
-    echo "pip not found. Please install Python and pip first."
-    exit 1
-fi
-
-# Check if pip3 is installed
-if command -v pip3 &> /dev/null; then
-    echo "pip3 found."
-else
-    echo "pip3 not found. Please install Python and pip first."
-    exit 1
-fi
-
-# Check if pre-commit is installed
-if command -v pre-commit &> /dev/null; then
-    echo "pre-commit is installed. Exiting..."
-    ecit 0
-else
-    echo "pre-commit not found. Installing pre-commit..."
-    pip install --user pre-commit
+    setup
 fi
