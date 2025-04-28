@@ -53,6 +53,10 @@ if [ -f /etc/os-release ]; then
     export GOPATH="${HOME}/go"
     export DETECTED_DISTRO="rhel"
     ;;
+  bazzite)
+    echo "You are using Bazzite Linux. Please install using distrobox. Exiting..."
+    exit 1
+    ;;
   *)
     echo "You are using Unknown OS"
     exit 1
