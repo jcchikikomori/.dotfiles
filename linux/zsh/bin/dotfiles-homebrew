@@ -1,7 +1,6 @@
 #!/bin/sh
 
 if [ "$1" = "install" ]; then
-  echo "Installing Homebrew (Linuxbrew)..."
   if [ -x "/bin/bash" ]; then
     echo "Installing Homebrew (Linuxbrew)..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -11,6 +10,7 @@ if [ "$1" = "install" ]; then
   fi
 elif [ "$1" = "update" ]; then
   echo "Currently not supported yet."
+  exit 1
 else
   echo "Usage: $0 {install|update}"
   echo "  install: Install Homebrew (Linuxbrew)"

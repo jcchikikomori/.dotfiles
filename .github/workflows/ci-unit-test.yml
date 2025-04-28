@@ -31,6 +31,9 @@ jobs:
       - name: Execute post-setup (python)
         run: |
           ./linux/zsh/bin/dotfiles-python install
+      - name: Execute post-setup (homebrew)
+        run: |
+          ./linux/zsh/bin/dotfiles-homebrew install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
@@ -63,6 +66,9 @@ jobs:
       - name: Execute post-setup (python)
         run: |
           ./linux/zsh/bin/dotfiles-python install
+      - name: Execute post-setup (homebrew)
+        run: |
+          ./linux/zsh/bin/dotfiles-homebrew install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
@@ -95,6 +101,9 @@ jobs:
       - name: Execute post-setup (python)
         run: |
           ./linux/zsh/bin/dotfiles-python install
+      - name: Execute post-setup (homebrew)
+        run: |
+          ./linux/zsh/bin/dotfiles-homebrew install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
