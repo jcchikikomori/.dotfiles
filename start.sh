@@ -95,7 +95,10 @@ if [ -n "$DETECTED_DISTRO" ]; then
     ;;
   archbtw)
     echo "Executing Arch-related (btw) workarounds..."
-    if [ "$(id -u)" -ne 0 ]; then
+    if [ -n "$CI" ]; then
+      echo "Executing init.sh (CI/CD mode)..."
+      sh arch/init.sh
+    elif [ "$(id -u)" -ne 0 ]; then
       echo "Executing init.sh as root..."
       sudo sh arch/init.sh
     fi
