@@ -13,8 +13,7 @@ pacman-key --populate archlinux
 # Sync repo
 pacman -Syyu --noconfirm --noprogressbar
 # Install commom package
-pacman -S --noconfirm --noprogressbar sudo gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
+pacman -S --noconfirm --noprogressbar sudo pacman-contrib git
 # Sort repo by speed
 cp -f /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.backup
 rankmirrors -n 5 /etc/pacman.d/mirrorlist.backup > /etc/pacman.d/mirrorlist
-
