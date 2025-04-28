@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ "$1" = "install" ]; then
+  echo "Installing Homebrew (Linuxbrew)..."
+  if [ -x "/bin/bash" ]; then
+    echo "Installing Homebrew (Linuxbrew)..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  else
+    echo "Error: /bin/bash not found or not executable." >&2
+    exit 1
+  fi
+elif [ "$1" = "update" ]; then
+  echo "Currently not supported yet."
+else
+  echo "Usage: $0 {install|update}"
+  echo "  install: Install Homebrew (Linuxbrew)"
+  echo "  update: Currently not supported yet."
+  exit 1
+fi
