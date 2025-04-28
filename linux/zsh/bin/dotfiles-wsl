@@ -1,8 +1,15 @@
 #!/bin/sh
 
-echo "Executing workarounds for WSL (Windows Subsystem for Linux)..."
+CURRENT_USERNAME=$(whoami)
+read -p "Enter your username (Default: $(whoami)): " USERNAME
+if [ -z "$USERNAME" ]; then
+  echo "No username provided! Proceeding with the current username: $CURRENT_USERNAME"
+else
+  CURRENT_USERNAME=$USERNAME
+fi
 
+echo "Executing workarounds for WSL (Windows Subsystem for Linux)..."
 echo "[boot]
 systemd=true
 [user]
-default=johnc" | sudo tee /etc/wsl.conf
+default=$CURRENT_USERNAME" | sudo tee /etc/wsl.conf

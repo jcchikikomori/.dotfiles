@@ -1,3 +1,4 @@
 #!/bin/sh
 
+unset SDKMAN_DIR
 curl -s "https://get.sdkman.io" | bash
