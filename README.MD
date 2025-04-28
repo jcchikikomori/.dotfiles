@@ -11,6 +11,18 @@ Forked from another [repository](https://github.com/sreerajkksd/dotfiles), with 
 - Includes specific patches and workarounds for various platforms.
 - Designed to minimize the risk of system misconfiguration.
 
+### Added packages (post-setup)
+
+|Package    |Description                 |Remarks   |
+|-----------|----------------------------|----------|
+|homebrew   | Linuxbrew                  |          |
+|pre-commit | Adds validation/features on git before committing|          |
+|sdkman     | Java JDK/JRE manager       |          |
+|vim        | Duh?                       |          |
+|pyenv      | Python version manager     |Untested  |
+|phpenv     | PHP version manager        |Untested  |
+|rbenv      | Ruby version manager       |Untested  |
+
 ## Supported Platforms
 
 - Windows Subsystem for Linux (WSL)
