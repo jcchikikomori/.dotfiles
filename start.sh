@@ -2,18 +2,22 @@
 
 echo "Welcome! Beginning setup..."
 
-echo "Copying files needed to your home directory..."
-cp .pythonversion $HOME/.dotfiles-python-version
+prelim() {
+  echo "Copying files needed to your home directory..."
+  cp .pythonversion $HOME/.dotfiles-python-version
 
-export DOTFILES_PATH=$(pwd)
-echo $DOTFILES_PATH >> .currentdir
+  export DOTFILES_PATH=$(pwd)
+  echo $DOTFILES_PATH >> .currentdir
 
-export DOTFILES_USERNAME=$(whoami)
-echo $DOTFILES_USERNAME >> .currentuser
+  export DOTFILES_USERNAME=$(whoami)
+  echo $DOTFILES_USERNAME >> .currentuser
 
-mkdir -p $HOME/bin
-echo "Copying binaries to ~/bin..."
-cp -rf ./linux/zsh/bin/* $HOME/bin/
+  mkdir -p $HOME/bin
+  echo "Copying binaries to ~/bin..."
+  cp -rf ./linux/zsh/bin/* $HOME/bin/
+
+  echo "Preliminary setup done! Proceeding with the rest of the setup..."
+}
 
 # OS-related workarounds
 export DETECTED_DISTRO="unknown"
@@ -31,10 +35,11 @@ if [ -f /etc/os-release ]; then
   arch)
     if [[ $NAME == *"Arch Linux"* ]]; then
       echo "You are using Arch Linux Barebones"
+      export DETECTED_DISTRO="archbtw"
     else
       echo "You are using Arch Linux"
+      export DETECTED_DISTRO="arch"
     fi
-    export DETECTED_DISTRO="arch"
     ;;
   garuda)
     echo "You are using Garuda Linux"
@@ -52,6 +57,10 @@ if [ -f /etc/os-release ]; then
     export GOPATH="${HOME}/go"
     export DETECTED_DISTRO="rhel"
     ;;
+  bazzite)
+    echo "You are using Bazzite Linux. Please install using distrobox. Exiting..."
+    exit 1
+    ;;
   *)
     echo "You are using Unknown OS"
     exit 1
@@ -68,7 +77,8 @@ else
   exit 1
 fi
 
-echo "Preliminary setup done! Proceeding with the rest of the setup..."
+# Execute preliminary setup
+prelim
 
 if [ -n "$DETECTED_DISTRO" ]; then
   echo "Detected distro: $DETECTED_DISTRO"
@@ -83,9 +93,18 @@ if [ -n "$DETECTED_DISTRO" ]; then
     sh ubuntu/setup.sh
     sh linux/zsh/bin/dotfiles-post-setup
     ;;
+  archbtw)
+    echo "Executing Arch-related (btw) workarounds..."
+    if [ "$(id -u)" -ne 0 ]; then
+      echo "Error: arch/init.sh must be run as root. Exiting..." >&2
+      exit 1
+    fi
+    sh arch/init.sh
+    sh arch/setup.sh
+    sh linux/zsh/bin/dotfiles-post-setup
+    ;;
   arch)
     echo "Executing Arch-related workarounds..."
-    sh arch/init.sh
     sh arch/setup.sh
     sh linux/zsh/bin/dotfiles-post-setup
     ;;

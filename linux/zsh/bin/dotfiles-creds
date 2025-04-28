@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# .dotstow must exists on your home directory
+DOTFILES_PATH="$HOME/.dotfiles"
+if [ ! -d "$DOTFILES_PATH" ]; then
+  echo "Error: $DOTFILES_PATH does not exist. Please clone the dotfiles repository first." >&2
+  exit 1
+fi
+
+if [ "$1" = "gpg-agent" ]; then
+  # Check if gpgconf and gpg-connect-agent commands exist
+  echo "Reloading gpg-agent..."
+  if command -v gpgconf >/dev/null 2>&1 && command -v gpg-connect-agent >/dev/null 2>&1; then
+    # Kill and restart gpg-agent
+    gpgconf --kill gpg-agent
+    echo RELOADAGENT | gpg-connect-agent >/dev/null 2>&1
+
+    # Set TTY environment variable
+    export GPG_TTY=$(tty)
+    echo "GPG_TTY set to $GPG_TTY"
+    exit 0
+  else
+    echo "Error: gpgconf and/or gpg-connect-agent commands not found." >&2
+    exit 1
+  fi
+elif [ "$1" = "gpg-stow" ]; then
+  # Manually stow GNUPG configs
+  # https://gist.github.com/oseme-techguy/bae2e309c084d93b75a9b25f49718f85
+  echo "Stowing GPG configs..."
+  mkdir -p $HOME/.gnupg
+  chown -R $(whoami) $HOME/.gnupg/
+  chmod 700 $HOME/.gnupg
+  if [ -f $HOME/.gnupg/gpg.conf ]; then
+    mv $HOME/.gnupg/gpg.conf $HOME/.gnupg/gpg.conf.bak
+  fi
+  if [ -f $HOME/.gnupg/gpg-agent.conf ]; then
+    mv $HOME/.gnupg/gpg-agent.conf $HOME/.gnupg/gpg-agent.conf.bak
+  fi
+  ln -sf $DOTFILES_PATH/linux/gpg/.gnupg/gpg.conf $HOME/.gnupg/gpg.conf
+  ln -sf $DOTFILES_PATH/linux/gpg/.gnupg/gpg-agent.conf $HOME/.gnupg/gpg-agent.conf
+elif [ "$1" = "ssh-keygen" ]; then
+  read -p "Enter your email address for the SSH key (or press Enter to cancel): " EMAIL
+  if [ -z "$EMAIL" ]; then
+      echo "No email provided. SSH key creation will be skipped. Exiting..."
+      exit 0
+  else
+    ssh-keygen -t ed25519 -C "$EMAIL" -f $HOME/.ssh/id_ed25519 -N ""
+    ssh-keygen -t rsa -b 4096 -C "$EMAIL" -f $HOME/.ssh/id_rsa -N ""
+  fi
+elif [ "$1" = "ssh-stow" ]; then
+  # Manually stow SSH configs
+  echo "Stowing SSH configs..."
+  mkdir -p $HOME/.ssh
+  if [ -f $HOME/.ssh/config ]; then
+    mv $HOME/.ssh/config $HOME/.ssh/config.bak
+  fi
+  ln -sf $DOTFILES_PATH/linux/ssh/.ssh/config $HOME/.ssh/config
+else
+  echo "Usage: $0 {gpg-agent|gpg-stow|ssh-keygen|ssh-stow}"
+  echo "  gpg-agent: Reload gpg-agent"
+  echo "  gpg-stow: Stow GPG configs"
+  echo "  ssh-keygen: Generate SSH keys"
+  echo "  ssh-stow: Stow SSH configs"
+  exit 1
+fi
+
+exit 0

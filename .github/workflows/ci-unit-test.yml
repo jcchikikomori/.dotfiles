@@ -30,7 +30,10 @@ jobs:
           ./linux/zsh/bin/dotfiles-git
       - name: Execute post-setup (python)
         run: |
-          ./linux/zsh/bin/dotfiles-python
+          ./linux/zsh/bin/dotfiles-python install
+      - name: Execute post-setup (homebrew)
+        run: |
+          ./linux/zsh/bin/dotfiles-homebrew install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
@@ -43,7 +46,6 @@ jobs:
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
-      PYTHON_VERSION: 3.11.4
     steps:
       - uses: actions/checkout@v3
       - name: Setup some directories
@@ -63,10 +65,48 @@ jobs:
           ./linux/zsh/bin/dotfiles-git
       - name: Execute post-setup (python)
         run: |
-          ./linux/zsh/bin/dotfiles-python
+          ./linux/zsh/bin/dotfiles-python install
+      - name: Execute post-setup (homebrew)
+        run: |
+          ./linux/zsh/bin/dotfiles-homebrew install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
       - name: Simulate Stowing
         run: |
           sh arch/stowme.sh
+  fedora:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/bin
+          cp -r $PWD/* $HOME/.dotfiles/
+      - name: Getting Started
+        run: |
+          ./start.sh
+      - name: Add User
+        run: |
+          sh linux/zsh/bin/dotfiles-adduser
+      - name: Execute post-setup (git)
+        run: |
+          ./linux/zsh/bin/dotfiles-git
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python install
+      - name: Execute post-setup (homebrew)
+        run: |
+          ./linux/zsh/bin/dotfiles-homebrew install
+      - name: Execute post-setup (pre-commit)
+        run: |
+          ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Simulate Stowing
+        run: |
+          sh rhel/stowme.sh

@@ -10,6 +10,13 @@ else
   export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 fi
 
+# Linuxbrew/Homebrew
+if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+else
+    echo "Warning: Homebrew is not installed or not executable at /home/linuxbrew/.linuxbrew/bin/brew" >&2
+fi
+
 # Locally installed binaries
 export PATH="${HOME}/bin:${PATH}"
 export EDITOR=nano
