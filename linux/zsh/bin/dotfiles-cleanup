@@ -30,7 +30,7 @@ fi
 if [ -d "$HOME/.git" ]; then
   cp -rf $HOME/.git $HOME/.backups
 fi
-if [ -d "$HOME/.bin" ]; then
+if [ -d "$HOME/bin" ]; then
   cp -rf $HOME/bin $HOME/.binbackups
 fi
 
