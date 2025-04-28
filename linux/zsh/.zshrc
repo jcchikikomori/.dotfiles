@@ -340,7 +340,7 @@ command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="/home/johnc/.sdkman"
-[[ -s "/home/johnc/.sdkman/bin/sdkman-init.sh" ]] && source "/home/johnc/.sdkman/bin/sdkman-init.sh"
+export SDKMAN_DIR="/home/$(whoami)/.sdkman"
+[[ -s "/home/$(whoami)/.sdkman/bin/sdkman-init.sh" ]] && source "/home/$(whoami)/.sdkman/bin/sdkman-init.sh"
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

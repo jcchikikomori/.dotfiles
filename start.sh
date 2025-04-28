@@ -85,6 +85,10 @@ if [ -n "$DETECTED_DISTRO" ]; then
     ;;
   arch)
     echo "Executing Arch-related workarounds..."
+    if [ "$(id -u)" -ne 0 ]; then
+      echo "Error: arch/init.sh must be run as root. Exiting..." >&2
+      exit 1
+    fi
     sh arch/init.sh
     sh arch/setup.sh
     sh linux/zsh/bin/dotfiles-post-setup
