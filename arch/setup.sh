@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# WSL-related setup
-# Note: Will take effect on next boot
-echo "[boot]
-systemd=true
-[user]
-default=johnc" | sudo tee /etc/wsl.conf
-
 # Setting default locale
 sudo loadkeys us
 sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen
@@ -15,7 +8,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar
-sudo pacman -S --noconfirm --noprogressbar base-devel git python3 zip unzip vi nano fakeroot openssh stow sqlite tmux
+sudo pacman -S --noconfirm --noprogressbar base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget
 mkdir -p temp && cd temp/
 # Reference: https://devicetests.com/running-commands-non-root-user-sudo
 sudo -u johnc bash -c '\
@@ -26,8 +19,8 @@ cd ../..
 rm -rf temp/
 
 # SSH Keys
-ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
-ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
+# ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
+# ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
 
 # Chaotic AUR
 echo 'Importing essential keys...'
@@ -53,27 +46,14 @@ sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
 
 # Workarounds & Misc software
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
-
-# Programming languages
-if [ -v SKIP_INSTALL_PROGLANG ]; then
-  echo 'Skipped installing programming languages.';
-else
-  sudo pacman -S --noconfirm --noprogressbar pyenv rbenv chaotic-aur/nvm
-  sudo -u johnc bash -c '\
-   yay -S ruby-build --noconfirm --noprogressbar
-   pyenv install 3.11.4 -v
-   pyenv global 3.11.4
-   nvm install 18 --lts
-  '
-fi
+sudo pacman -S --noconfirm --noprogressbar xsel ncdu
 
 # Post-Setup
-if [ -v SKIP_POST_SETUP ]; then
-  echo 'Skipped post-setup script.';
+if command -v zenity >/dev/null 2>&1; then
+  zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
-  echo 'Installing dependencies into your home directory...'
-  cd ..
-  ./post-setup.sh
+  echo "Setup Completed."
+  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
 fi
 
-echo 'Script execution completed.'
+exit 0

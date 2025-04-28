@@ -1,0 +1,83 @@
+#!/bin/sh
+
+# Issues occurring with the script: vim & zsh
+echo 'Unstowing...'
+dotstow unstow git antigen tmux tmuxp vscode dxvk
+
+echo 'Backing up...'
+rm -rf $HOME/.backups
+mkdir -p $HOME/.backups
+mkdir -p $HOME/.binbackups
+
+if [ -d "$HOME/.ssh" ]; then
+  cp -rf $HOME/.ssh $HOME/.backups
+fi
+if [ -d "$HOME/.zsh" ]; then
+  cp -rf $HOME/.zsh $HOME/.backups
+fi
+if [ -f "$HOME/.zshrc" ]; then
+  cp -f $HOME/.zshrc $HOME/.backups
+fi
+if [ -f "$HOME/.zprofile" ]; then
+  cp -f $HOME/.zprofile $HOME/.backups
+fi
+if [ -f "$HOME/.profile" ]; then
+  cp -f $HOME/.profile $HOME/.backups
+fi
+if [ -f "$HOME/.zshrc.pre-oh-my-zsh" ]; then
+  cp -f $HOME/.zshrc.pre-oh-my-zsh $HOME/.backups
+fi
+if [ -d "$HOME/.git" ]; then
+  cp -rf $HOME/.git $HOME/.backups
+fi
+if [ -d "$HOME/.bin" ]; then
+  cp -rf $HOME/bin $HOME/.binbackups
+fi
+
+echo 'Cleaning up tmux...'
+rm -f $HOME/.tmux.conf.local
+
+echo 'Cleaning up VSCode...'
+rm -rf $HOME/.vscode
+rm -rf $HOME/.vscode-server
+
+echo 'Cleaning up binary files...'
+if [ -d "$HOME/.bin" ]; then
+  rm -rf $HOME/bin
+fi
+if [ -f "$HOME/.bin" ]; then
+  rm -f $HOME/bin
+fi
+
+echo 'Cleaning up other files...'
+rm -f $HOME/.gitconfig
+rm -f $HOME/.alacritty.yml
+rm -f $HOME/.antigenrc
+rm -f $HOME/bash_completion.d
+rm -f $HOME/default.yml
+rm -f $HOME/.dxvk
+rm -f $HOME/.hushlogin
+rm -f $HOME/.zprofile
+rm -f $HOME/.profile
+rm -f $HOME/.tmuxp
+rm -f $HOME/.vimrc
+rm -f $HOME/.virc
+rm -f $HOME/.gnupg/gpg.conf
+rm -f $HOME/.gnupg/gpg-agent.conf
+rm -f $HOME/.zsh
+rm -f $HOME/.zshrc
+rm -f $HOME/.zshrc.pre-oh-my-zsh
+rm -f $HOME/.git
+
+# Python version tag cleanup. Ensure to get values from .dotfiles-python-version
+echo 'Cleaning up Python version tag...'
+rm -f $HOME/.dotfiles-python-version
+if [ -d "$HOME/.dotfiles" ]; then
+  cp -f $HOME/.dotfiles/.dotfiles-python-version $HOME/linux/systems/.dotfiles-python-version
+else
+  # Add a warning if the directory doesn't exist
+  echo "Warning: $HOME/.dotfiles directory does not exist!"
+fi
+
+# Avoid removing ssh
+echo 'y' || cp -rf $HOME/.ssh $HOME/.ssh-backup

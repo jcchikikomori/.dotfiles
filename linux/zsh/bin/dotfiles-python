@@ -1,0 +1,49 @@
+#!/bin/sh
+
+if [ "$1" = "install" ]; then
+  echo "Installing pyenv..."
+  echo "Removing any existing pyenv installation..."
+  if [ -d "$HOME/.pyenv" ]; then
+    rm -rf "$HOME/.pyenv"
+  fi
+  curl https://pyenv.run | bash
+  echo "Loading ccache..."
+  if command -v ccache >/dev/null 2>&1; then
+    export CC="ccache gcc"
+    export CXX="ccache g++"
+    export KERNEL_CC="ccache gcc"
+    export UTILS_CC="ccache gcc"
+    export UTILS_CXX="ccache g++"
+  fi
+  echo "Installing python3 from pyenv..."
+  export PYENV_ROOT="$HOME/.pyenv"
+  if [ -d "$PYENV_ROOT" ]; then
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+
+    pyenv install 3.11.4 -v
+    pyenv global 3.11.4
+    pyenv rehash
+  fi
+elif [ "$1" = "update" ]; then
+  if [ -f "$HOME/.dotfiles-python-version" ]; then
+    REQUIRED_VERSION=$(cat "$HOME/.dotfiles-python-version")
+    if pyenv versions --bare | grep -q "^$REQUIRED_VERSION$"; then
+      echo "Setting Python $REQUIRED_VERSION as the global version..."
+      pyenv global "$REQUIRED_VERSION"
+      pyenv rehash
+    else
+      echo "Error: Python version $REQUIRED_VERSION not found in pyenv. Please install it first." >&2
+      exit 1
+    fi
+  else
+    echo "Error: Version file $HOME/.dotfiles-python-version not found." >&2
+    exit 1
+  fi
+else
+  echo "Usage: $0 {install|update}"
+  echo "  install: Install pyenv and Python"
+  echo "  update: Update the global Python version to the one specified in $HOME/.dotfiles-python-version"
+  exit 1
+fi

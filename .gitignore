@@ -21,9 +21,24 @@ linux/gpg/.gnupg/*
 # VSCode
 /.vscode
 /.vscode/exports-autocomplete-cache/
+linux/vscode/.vscode/argv.json
 **/vscode/.vscode-server/bin/*
 **/vscode/.vscode-server/data/*
 **/vscode/.vscode-server/extensions/
 !**/vscode/.vscode-server/extensions/extensions.json
 !**/vscode/.vscode-server/data/Machine/*
 !**/vscode/.vscode-server/data/User/*
+**/vscode/.vscode/extensions/
+
+# DXVK
+linux/dxvk/.dxvk/cache/
+linux/dxvk/.dxvk/log/
+
+# Tentative adjustments due to a symlink bug
+.dotfiles/
+.dotfiles
+
+# Temporary files related to dotfiles setup
+.currentdir
+.currentuser
+linux/systems/.dotfiles-python-version

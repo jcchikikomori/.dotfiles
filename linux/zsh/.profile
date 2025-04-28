@@ -2,14 +2,20 @@
 # References:
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
 # https://owensgl.github.io/biol525D/Topic_1/configure_ssh_agent
-# https://bbs.archlinux.org/viewtopic.php?id=281324
+if [ -z "$(pgrep ssh-agent)" ]; then
+  rm -rf '/tmp/ssh-*'
+  eval "$(ssh-agent -s)" >/dev/null
+else
+  export SSH_AGENT_PID=$(pgrep ssh-agent)
+  export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+fi
 
-# if ! pgrep -u "$USER" ssh-agent > /dev/null; then
-#   ssh-agent -t 1h > "$XDG_RUNTIME_DIR/ssh-agent.env"
-# fi
-# if [[ ! -f "$SSH_AUTH_SOCK" ]]; then
-#   source "$XDG_RUNTIME_DIR/ssh-agent.env" >/dev/null
-# fi
+# Linuxbrew/Homebrew
+if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+else
+    echo "Warning: Homebrew is not installed or not executable at /home/linuxbrew/.linuxbrew/bin/brew" >&2
+fi
 
 # Locally installed binaries
 export PATH="${HOME}/bin:${PATH}"
@@ -19,31 +25,28 @@ export EDITOR=nano
 export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 
-# phpenv
-export PHPENV_ROOT="$HOME/.phpenv"
-if [ -d "${PHPENV_ROOT}" ]; then
-  export PATH="${PHPENV_ROOT}/bin:${PATH}"
-  eval "$(phpenv init -)"
-fi
-
 # pyenv
 export PYENV_ROOT="$HOME/.pyenv"
-command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+if [ -d "$PYENV_ROOT" ]; then
+  export PATH="$PYENV_ROOT/bin:$PATH"
+  eval "$(pyenv init --path)"
+  eval "$(pyenv init -)"
+fi
 
 # NVM
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
 
-# Start TMUX
-# To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
-# export TMUX_DISABLE_AT_BOOT=1
-if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
-  tmux attach || tmux new
+# phpenv
+export PHPENV_ROOT="$HOME/.phpenv"
+if [ -d "$PHPENV_ROOT" ]; then
+  export PATH="$PHPENV_ROOT/bin:$PATH"
+  eval "$(phpenv init -)"
 fi
 
 # TMUX
 export DISABLE_AUTO_TITLE=1
+export TMUX_DISABLE_AT_BOOT=1
 
 # sdkman
 export SDKMAN_DIR="$HOME/.sdkman"
@@ -69,37 +72,37 @@ export GPG_TTY=$(tty)
 if [ -f /etc/os-release ]; then
   source /etc/os-release
   case $ID in
-    ubuntu)
-      echo "Distribution: Ubuntu"
-      ;;
-    debian)
-      echo "Distribution: Debian"
-      ;;
-    arch)
-      if [[ $NAME == *"Arch Linux"* ]]; then
-          echo "Distribution: Arch Linux Barebones"
-      else
-          echo "Distribution: Unknown"
-      fi
-      ;;
-    garuda)
-      echo "Distribution: Garuda Linux"
-      ;;
-    manjaro)
-      echo "Distribution: Manjaro"
-      ;;
-    fedora*)
-      echo "Distribution: Fedora"
-
-      # Ensure include the installed libraries from system before compiling software
-      export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
-      # Ensure path for GO programming language
-      export GOPATH="${HOME}/go"
-      ;;
-    *)
+  ubuntu)
+    echo "Distribution: Ubuntu"
+    ;;
+  debian)
+    echo "Distribution: Debian"
+    ;;
+  arch)
+    if [[ $NAME == *"Arch Linux"* ]]; then
+      echo "Distribution: Arch Linux Barebones"
+    else
       echo "Distribution: Unknown"
-      ;;
-    esac
+    fi
+    ;;
+  garuda)
+    echo "Distribution: Garuda Linux"
+    ;;
+  manjaro)
+    echo "Distribution: Manjaro"
+    ;;
+  fedora*)
+    echo "Distribution: Fedora"
+
+    # Ensure include the installed libraries from system before compiling software
+    export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+    # Ensure path for GO programming language
+    export GOPATH="${HOME}/go"
+    ;;
+  *)
+    echo "Distribution: Unknown"
+    ;;
+  esac
 elif [ -f /etc/redhat-release ]; then
   echo "Distribution: $(cat /etc/redhat-release)"
 elif [ -f /etc/debian_version ]; then
@@ -120,11 +123,11 @@ if [ -z "$WSL_DISTRO_NAME" ]; then
   # alias vlc="flatpak run org.videolan.VLC"
 else
   # Execute WSL-related workarounds
-  export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0 #GWSL
+  export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0      #GWSL
   export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
-  export LIBGL_ALWAYS_INDIRECT=0 #GWSL
-  export GDK_SCALE=0.5 #GWSL
-  export QT_SCALE_FACTOR=1 #GWSL
+  export LIBGL_ALWAYS_INDIRECT=0                                                              #GWSL
+  export GDK_SCALE=0.5                                                                        #GWSL
+  export QT_SCALE_FACTOR=1                                                                    #GWSL
   export GDK_DPI_SCALE=1
 fi
 
@@ -132,3 +135,9 @@ fi
 # if [[ -f ~/.wslprofile ]]; then
 #     source ~/.wslprofile
 # fi
+
+# Start TMUX on the end after executing everything...
+# To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
+if [ -z "$TMUX" ] && [ -z $TMUX_DISABLE_AT_BOOT ]; then
+  tmux attach || tmux new
+fi

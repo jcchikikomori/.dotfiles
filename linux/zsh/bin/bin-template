@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# THIS IS A BINARY/BASH SCRIPT TEMPLATE
+
+if [ "$1" = "install" ]; then
+  echo "Install Test"
+elif [ "$1" = "update" ]; then
+  echo "Update Test"
+else
+  echo "Usage: $0 {install|update}"
+  echo "  install: Badabing badaboom"
+  echo "  update: Whoopididoop"
+  exit 1
+fi
