@@ -31,10 +31,11 @@ if [ -f /etc/os-release ]; then
   arch)
     if [[ $NAME == *"Arch Linux"* ]]; then
       echo "You are using Arch Linux Barebones"
+      export DETECTED_DISTRO="archbtw"
     else
       echo "You are using Arch Linux"
+      export DETECTED_DISTRO="arch"
     fi
-    export DETECTED_DISTRO="arch"
     ;;
   garuda)
     echo "You are using Garuda Linux"
@@ -83,13 +84,18 @@ if [ -n "$DETECTED_DISTRO" ]; then
     sh ubuntu/setup.sh
     sh linux/zsh/bin/dotfiles-post-setup
     ;;
-  arch)
-    echo "Executing Arch-related workarounds..."
+  archbtw)
+    echo "Executing Arch-related (btw) workarounds..."
     if [ "$(id -u)" -ne 0 ]; then
       echo "Error: arch/init.sh must be run as root. Exiting..." >&2
       exit 1
     fi
     sh arch/init.sh
+    sh arch/setup.sh
+    sh linux/zsh/bin/dotfiles-post-setup
+    ;;
+  arch)
+    echo "Executing Arch-related workarounds..."
     sh arch/setup.sh
     sh linux/zsh/bin/dotfiles-post-setup
     ;;
