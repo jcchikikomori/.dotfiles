@@ -31,7 +31,7 @@ if [ -d "$HOME/.git" ]; then
   cp -rf $HOME/.git $HOME/.backups
 fi
 if [ -d "$HOME/bin" ]; then
-  cp -rf $HOME/bin $HOME/.binbackups
+  cp -rf $HOME/bin/* $HOME/.binbackups/
 fi
 
 echo 'Cleaning up tmux...'
