@@ -7,14 +7,13 @@ sudo locale-gen en_US.UTF-8
 sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
-sudo pacman -Syyu --noconfirm --noprogressbar
+sudo pacman -Syyu --noconfirm --noprogressbar gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
 sudo pacman -S --noconfirm --noprogressbar base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget
 mkdir -p temp && cd temp/
-# Reference: https://devicetests.com/running-commands-non-root-user-sudo
-sudo -u johnc bash -c '\
- git clone https://aur.archlinux.org/yay.git $HOME/yay
- cd $HOME/yay && makepkg -si --noconfirm
-'
+# Install yay
+git clone https://aur.archlinux.org/yay.git $HOME/yay
+cd $HOME/yay
+sudo makepkg -si --noconfirm
 cd ../..
 rm -rf temp/
 

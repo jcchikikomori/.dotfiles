@@ -46,7 +46,12 @@ prompt_installation() {
     read choice
     if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
         echo "Installing $name..."
-        $WORKDIR/$script
+        # TODO: Will include the "install" argument to all scripts.
+        if [ "$script" = "dotfiles-python" ]; then
+            $WORKDIR/$script install
+        else
+            $WORKDIR/$script
+        fi
     else
         echo "Skipped. You can install $name later."
     fi
