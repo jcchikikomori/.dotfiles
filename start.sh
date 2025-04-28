@@ -2,18 +2,22 @@
 
 echo "Welcome! Beginning setup..."
 
-echo "Copying files needed to your home directory..."
-cp .pythonversion $HOME/.dotfiles-python-version
+prelim() {
+  echo "Copying files needed to your home directory..."
+  cp .pythonversion $HOME/.dotfiles-python-version
 
-export DOTFILES_PATH=$(pwd)
-echo $DOTFILES_PATH >> .currentdir
+  export DOTFILES_PATH=$(pwd)
+  echo $DOTFILES_PATH >> .currentdir
 
-export DOTFILES_USERNAME=$(whoami)
-echo $DOTFILES_USERNAME >> .currentuser
+  export DOTFILES_USERNAME=$(whoami)
+  echo $DOTFILES_USERNAME >> .currentuser
 
-mkdir -p $HOME/bin
-echo "Copying binaries to ~/bin..."
-cp -rf ./linux/zsh/bin/* $HOME/bin/
+  mkdir -p $HOME/bin
+  echo "Copying binaries to ~/bin..."
+  cp -rf ./linux/zsh/bin/* $HOME/bin/
+
+  echo "Preliminary setup done! Proceeding with the rest of the setup..."
+}
 
 # OS-related workarounds
 export DETECTED_DISTRO="unknown"
@@ -73,7 +77,8 @@ else
   exit 1
 fi
 
-echo "Preliminary setup done! Proceeding with the rest of the setup..."
+# Execute preliminary setup
+prelim
 
 if [ -n "$DETECTED_DISTRO" ]; then
   echo "Detected distro: $DETECTED_DISTRO"
