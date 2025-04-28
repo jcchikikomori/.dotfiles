@@ -1,10 +1,9 @@
-# https://github.com/linuxserver/docker-steamos
-name: CI - Steam Deck (SteamOS)
+name: CI - Custom Arch Linux Images
 on:
   pull_request:
   workflow_dispatch:
 jobs:
-  setup:
+  steamos:
     runs-on: ubuntu-latest
     container: lscr.io/linuxserver/steamos:latest
     env:
@@ -13,6 +12,29 @@ jobs:
       PUID: 1000
       PGID: 1000
       TZ: Etc/UTC
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/bin
+          cp -r $PWD/* $HOME/.dotfiles/
+      - name: Getting Started
+        run: |
+          ./start.sh
+      - name: Add User
+        run: |
+          sh linux/zsh/bin/dotfiles-adduser
+      - name: Simulate Stowing
+        run: |
+          sh arch/stowme.sh
+  manjaro:
+    runs-on: ubuntu-latest
+    container: manjarolinux/base:latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
     steps:
       - uses: actions/checkout@v3
       - name: Setup some directories
