@@ -22,21 +22,21 @@ jobs:
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Add User
-        run: |
-          sh linux/zsh/bin/dotfiles-adduser
       - name: Execute post-setup (git)
         run: |
           ./linux/zsh/bin/dotfiles-git
-      - name: Execute post-setup (python)
-        run: |
-          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/zsh/bin/dotfiles-homebrew install
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Execute post-setup (ruby)
+        run: |
+          ./linux/zsh/bin/dotfiles-ruby
       - name: Simulate Stowing
         run: |
           sh ubuntu/stowme.sh
@@ -57,21 +57,21 @@ jobs:
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Add User
-        run: |
-          sh linux/zsh/bin/dotfiles-adduser
       - name: Execute post-setup (git)
         run: |
           ./linux/zsh/bin/dotfiles-git
-      - name: Execute post-setup (python)
-        run: |
-          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/zsh/bin/dotfiles-homebrew install
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Execute post-setup (ruby)
+        run: |
+          ./linux/zsh/bin/dotfiles-ruby
       - name: Simulate Stowing
         run: |
           sh arch/stowme.sh
@@ -92,21 +92,21 @@ jobs:
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Add User
-        run: |
-          sh linux/zsh/bin/dotfiles-adduser
       - name: Execute post-setup (git)
         run: |
           ./linux/zsh/bin/dotfiles-git
-      - name: Execute post-setup (python)
-        run: |
-          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/zsh/bin/dotfiles-homebrew install
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Execute post-setup (ruby)
+        run: |
+          ./linux/zsh/bin/dotfiles-ruby
       - name: Simulate Stowing
         run: |
           sh rhel/stowme.sh

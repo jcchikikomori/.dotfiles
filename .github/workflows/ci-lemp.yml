@@ -20,9 +20,6 @@ jobs:
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Add User
-        run: |
-          sh linux/zsh/bin/dotfiles-adduser
       - name: Simulate Stowing
         run: |
           sh debian/stowme.sh
