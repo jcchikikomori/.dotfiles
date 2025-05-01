@@ -120,31 +120,6 @@ else
   echo "Distribution: Unknown"
 fi
 
-# WSL2-related
-if [ -z "$WSL_DISTRO_NAME" ]; then
-  # Execute non-WSL related workarounds
-  # Flatpak-related workarounds
-  # export PATH=/var/lib/flatpak/exports/bin:$PATH
-  # alias code="flatpak run com.visualstudio.code"
-  # alias chromium-browser="flatpak run org.chromium.Chromium"
-  # alias steam="flatpak run com.valvesoftware.Steam"
-  # alias PPSSPP="flatpak run org.ppsspp.PPSSPP"
-  # alias vlc="flatpak run org.videolan.VLC"
-else
-  # Execute WSL-related workarounds
-  export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}'):0.0      #GWSL
-  export PULSE_SERVER=tcp:$(cat /etc/resolv.conf | grep nameserver | awk '{print $2; exit;}') #GWSL
-  export LIBGL_ALWAYS_INDIRECT=0                                                              #GWSL
-  export GDK_SCALE=0.5                                                                        #GWSL
-  export QT_SCALE_FACTOR=1                                                                    #GWSL
-  export GDK_DPI_SCALE=1
-fi
-
-# Check if the .wslprofile file exists, then source it
-# if [[ -f ~/.wslprofile ]]; then
-#     source ~/.wslprofile
-# fi
-
 # Stow Me!
 alias stowme='echo "Under construction" && stow -v --no-folding --no-backups'
 
