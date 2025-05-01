@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit on any error
-# set -e
+set -e
 
 # Suppress progress bars and interactive prompts
 export DEBIAN_FRONTEND=noninteractive
@@ -26,16 +26,28 @@ git clone --quiet https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins
 rbenv install -l > /dev/null
 
 # Install Ruby 2.5.1
+# Part of building test...
 echo "Installing Ruby 2.5.1..."
-rbenv install --verbose 2.5.1
+if ! rbenv install --verbose 2.5.1; then
+  echo "Error: Failed to install Ruby 2.5.1. Exiting..."
+  exit 1
+fi
 
 # Set global Ruby version
 echo "Setting Ruby 2.5.1 as global version..."
-rbenv global 2.5.1
+if ! rbenv global 2.5.1; then
+  echo "Error: Ruby version '2.5.1' is not installed. Please check the installation and try again."
+  exit 1
+fi
 
 # Rehash to update shims
 echo "Updating shims..."
 rbenv rehash
 
 # Verify installation
+if ! ruby -v | grep "2.5.1" > /dev/null; then
+  echo "Error: Ruby 2.5.1 is not properly installed. Exiting..."
+  exit 1
+fi
+
 echo "Installation complete!"
