@@ -12,9 +12,9 @@ prelim() {
   export DOTFILES_USERNAME=$(whoami)
   echo $DOTFILES_USERNAME >> .currentuser
 
-  mkdir -p $HOME/bin
-  echo "Copying binaries to ~/bin..."
-  cp -rf ./linux/zsh/bin/* $HOME/bin/
+  # mkdir -p $HOME/bin
+  # echo "Copying scripts to ~/bin..."
+  # cp -rf ./linux/zsh/bin/* $HOME/bin/
 
   echo "Preliminary setup done! Proceeding with the rest of the setup..."
 }
