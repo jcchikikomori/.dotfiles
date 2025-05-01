@@ -7,16 +7,38 @@ prelim() {
   cp .pythonversion $HOME/.dotfiles-python-version
 
   export DOTFILES_PATH=$(pwd)
-  echo $DOTFILES_PATH >> .currentdir
+  echo $DOTFILES_PATH >>.currentdir
 
   export DOTFILES_USERNAME=$(whoami)
-  echo $DOTFILES_USERNAME >> .currentuser
+  echo $DOTFILES_USERNAME >>.currentuser
 
   # mkdir -p $HOME/bin
   # echo "Copying scripts to ~/bin..."
   # cp -rf ./linux/zsh/bin/* $HOME/bin/
 
   echo "Preliminary setup done! Proceeding with the rest of the setup..."
+}
+
+# Generate .bashrc from system (/etc/skel/.bashrc)
+generate_bashrc() {
+  echo "Generating .bashrc from system..."
+  if [ -f /etc/skel/.bashrc ]; then
+    cp -f /etc/skel/.bashrc $HOME/.bashrc
+    echo "Generated .bashrc from system."
+
+    echo "Appending custom configurations to .bashrc..."
+    cat <<EOF >>$HOME/.bashrc
+## emacs
+source \$HOME/.emacsbinding
+## profile
+source \$HOME/.profile
+## antigen
+source \$HOME/.antigenrc
+EOF
+    echo "Custom configurations appended to .bashrc."
+  else
+    echo "System .bashrc not found. Skipping generation."
+  fi
 }
 
 # OS-related workarounds
@@ -78,6 +100,7 @@ else
 fi
 
 # Execute preliminary setup
+generate_bashrc
 prelim
 
 if [ -n "$DETECTED_DISTRO" ]; then
