@@ -1,3 +1,12 @@
+# FZF
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# Auto-add SSH
+if [ -z "$SSH_AUTH_SOCK" ] ; then
+    eval `ssh-agent -s`
+    ssh-add
+fi
+
 # SSH Agent
 # References:
 # https://wiki.archlinux.org/title/SSH_keys#Start_ssh-agent_with_systemd_user
@@ -135,6 +144,34 @@ fi
 # if [[ -f ~/.wslprofile ]]; then
 #     source ~/.wslprofile
 # fi
+
+# Stow Me!
+alias stowme='echo "Under construction" && stow -v --no-folding --no-backups'
+
+## Useful aliases
+# alias grubup="sudo update-grub" # unmaintained
+alias tarnow='tar -acf '
+alias untar='tar -zxvf '
+alias wget='wget -c '
+# alias rmpkg="sudo pacman -Rdd" # unmaintained
+alias psmem='ps auxf | sort -nr -k 4'
+alias psmem10='ps auxf | sort -nr -k 4 | head -10'
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ......='cd ../../../../..'
+alias dir='dir --color=auto'
+alias vdir='vdir --color=auto'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+alias hw='hwinfo --short'                                   # Hardware Info
+
+# Misc alias
+alias please='sudo'
+# alias fetch='sudo apt-get update' # unmaintained
+# alias upgrademe='sudo apt-get upgrade' # unmaintained
 
 # Start TMUX on the end after executing everything...
 # To disable tmux at boot, set $TMUX_DISABLE_AT_BOOT to true
