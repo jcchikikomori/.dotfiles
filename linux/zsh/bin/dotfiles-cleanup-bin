@@ -9,9 +9,9 @@ for file in "$HOME/bin"/dotfiles-*; do
     echo "Skipping $file"
     continue
   fi
-  # Delete the file
-  if [ -f "$file" ]; then
-    echo "Deleting $file"
+  # Check if the file is a symlink
+  if [ -L "$file" ]; then
+    echo "Deleting symlink $file"
     rm -f "$file"
   fi
 done
