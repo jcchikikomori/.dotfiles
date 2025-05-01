@@ -48,28 +48,25 @@ else
   echo "Warning: $HOME/bin/dotfiles-cleanup-bin does not exist. Skipping script cleanup."
 fi
 
-echo 'Cleaning up conflicting files for stow...'
-# Remove files that might conflict with stow
-find $HOME -type f \( \
-  -name ".gitconfig" -o \
-  -name ".alacritty.yml" -o \
-  -name ".antigenrc" -o \
-  -name "bash_completion.d" -o \
-  -name "default.yml" -o \
-  -name ".dxvk" -o \
-  -name ".hushlogin" -o \
-  -name ".zprofile" -o \
-  -name ".profile" -o \
-  -name ".tmuxp" -o \
-  -name ".vimrc" -o \
-  -name ".virc" -o \
-  -name "gpg.conf" -o \
-  -name "gpg-agent.conf" -o \
-  -name ".zsh" -o \
-  -name ".zshrc" -o \
-  -name ".zshrc.pre-oh-my-zsh" -o \
-  -name ".git" \
-\) -exec rm -f {} \;
+echo 'Cleaning up other files...'
+rm -f $HOME/.gitconfig
+rm -f $HOME/.alacritty.yml
+rm -f $HOME/.antigenrc
+rm -f $HOME/bash_completion.d
+rm -f $HOME/default.yml
+rm -f $HOME/.dxvk
+rm -f $HOME/.hushlogin
+rm -f $HOME/.zprofile
+rm -f $HOME/.profile
+rm -f $HOME/.tmuxp
+rm -f $HOME/.vimrc
+rm -f $HOME/.virc
+rm -f $HOME/.gnupg/gpg.conf
+rm -f $HOME/.gnupg/gpg-agent.conf
+rm -f $HOME/.zsh
+rm -f $HOME/.zshrc
+rm -f $HOME/.zshrc.pre-oh-my-zsh
+rm -f $HOME/.git
 
 # Python version tag cleanup. Ensure to get values from .dotfiles-python-version
 echo 'Cleaning up Python version tag...'
