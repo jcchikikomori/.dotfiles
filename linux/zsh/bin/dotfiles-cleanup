@@ -41,12 +41,11 @@ echo 'Cleaning up VSCode...'
 rm -rf $HOME/.vscode
 rm -rf $HOME/.vscode-server
 
-echo 'Cleaning up binary files...'
-if [ -d "$HOME/.bin" ]; then
-  rm -rf $HOME/bin
-fi
-if [ -f "$HOME/.bin" ]; then
-  rm -f $HOME/bin
+echo 'Cleaning up scripts...'
+if [ -f "$HOME/bin/dotfiles-cleanup-bin" ]; then
+  sh $HOME/bin/dotfiles-cleanup-bin
+else
+  echo "Warning: $HOME/bin/dotfiles-cleanup-bin does not exist. Skipping script cleanup."
 fi
 
 echo 'Cleaning up other files...'
