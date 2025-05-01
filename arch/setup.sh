@@ -17,25 +17,25 @@ sudo makepkg -si --noconfirm
 cd ../..
 rm -rf temp/
 
-# SSH Keys
-# ssh-keygen -t ed25519 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_ed25519 -N ""
-# ssh-keygen -t rsa -b 4096 -C "jccorsanes@protonmail.com" -f $HOME/.ssh/id_rsa -N ""
-
 # Chaotic AUR
-echo 'Importing essential keys...'
-sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
-echo 'Signing keys...'
-sudo pacman-key --lsign-key 3056513887B78AEB
-echo 'Begin installing Chaotic AUR...'
-sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-# Backup the pacman.conf file
-sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
-# Add the Chaotic AUR repository to pacman.conf without manual confirmation
-echo "
+if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
+  echo 'Importing essential keys...'
+  sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+  echo 'Signing keys...'
+  sudo pacman-key --lsign-key 3056513887B78AEB
+  echo 'Begin installing Chaotic AUR...'
+  sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+  # Backup the pacman.conf file
+  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  # Add the Chaotic AUR repository to pacman.conf
+  echo "
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
-# Synchronize and upgrade packages without manual confirmation
-sudo pacman -Syyu --noconfirm --noprogressbar
+  # Synchronize and upgrade packages
+  sudo pacman -Syyu --noconfirm --noprogressbar
+else
+  echo "chaotic-aur repository is already registered. Skipping..."
+fi
 
 # Compilation Cache
 sudo pacman -S --noconfirm --noprogressbar ccache
