@@ -17,16 +17,19 @@ export PATH="$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 type rbenv
 
-# Install ruby-build plugin
-echo "Installing ruby-build plugin..."
-mkdir -p "${RBENV_ROOT}/plugins"
-git clone --quiet https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build"
+# Install ruby-build plugin only if the plugins directory does not exist
+if [ ! -d "${RBENV_ROOT}/plugins" ]; then
+  echo "Installing ruby-build plugin..."
+  mkdir -p "${RBENV_ROOT}/plugins"
+  git clone --quiet https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build"
+else
+  echo "ruby-build plugin already installed. Skipping..."
+fi
 
 # List available Ruby versions
 rbenv install -l > /dev/null
 
 # Install Ruby 2.5.1
-# Part of building test...
 echo "Installing Ruby 2.5.1..."
 if ! rbenv install --verbose 2.5.1; then
   echo "Error: Failed to install Ruby 2.5.1. Exiting..."
