@@ -1,0 +1,11 @@
+# Compilation Cache (ccache package required)
+if command -v ccache >/dev/null 2>&1; then
+    export PATH="/usr/lib/ccache:${PATH}"
+    export CC="ccache gcc"
+    export CXX="ccache g++"
+    export KERNEL_CC="ccache gcc"
+    export UTILS_CC="ccache gcc"
+    export UTILS_CXX="ccache g++"
+else
+    echo "Warning: ccache is not installed or not in PATH. Compilation cache will not be used."
+fi

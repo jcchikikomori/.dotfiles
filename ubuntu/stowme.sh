@@ -1,6 +1,6 @@
 #!/bin/sh
-sh $HOME/bin/dotfiles-cleanup
-sh $HOME/bin/dotfiles-ssh
+sh $HOME/.dotfiles/linux/zsh/bin/dotfiles-cleanup
+sh $HOME/.dotfiles/linux/zsh/bin/dotfiles-ssh
 cd $HOME || return
-dotstow stow zsh git antigen tmux tmuxp vim vscode dxvk systems
+dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems wireplumber
 exit 0

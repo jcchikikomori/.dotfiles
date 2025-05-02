@@ -18,28 +18,41 @@ jobs:
           mkdir -p $HOME/.dotfiles
           mkdir -p $HOME/.local/state/dotstow
           mkdir -p $HOME/bin
+          mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Add User
-        run: |
-          sh linux/zsh/bin/dotfiles-adduser
       - name: Execute post-setup (git)
         run: |
           ./linux/zsh/bin/dotfiles-git
-      - name: Execute post-setup (python)
-        run: |
-          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/zsh/bin/dotfiles-homebrew install
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
       - name: Simulate Stowing
+        if: always()
         run: |
           sh ubuntu/stowme.sh
+      - name: Generate list from $HOME dir
+        if: always()
+        run: |
+          ls -lah $HOME > $HOME/logs/userfilelslah.txt
+          find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotfiles-logs-ubuntu
+          path: $HOME/logs
+          retention-days: 30
+          compression-level: 9
+          include-hidden-files: true
   arch:
     runs-on: ubuntu-latest
     container: archlinux:latest
@@ -53,28 +66,41 @@ jobs:
           mkdir -p $HOME/.dotfiles
           mkdir -p $HOME/.local/state/dotstow
           mkdir -p $HOME/bin
+          mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Add User
-        run: |
-          sh linux/zsh/bin/dotfiles-adduser
       - name: Execute post-setup (git)
         run: |
           ./linux/zsh/bin/dotfiles-git
-      - name: Execute post-setup (python)
-        run: |
-          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/zsh/bin/dotfiles-homebrew install
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
       - name: Simulate Stowing
+        if: always()
         run: |
           sh arch/stowme.sh
+      - name: Generate list from $HOME dir
+        if: always()
+        run: |
+          ls -lah $HOME > $HOME/logs/userfilelslah.txt
+          find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotfiles-logs-arch
+          path: $HOME/logs
+          retention-days: 30
+          compression-level: 9
+          include-hidden-files: true
   fedora:
     runs-on: ubuntu-latest
     container: fedora:latest
@@ -88,25 +114,38 @@ jobs:
           mkdir -p $HOME/.dotfiles
           mkdir -p $HOME/.local/state/dotstow
           mkdir -p $HOME/bin
+          mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |
           ./start.sh
-      - name: Add User
-        run: |
-          sh linux/zsh/bin/dotfiles-adduser
       - name: Execute post-setup (git)
         run: |
           ./linux/zsh/bin/dotfiles-git
-      - name: Execute post-setup (python)
-        run: |
-          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/zsh/bin/dotfiles-homebrew install
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/zsh/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
       - name: Simulate Stowing
+        if: always()
         run: |
           sh rhel/stowme.sh
+      - name: Generate list from $HOME dir
+        if: always()
+        run: |
+          ls -lah $HOME > $HOME/logs/userfilelslah.txt
+          find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotfiles-logs-fedora
+          path: $HOME/logs
+          retention-days: 30
+          compression-level: 9
+          include-hidden-files: true
