@@ -6,5 +6,7 @@ cd $HOME || return
 export LD_PRELOAD="/usr/lib64/libgcrypt.so.20"
 # Generic
 dotstow stow zsh git antigen tmux tmuxp vim vscode dxvk systems
+cd $HOME/.dotfiles
+git reset --hard HEAD
 export LD_PRELOAD=
 exit 0
