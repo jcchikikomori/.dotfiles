@@ -21,7 +21,6 @@ if [ -f /etc/os-release ]; then
             echo -e "\nWarning: Unable to detect distribution. Default settings will be used."
             ;;
     esac
-    # TODO: Apply this to zsh shell!
     echo -e "Detected distribution: $NAME ($VERSION_ID)"
     echo -e "\nWelcome, $USER!"
 fi

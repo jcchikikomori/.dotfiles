@@ -14,10 +14,15 @@ if [ -f /etc/os-release ]; then
             # Arch-based systems
             export MAKEFLAGS="-j$(nproc)"
             ;;
+        bazzite)
+            echo -e "\nWarning: Bazzite is not officially supported. Proceed with caution."
+            ;;
         *)
-            echo "Distribution: Unknown"
+            echo -e "\nWarning: Unable to detect distribution. Default settings will be used."
             ;;
     esac
+    echo -e "Detected distribution: $NAME ($VERSION_ID)"
+    echo -e "\nWelcome, $USER!"
 fi
 
 # Core environment variables
