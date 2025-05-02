@@ -2,7 +2,7 @@
 
 # Issues occurring with the script: vim & zsh
 echo 'Unstowing...'
-dotstow unstow git antigen tmux tmuxp vscode dxvk
+dotstow unstow git antigen tmux tmuxp vscode dxvk systems
 
 echo 'Backing up...'
 rm -rf $HOME/.backups
