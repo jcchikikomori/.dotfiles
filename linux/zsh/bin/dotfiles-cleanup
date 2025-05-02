@@ -67,6 +67,7 @@ rm -f $HOME/.zsh
 rm -f $HOME/.zshrc
 rm -f $HOME/.zshrc.pre-oh-my-zsh
 rm -f $HOME/.git
+rm -f $HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf
 
 # Python version tag cleanup. Ensure to get values from .dotfiles-python-version
 echo 'Cleaning up Python version tag...'
