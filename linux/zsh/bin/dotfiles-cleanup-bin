@@ -2,18 +2,10 @@
 
 echo "Cleaning up scripts in $HOME/bin..."
 
-# Iterate through files in $HOME/bin that start with 'dotfiles-'
-for file in "$HOME/bin"/dotfiles-*; do
-  # Skip if the file is 'dotfiles-cleanup' or 'dotfiles-cleanup-bin'
-  if [ "$(basename "$file")" = "dotfiles-cleanup" ] || [ "$(basename "$file")" = "dotfiles-cleanup-bin" ]; then
-    echo "Skipping $file"
-    continue
-  fi
-  # Check if the file is a symlink
-  if [ -L "$file" ]; then
-    echo "Deleting symlink $file"
-    rm -f "$file"
-  fi
-done
+# Check if the file is a symlink
+if [ -L "$HOME/bin" ]; then
+  echo "Deleting symlink $HOME/bin..."
+  rm -f $HOME/bin
+fi
 
 echo "Scripts cleanup completed."

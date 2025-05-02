@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# Issues occurring with the script: vim & zsh
+# Issues occurring with the script: vim, zsh & systems (.profile file)
 echo 'Unstowing...'
-dotstow unstow git antigen tmux tmuxp vscode dxvk systems
+dotstow unstow git antigen tmux tmuxp vscode dxvk
 
 echo 'Backing up...'
 rm -rf $HOME/.backups
