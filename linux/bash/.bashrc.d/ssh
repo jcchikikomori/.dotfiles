@@ -1,0 +1,8 @@
+# SSH Agent setup
+if [ -z "$(pgrep ssh-agent)" ]; then
+    rm -rf '/tmp/ssh-*'
+    eval "$(ssh-agent -s)" >/dev/null
+else
+    export SSH_AGENT_PID=$(pgrep ssh-agent)
+    export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+fi

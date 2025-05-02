@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "Cleaning up scripts in $HOME/bin..."
+
+# Check if the file is a symlink
+if [ -L "$HOME/bin" ]; then
+  echo "Deleting symlink $HOME/bin..."
+  rm -f $HOME/bin
+fi
+
+echo "Scripts cleanup completed."

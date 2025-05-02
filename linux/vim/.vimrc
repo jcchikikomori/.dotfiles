@@ -29,6 +29,12 @@ Plug 'preservim/nerdtree'               " FileTree View
 
 call plug#end()
 
+" Gruvbox configuration
+let g:gruvbox_contrast_dark = 'hard'
+let g:gruvbox_invert_selection = '0'
+" Color scheme
+colorscheme gruvbox
+
 set autoread
 set smartcase
 syntax enable
