@@ -15,10 +15,13 @@ if [ -f /etc/os-release ]; then
             export MAKEFLAGS="-j$(nproc)"
             ;;
         bazzite)
-            echo "Warning: Bazzite is not officially supported. Proceed with caution."
+            echo -e "\nWarning: Bazzite is not officially supported. Proceed with caution."
             ;;
         *)
-            echo "Warning: Unable to detect distribution. Default settings will be used."
+            echo -e "\nWarning: Unable to detect distribution. Default settings will be used."
             ;;
     esac
+    # TODO: Apply this to zsh shell!
+    echo -e "Detected distribution: $NAME ($VERSION_ID)"
+    echo -e "\nWelcome, $USER!"
 fi
