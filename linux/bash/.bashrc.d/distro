@@ -1,0 +1,21 @@
+# Distribution detection and setup
+if [ -f /etc/os-release ]; then
+    source /etc/os-release
+    case $ID in
+        ubuntu|debian)
+            # Debian-based systems
+            export DEBIAN_FRONTEND=noninteractive
+            ;;
+        fedora|centos|rhel)
+            # Red Hat-based systems
+            export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
+            ;;
+        arch|garuda|manjaro)
+            # Arch-based systems
+            export MAKEFLAGS="-j$(nproc)"
+            ;;
+        *)
+            echo "Distribution: Unknown"
+            ;;
+    esac
+fi
