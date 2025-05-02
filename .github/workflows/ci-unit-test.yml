@@ -35,24 +35,14 @@ jobs:
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
-      - name: Execute post-setup (ruby)
-        run: |
-          ./linux/zsh/bin/dotfiles-ruby
-      - name: Collect Ruby Build Logs
-        if: always()
-        run: |
-          mkdir -p $HOME/logs
-          for dir in /tmp/ruby-build.*; do
-            [ -d "$dir" ] && cp -r "$dir" $HOME/logs/
-          done
       - name: Simulate Stowing
         if: always()
         run: |
           sh ubuntu/stowme.sh
-          ls -lah $HOME > $HOME/logs/userfilelslah.txt
       - name: Generate list from $HOME dir
         if: always()
         run: |
+          ls -lah $HOME > $HOME/logs/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
       - name: Upload logs as artifact
         if: always()
@@ -93,24 +83,14 @@ jobs:
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
-      - name: Execute post-setup (ruby)
-        run: |
-          ./linux/zsh/bin/dotfiles-ruby
-      - name: Collect Ruby Build Logs
-        if: always()
-        run: |
-          mkdir -p $HOME/logs
-          for dir in /tmp/ruby-build.*; do
-            [ -d "$dir" ] && cp -r "$dir" $HOME/logs/
-          done
       - name: Simulate Stowing
         if: always()
         run: |
           sh arch/stowme.sh
-          ls -lah $HOME > $HOME/logs/userfilelslah.txt
       - name: Generate list from $HOME dir
         if: always()
         run: |
+          ls -lah $HOME > $HOME/logs/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
       - name: Upload logs as artifact
         if: always()
@@ -151,24 +131,14 @@ jobs:
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
-      - name: Execute post-setup (ruby)
-        run: |
-          ./linux/zsh/bin/dotfiles-ruby
-      - name: Collect Ruby Build Logs
-        if: always()
-        run: |
-          mkdir -p $HOME/logs
-          for dir in /tmp/ruby-build.*; do
-            [ -d "$dir" ] && cp -r "$dir" $HOME/logs/
-          done
       - name: Simulate Stowing
         if: always()
         run: |
           sh rhel/stowme.sh
-          ls -lah $HOME > $HOME/logs/userfilelslah.txt
       - name: Generate list from $HOME dir
         if: always()
         run: |
+          ls -lah $HOME > $HOME/logs/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
       - name: Upload logs as artifact
         if: always()
