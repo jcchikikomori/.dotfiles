@@ -1,0 +1,29 @@
+# Scripts
+export PATH="${HOME}/bin:${PATH}"
+
+# Development environments
+export EDITOR=nano
+export PYENV_ROOT="$HOME/.pyenv"
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+export SDKMAN_DIR="$HOME/.sdkman"
+export GOPATH="${HOME}/go"
+
+# XDG Base Directory Specification
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+
+# Display setup
+export GPG_TTY=$(tty)
+export DISABLE_AUTO_TITLE=1
+export TMUX_DISABLE_AT_BOOT=1
+
+# DXVK configuration
+export DXVK_CONFIG_FILE="$HOME/.dxvk/dxvk.conf"
+export DXVK_STATE_CACHE_PATH="$HOME/.dxvk/cache"
+export DXVK_LOG_PATH="$HOME/.dxvk/log"
+
+# Reset deprecated QT properties
+export QT_SCREEN_SCALE_FACTORS=
+export QT_SCALE_FACTOR=
+export QT_AUTO_SCREEN_SCALE_FACTOR=

@@ -1,0 +1,4 @@
+# Start TMUX if not already running
+if [ -z "$TMUX" ] && [ -z "$TMUX_DISABLE_AT_BOOT" ]; then
+    tmux attach || tmux new
+fi
