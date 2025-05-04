@@ -40,6 +40,20 @@ export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 
+# Linuxbrew/Homebrew
+if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+else
+    echo "Warning: Homebrew is not installed or not executable at /home/linuxbrew/.linuxbrew/bin/brew" >&2
+fi
+
+# phpenv
+export PHPENV_ROOT="$HOME/.phpenv"
+if [ -d "$PHPENV_ROOT" ]; then
+  export PATH="$PHPENV_ROOT/bin:$PATH"
+  eval "$(phpenv init -)"
+fi
+
 # SSH Agent setup
 if [ -z "$(pgrep ssh-agent)" ]; then
     rm -rf '/tmp/ssh-*'
