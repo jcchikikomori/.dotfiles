@@ -30,6 +30,23 @@ linux/vscode/.vscode/argv.json
 !**/vscode/.vscode-server/data/User/*
 **/vscode/.vscode/extensions/
 
+# Docker
+linux/zsh/.config/systemd/user/default.target.wants/docker.service
+linux/zsh/.config/systemd/user/docker.service
+linux/zsh/.config/systemd/user/sockets.target.wants/docker.socket
+linux/zsh/bin/containerd
+linux/zsh/bin/containerd-shim-runc-v2
+linux/zsh/bin/ctr
+linux/zsh/bin/docker
+linux/zsh/bin/docker-init
+linux/zsh/bin/docker-proxy
+linux/zsh/bin/dockerd
+linux/zsh/bin/dockerd-rootless-setuptool.sh
+linux/zsh/bin/dockerd-rootless.sh
+linux/zsh/bin/rootlesskit
+linux/zsh/bin/runc
+linux/zsh/bin/vpnkit
+
 # DXVK
 linux/dxvk/.dxvk/cache/
 linux/dxvk/.dxvk/log/
