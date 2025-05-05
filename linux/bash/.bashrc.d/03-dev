@@ -15,11 +15,11 @@ else
 fi
 
 # PHP - phpenv
-export PHPENV_ROOT="$HOME/.phpenv"
-if [ -d "$PHPENV_ROOT" ]; then
-  export PATH="$PHPENV_ROOT/bin:$PATH"
-  eval "$(phpenv init -)"
-fi
+# export PHPENV_ROOT="$HOME/.phpenv"
+# if [ -d "$PHPENV_ROOT" ]; then
+#   export PATH="$PHPENV_ROOT/bin:$PATH"
+#   eval "$(phpenv init -)"
+# fi
 
 # NVM (Node Version Manager)
 if [ -s "$NVM_DIR/nvm.sh" ]; then
