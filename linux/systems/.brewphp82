@@ -1,4 +1,4 @@
-export PATH="/home/linuxbrew/.linuxbrew/opt/php@8.2/bin:$PATH"
-export PATH="/home/linuxbrew/.linuxbrew/opt/php@8.2/sbin:$PATH"
+export PATH="$PATH:/home/linuxbrew/.linuxbrew/opt/php@8.2/bin"
+export PATH="$PATH:/home/linuxbrew/.linuxbrew/opt/php@8.2/sbin"
 export LDFLAGS="-L/home/linuxbrew/.linuxbrew/opt/php@8.2/lib"
 export CPPFLAGS="-I/home/linuxbrew/.linuxbrew/opt/php@8.2/include"
