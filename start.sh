@@ -30,6 +30,10 @@ generate_bashrc() {
   fi
 }
 
+# Execute preliminary setup
+generate_bashrc
+prelim
+
 # OS-related workarounds
 export DETECTED_DISTRO="unknown"
 if [ -f /etc/os-release ]; then
@@ -83,7 +87,7 @@ if [ -f /etc/os-release ]; then
     exit 1
     ;;
   *)
-    echo "You are using Unknown OS"
+    echo "You are using Unknown OS. Exiting..."
     exit 1
     ;;
   esac
@@ -97,10 +101,6 @@ else
   echo "Unable to identify the OS. Exiting..."
   exit 1
 fi
-
-# Execute preliminary setup
-generate_bashrc
-prelim
 
 if [ -n "$DETECTED_DISTRO" ]; then
   echo "Detected distro: $DETECTED_DISTRO"

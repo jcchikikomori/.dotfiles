@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# Generates ASCII art of a thunder based on a emoji.
+thunder() {
+  cat << "EOF"
+        'z$$$$$$"'
+      z$$$$$"
+    z$$$$P
+  .d$$$$$$$$$$$$"'
+    '***$$$$$$"'
+        .$$"
+      .$P"
+      /'
+EOF
+}
+
+if [ "$1" = "start" ]; then
+  sudo systemctl start docker.service
+  sudo systemctl start docker.socket
+  thunder
+  if command -v zenity >/dev/null 2>&1; then
+    zenity --info --title="Docker started" --text="Docker services started."
+  else
+    echo "Docker started"
+    echo "Docker services started."
+  fi
+elif [ "$1" = "stop" ]; then
+  sudo systemctl disable --now docker.service
+  sudo systemctl disable --now docker.socket
+  if command -v zenity >/dev/null 2>&1; then
+    zenity --info --title="Docker stopped" --text="Docker services stopped."
+  else
+    echo "Docker stopped"
+    echo "Docker services stopped."
+  fi
+elif [ "$1" = "startup" ]; then
+  sudo systemctl enable --now docker.service
+  sudo systemctl enable --now docker.socket
+  thunder
+  if command -v zenity >/dev/null 2>&1; then
+    zenity --info --title="Docker will be started on startup." --text="Please make sure to execute dotfiles-docker stop if you want to disable this."
+  else
+    echo "Docker will be started on startup."
+    echo "Please make sure to execute dotfiles-docker stop if you want to disable this."
+  fi
+else
+  echo "Usage: $0 {start|startup|stop}"
+  echo "  start: Starts docker services"
+  echo "  startup: Starts docker services on startup. Will also execute 'start'"
+  echo "  stop: Stops docker from running"
+  exit 1
+fi
