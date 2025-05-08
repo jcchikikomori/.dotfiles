@@ -12,7 +12,7 @@ setup_directory() {
     cp -r "dotfiles-python" "$WORKDIR"
     cp -r "dotfiles-python--pre-commit" "$WORKDIR"
     cp -r "dotfiles-nodejs" "$WORKDIR"
-    # cp -r "dotfiles-php" "$WORKDIR"
+    cp -r "dotfiles-php" "$WORKDIR"
     cp -r "dotfiles-java-sdkman" "$WORKDIR"
     cp -r "dotfiles-ruby" "$WORKDIR"
     cp -r "dotfiles-vim" "$WORKDIR"
@@ -48,6 +48,8 @@ prompt_installation() {
         echo "Installing $name..."
         # TODO: Will include the "install" argument to all scripts.
         if [ "$script" = "dotfiles-python" ]; then
+            $WORKDIR/$script install
+        elif [ "$script" = "dotfiles-php" ]; then
             $WORKDIR/$script install
         else
             $WORKDIR/$script
@@ -106,7 +108,7 @@ main() {
     prompt_installation "Ruby with rbenv" "dotfiles-ruby"
     prompt_installation "SDKMAN" "dotfiles-java-sdkman"
     prompt_installation "NodeJS with NVM" "dotfiles-nodejs"
-    # prompt_installation "PHP with phpenv" "dotfiles-php"
+    prompt_installation "PHP with phpenv" "dotfiles-php"
     prompt_installation "Vim with plugins" "dotfiles-vim"
 
     echo 'Setting up oh-my-zsh...'

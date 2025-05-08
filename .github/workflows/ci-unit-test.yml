@@ -35,6 +35,9 @@ jobs:
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Execute post-setup (php)
+        run: |
+          ./linux/zsh/bin/dotfiles-php install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -83,6 +86,9 @@ jobs:
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Execute post-setup (php)
+        run: |
+          ./linux/zsh/bin/dotfiles-php install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -131,6 +137,9 @@ jobs:
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/zsh/bin/dotfiles-python--pre-commit
+      - name: Execute post-setup (php)
+        run: |
+          ./linux/zsh/bin/dotfiles-php install
       - name: Simulate Stowing
         if: always()
         run: |
