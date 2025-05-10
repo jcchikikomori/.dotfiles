@@ -50,7 +50,7 @@ if [ -f /etc/os-release ]; then
     export DEBIAN_FRONTEND=noninteractive
     echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
     ;;
-  arch)
+  arch|garuda|manjaro|cachyos)
     if [[ $NAME == *"Arch Linux"* ]]; then
       echo "You are using Arch Linux Barebones"
       export DETECTED_DISTRO="archbtw"
@@ -61,20 +61,8 @@ if [ -f /etc/os-release ]; then
     export MAKEFLAGS="-j$(nproc)"
     echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
     ;;
-  garuda)
-    echo "You are using Garuda Linux"
-    export DETECTED_DISTRO="arch"
-    export MAKEFLAGS="-j$(nproc)"
-    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
-    ;;
-  manjaro)
-    echo "You are using Manjaro"
-    export DETECTED_DISTRO="arch"
-    export MAKEFLAGS="-j$(nproc)"
-    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
-    ;;
-  fedora*)
-    echo "You are using Fedora"
+  fedora|centos|rhel)
+    echo "You are using Fedora/CentOS/RHEL"
     # Ensure include the installed libraries from system before compiling software
     export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
     # Ensure path for GO programming language

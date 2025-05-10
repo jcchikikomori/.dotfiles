@@ -10,7 +10,7 @@ if [ -f /etc/os-release ]; then
             # Red Hat-based systems
             export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
             ;;
-        arch|garuda|manjaro)
+        arch|garuda|manjaro|cachyos)
             # Arch-based systems
             export MAKEFLAGS="-j$(nproc)"
             ;;
