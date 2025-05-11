@@ -180,3 +180,8 @@ source $HOME/.profile
 
 ## antigen
 source $HOME/.antigenrc
+
+# Specific homebrew profiles
+# Note: Ensure to execute this to the last order/sequence of the .zshrc
+#       to avoid any conflicts with other profiles.
+source $HOME/.brewphp82
