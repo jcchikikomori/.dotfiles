@@ -92,22 +92,22 @@ import = ["~/.config/alacritty/themes/themes/vscode.toml"]
 TERM = "xterm-256color"
 
 [font]
-size = 10.0
+size = 10
 
 [font.bold]
-family = "Fira Code"
+family = "JetBrainsMono Nerd Font Mono"
 style = "Bold"
 
 [font.bold_italic]
-family = "Fira Code"
+family = "JetBrainsMono Nerd Font Mono"
 style = "Bold Italic"
 
 [font.italic]
-family = "Fira Code"
+family = "JetBrainsMono Nerd Font Mono"
 style = "Italic"
 
 [font.normal]
-family = "Fira Code"
+family = "JetBrainsMono Nerd Font Mono"
 style = "Regular"
 
 [font.offset]
