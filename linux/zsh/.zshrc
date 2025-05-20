@@ -93,12 +93,12 @@ export EDITOR='vim'
 # export ARCHFLAGS="-arch x86_64"
 
 # Compilation Cache (ccache package required)
-export PATH="/usr/lib/ccache:${PATH}"
-export CC="ccache gcc"
-export CXX="ccache g++"
-export KERNEL_CC="ccache gcc"
-export UTILS_CC="ccache gcc"
-export UTILS_CXX="ccache g++"
+# export PATH="/usr/lib/ccache:${PATH}"
+# export CC="ccache gcc"
+# export CXX="ccache g++"
+# export KERNEL_CC="ccache gcc"
+# export UTILS_CC="ccache gcc"
+# export UTILS_CXX="ccache g++"
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
