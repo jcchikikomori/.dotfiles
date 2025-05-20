@@ -59,3 +59,10 @@ linux/dxvk/.dxvk/log/
 .currentdir
 .currentuser
 linux/systems/.dotfiles-python-version
+
+# EmuDeck
+linux/zsh/.config/systemd/user/EmuDeckCloudSync.service
+# Other services (such as appimagelauncherd, sdgyrodsu, etc.)
+linux/zsh/.config/systemd/user/default.target.wants/*
+# Steam Deck Gyro DSU service
+linux/zsh/.config/systemd/user/sdgyrodsu.service
