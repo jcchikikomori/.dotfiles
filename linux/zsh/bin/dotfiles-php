@@ -6,12 +6,16 @@ if [ "$1" = "install" ]; then
   echo "Installing php using Homebrew..."
   if command -v brew >/dev/null 2>&1; then
     echo "Homebrew is installed and executable."
-    brew install php@8.2
   else
     echo "Homebrew is not installed or not in PATH."
-    echo "Please install Homebrew first: https://brew.sh/"
-    exit 1
+    echo "Installing homebrew..."
+    # TODO: Re-executable binary for installing homebrew.
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
+  # Ensure Homebrew is in the PATH
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  # Install PHP 8.2 using Homebrew
+  brew install php@8.2
 elif [ "$1" = "env" ]; then
   echo "Install phpenv..."
   # Store current directory
@@ -41,7 +45,7 @@ elif [ "$1" = "env" ]; then
   phpenv rehash
 else
   echo "Usage: $0 {install|env}"
-  echo "  install: Install php using Homebrew"
-  echo "  env: Install phpenv"
+  echo "  install: Install php using Homebrew (RECOMMENDED)"
+  echo "  env: Install phpenv (Advanced)"
   exit 1
 fi
