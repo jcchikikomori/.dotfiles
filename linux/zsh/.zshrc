@@ -93,12 +93,12 @@ export EDITOR='vim'
 # export ARCHFLAGS="-arch x86_64"
 
 # Compilation Cache (ccache package required)
-export PATH="/usr/lib/ccache:${PATH}"
-export CC="ccache gcc"
-export CXX="ccache g++"
-export KERNEL_CC="ccache gcc"
-export UTILS_CC="ccache gcc"
-export UTILS_CXX="ccache g++"
+# export PATH="/usr/lib/ccache:${PATH}"
+# export CC="ccache gcc"
+# export CXX="ccache g++"
+# export KERNEL_CC="ccache gcc"
+# export UTILS_CC="ccache gcc"
+# export UTILS_CXX="ccache g++"
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
@@ -180,3 +180,8 @@ source $HOME/.profile
 
 ## antigen
 source $HOME/.antigenrc
+
+# Specific homebrew profiles
+# Note: Ensure to execute this to the last order/sequence of the .zshrc
+#       to avoid any conflicts with other profiles.
+source $HOME/.brewphp82
