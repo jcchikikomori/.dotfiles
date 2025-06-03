@@ -68,6 +68,8 @@ rm -f $HOME/.zshrc
 rm -f $HOME/.zshrc.pre-oh-my-zsh
 rm -f $HOME/.git
 rm -f $HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf
+rm -f $HOME/.config/alacritty/alacritty.toml
+rm -f $HOME/.config/autostart/com.discordapp.Discord.desktop
 
 # Python version tag cleanup. Ensure to get values from .dotfiles-python-version
 echo 'Cleaning up Python version tag...'
