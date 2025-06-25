@@ -3,7 +3,7 @@
 if [ "$1" = "install" ]; then
   if [ -x "/bin/bash" ]; then
     echo "Installing Homebrew (Linuxbrew)..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    /bin/bash -c "$(NONINTERACTIVE=1 curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   else
     echo "Error: /bin/bash not found or not executable." >&2
     exit 1
