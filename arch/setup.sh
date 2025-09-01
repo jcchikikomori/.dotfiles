@@ -40,8 +40,10 @@ fi
 # Compilation Cache
 sudo pacman -S --noconfirm --noprogressbar ccache
 
-# NVM
+# Programming languages
 sudo pacman -S --noconfirm --noprogressbar chaotic-aur/nvm
+sudo pacman -S --noconfirm --noprogressbar rbenv pyenv
+sudo pacman -S --noconfirm --noprogressbar aur/phpenv-git
 
 # Workarounds & Misc software
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth

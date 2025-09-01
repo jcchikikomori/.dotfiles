@@ -1,0 +1,52 @@
+#!/bin/sh
+# https://waxzce.medium.com/use-bashrc-d-directory-instead-of-bloated-bashrc-50204d5389ff
+
+# Generate .bashrc from system (/etc/skel/.bashrc)
+generate_bashrc() {
+  echo "Generating .bashrc from system..."
+  if [ -f /etc/skel/.bashrc ]; then
+    cp -f /etc/skel/.bashrc $HOME/.bashrc
+    echo "Generated .bashrc from system."
+  else
+    echo "System .bashrc not found. Skipping generation."
+  fi
+}
+
+if [ "$1" = "install" ]; then
+  echo "Installing bashrc.d setup..."
+  generate_bashrc
+
+  # Check if .bashrc.d directory exists
+  if [ ! -d "$HOME/.bashrc.d" ]; then
+    mkdir -p "$HOME/.bashrc.d"
+    echo "Created $HOME/.bashrc.d directory."
+  else
+    echo "$HOME/.bashrc.d directory already exists."
+  fi
+
+  # Check if .bashrc file exists
+  if [ ! -f "$HOME/.bashrc" ]; then
+    touch "$HOME/.bashrc"
+    echo "Created $HOME/.bashrc file."
+  else
+    echo "$HOME/.bashrc file already exists."
+  fi
+
+  # Add the source command to .bashrc if not already present
+  if ! grep -q 'for file in ~/.bashrc.d/*.bashrc; do source "$file"; done' "$HOME/.bashrc"; then
+    echo "" >>"$HOME/.bashrc"
+    echo "for file in ~/.bashrc.d/*; do" >>"$HOME/.bashrc"
+    echo "  source \"\$file\"" >>"$HOME/.bashrc"
+    echo "done" >>"$HOME/.bashrc"
+    echo "Added source command to $HOME/.bashrc."
+  else
+    echo "Source command already present in $HOME/.bashrc."
+  fi
+elif [ "$1" = "update" ]; then
+  echo "Under construction"
+else
+  echo "Usage: $0 {install|update}"
+  echo "  install: Add bashrc.d directory to .bashrc"
+  echo "  update: Under construction"
+  exit 1
+fi

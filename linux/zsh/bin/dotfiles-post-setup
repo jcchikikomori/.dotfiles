@@ -49,6 +49,8 @@ prompt_installation() {
         # TODO: Will include the "install" argument to all scripts.
         if [ "$script" = "dotfiles-python" ]; then
             $WORKDIR/$script install
+        elif [ "$script" = "dotfiles-php" ]; then
+            $WORKDIR/$script install
         else
             $WORKDIR/$script
         fi
