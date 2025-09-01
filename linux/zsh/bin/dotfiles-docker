@@ -14,7 +14,19 @@ thunder() {
 EOF
 }
 
-if [ "$1" = "start" ]; then
+if [ "$1" = "install" ]; then
+  echo "Opening the webpage.. Automatic installation is not supported yet."
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "https://docs.docker.com/engine/install/"
+  elif command -v gnome-open >/dev/null 2>&1; then
+    gnome-open "https://docs.docker.com/engine/install/"
+  elif command -v open >/dev/null 2>&1; then
+    open "https://docs.docker.com/engine/install/"
+  else
+    echo "Please open the following URL in your browser to install Docker:"
+    echo "https://docs.docker.com/engine/install/"
+  fi
+elif [ "$1" = "start" ]; then
   sudo systemctl start docker.service
   sudo systemctl start docker.socket
   thunder
@@ -45,6 +57,7 @@ elif [ "$1" = "startup" ]; then
   fi
 else
   echo "Usage: $0 {start|startup|stop}"
+  echo "  install: Installs docker and configures it for the current user"
   echo "  start: Starts docker services"
   echo "  startup: Starts docker services on startup. Will also execute 'start'"
   echo "  stop: Stops docker from running"
