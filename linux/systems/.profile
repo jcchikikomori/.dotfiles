@@ -97,6 +97,7 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=
 # Initialize development tools
 if [ -d "$PYENV_ROOT" ]; then
     export PATH="$PYENV_ROOT/bin:$PATH"
+    export PYENV_VERSION="system"
     eval "$(pyenv init --path)"
     eval "$(pyenv init -)"
 fi
