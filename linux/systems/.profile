@@ -1,27 +1,43 @@
 # Distribution detection and setup
+export DETECTED_DISTRO="unknown"
 if [ -f /etc/os-release ]; then
     source /etc/os-release
+    export DETECTED_DISTRO=$ID
+    export DETECTED_DISTRO_NAME=$NAME
     case $ID in
         ubuntu|debian)
             # Debian-based systems
+            export DETECTED_DISTRO="debian"
             export DEBIAN_FRONTEND=noninteractive
             ;;
         fedora|centos|rhel)
             # Red Hat-based systems
+            export DETECTED_DISTRO="rhel"
             export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
             ;;
-        arch|garuda|manjaro)
+        arch|garuda|manjaro|cachyos)
             # Arch-based systems
+            export DETECTED_DISTRO="arch"
             export MAKEFLAGS="-j$(nproc)"
             ;;
         bazzite)
+            export DETECTED_DISTRO="fedoraimmmutable"
             echo -e "\nWarning: Bazzite is not officially supported. Proceed with caution."
             ;;
         *)
             echo -e "\nWarning: Unable to detect distribution. Default settings will be used."
             ;;
     esac
-    echo -e "Detected distribution: $NAME ($VERSION_ID)"
+    # Include $VERSION_ID if exists
+    # Execute `clear` if exists
+    if [ -f /usr/bin/clear ]; then
+        clear
+    fi
+    if [ -n "$VERSION_ID" ]; then
+        echo -e "Detected distribution: $NAME ($VERSION_ID)"
+    else
+        echo -e "Detected distribution: $NAME"
+    fi
     echo -e "\nWelcome, $USER!"
 fi
 
@@ -39,6 +55,20 @@ export GOPATH="${HOME}/go"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+
+# Linuxbrew/Homebrew
+if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+else
+    echo "Warning: Homebrew is not installed or not executable at /home/linuxbrew/.linuxbrew/bin/brew" >&2
+fi
+
+# phpenv
+# export PHPENV_ROOT="$HOME/.phpenv"
+# if [ -d "$PHPENV_ROOT" ]; then
+#   export PATH="$PHPENV_ROOT/bin:$PATH"
+#   eval "$(phpenv init -)"
+# fi
 
 # SSH Agent setup
 if [ -z "$(pgrep ssh-agent)" ]; then
@@ -67,6 +97,7 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=
 # Initialize development tools
 if [ -d "$PYENV_ROOT" ]; then
     export PATH="$PYENV_ROOT/bin:$PATH"
+    export PYENV_VERSION="system"
     eval "$(pyenv init --path)"
     eval "$(pyenv init -)"
 fi
