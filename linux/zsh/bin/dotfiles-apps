@@ -1,0 +1,23 @@
+#!/bin/sh
+
+if [ "$1" = "cleanup" ]; then
+  echo "Cleaning up applications..."
+  # Remove .desktop files that do not have an Exec= line
+  find ~/.local/share/applications -type f -name "*.desktop" -exec grep -L "Exec=" {} \; -delete
+  echo "Cleanup complete!"
+elif [ "$1" = "status" ]; then
+  echo "Checking application status..."
+  # List all .desktop files in ~/.local/share/applications
+  # find ~/.local/share/applications -type f -name "*.desktop" -exec basename {} \;
+  echo "Status check complete!"
+elif [ "$1" = "update" ]; then
+  echo "Updating applications..."
+  echo "Under construction!"
+  echo "Update complete!"
+else
+  echo "Usage: $0 {cleanup}"
+  echo "  cleanup: Cleans up the applications"
+  echo "  status: Lists all applications"
+  echo "  update: Updates the applications (not implemented yet)"
+  exit 1
+fi

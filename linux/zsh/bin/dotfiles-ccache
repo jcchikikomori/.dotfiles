@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# THIS IS A BINARY/BASH SCRIPT TEMPLATE
+
+if [ "$1" = "load" ]; then
+  # Load ccache into environment
+  export PATH="/usr/lib/ccache:${PATH}"
+  export CC="ccache gcc"
+  export CXX="ccache g++"
+  export KERNEL_CC="ccache gcc"
+  export UTILS_CC="ccache gcc"
+  export UTILS_CXX="ccache g++"
+  echo "ccache loaded into environment."
+elif [ "$1" = "unload" ]; then
+  # Unload
+  export PATH=$(echo "${PATH}" | sed -e 's|/usr/lib/ccache:||')
+  export CC=$(echo "${CC}" | sed -e 's|ccache ||')
+  export CXX=$(echo "${CXX}" | sed -e 's|ccache ||')
+  export KERNEL_CC=$(echo "${KERNEL_CC}" | sed -e 's|ccache ||')
+  export UTILS_CC=$(echo "${UTILS_CC}" | sed -e 's|ccache ||')
+  export UTILS_CXX=$(echo "${UTILS_CXX}" | sed -e 's|ccache ||')
+  echo "ccache unloaded from environment."
+else
+  echo "Usage: $0 {load|unload}"
+  echo "  load: Loads ccache into environment"
+  echo "  unload: Unloads ccache from environment"
+  echo "Note: This script is intended to be sourced, not executed directly."
+  exit 1
+fi
