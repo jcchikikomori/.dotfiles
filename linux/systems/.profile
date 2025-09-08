@@ -94,6 +94,9 @@ export QT_SCREEN_SCALE_FACTORS=
 export QT_SCALE_FACTOR=
 export QT_AUTO_SCREEN_SCALE_FACTOR=
 
+# libvrt
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+
 # Initialize development tools
 if [ -d "$PYENV_ROOT" ]; then
     export PATH="$PYENV_ROOT/bin:$PATH"
