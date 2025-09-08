@@ -97,6 +97,11 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=
 # libvrt
 export LIBVIRT_DEFAULT_URI="qemu:///system"
 
+# Rootless Docker
+# https://docs.docker.com/engine/security/rootless/
+# export PATH=/home/patatasdeck/bin:$PATH
+export DOCKER_HOST="unix:///run/user/$UID/docker.sock"
+
 # Initialize development tools
 if [ -d "$PYENV_ROOT" ]; then
     export PATH="$PYENV_ROOT/bin:$PATH"
