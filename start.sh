@@ -3,8 +3,7 @@
 echo "Welcome! Beginning setup..."
 
 prelim() {
-  echo "Copying files needed to your home directory..."
-  cp .pythonversion $HOME/.dotfiles-python-version
+  echo "Copying/generating files needed to your home directory..."
 
   export DOTFILES_PATH=$(pwd)
   echo $DOTFILES_PATH >>.currentdir

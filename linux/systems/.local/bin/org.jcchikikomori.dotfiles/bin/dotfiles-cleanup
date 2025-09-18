@@ -67,16 +67,8 @@ rm -f $HOME/.git
 rm -f $HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf
 rm -f $HOME/.config/alacritty/alacritty.toml
 rm -f $HOME/.config/autostart/com.discordapp.Discord.desktop
-
-# Python version tag cleanup. Ensure to get values from .dotfiles-python-version
-echo 'Cleaning up Python version tag...'
-rm -f $HOME/.dotfiles-python-version
-if [ -d "$HOME/.dotfiles" ]; then
-  cp -f $HOME/.dotfiles/.dotfiles-python-version $HOME/linux/systems/.dotfiles-python-version
-else
-  # Add a warning if the directory doesn't exist
-  echo "Warning: $HOME/.dotfiles directory does not exist!"
-fi
+rm -f $HOME/.config/htop/htoprc
+rm -f $HOME/.pyenv/version
 
 # Avoid removing ssh
 echo 'y' || cp -rf $HOME/.ssh $HOME/.ssh-backup
