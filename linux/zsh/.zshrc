@@ -1,5 +1,5 @@
 # If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+# export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -122,6 +122,10 @@ autoload -Uz add-zsh-hook
 source $ZSH/oh-my-zsh.sh
 
 ## Path section
+# Default
+export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:$PATH
+
+# Additional, separated from dotfiles package.
 # Set $PATH if ~/.local/bin exist
 if [ -d "$HOME/.local/bin" ]; then
     export PATH=$HOME/.local/bin:$PATH

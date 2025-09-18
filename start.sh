@@ -12,9 +12,9 @@ prelim() {
   export DOTFILES_USERNAME=$(whoami)
   echo $DOTFILES_USERNAME >>.currentuser
 
-  # mkdir -p $HOME/bin
+  # mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
   # echo "Copying scripts to ~/bin..."
-  # cp -rf ./linux/zsh/bin/* $HOME/bin/
+  # cp -rf ./linux/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/* $HOME/.local/bin/org.jcchikikomori.dotfiles/bin/
 
   echo "Preliminary setup done! Proceeding with the rest of the setup..."
 }
@@ -96,12 +96,12 @@ if [ -n "$DETECTED_DISTRO" ]; then
   debian)
     echo "Executing Debian-related workarounds..."
     sh debian/setup.sh
-    sh linux/zsh/bin/dotfiles-post-setup
+    sh linux/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   ubuntu)
     echo "Executing Ubuntu-related workarounds..."
     sh ubuntu/setup.sh
-    sh linux/zsh/bin/dotfiles-post-setup
+    sh linux/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   archbtw)
     echo "Executing Arch-related (btw) workarounds..."
@@ -113,19 +113,19 @@ if [ -n "$DETECTED_DISTRO" ]; then
       sudo sh arch/init.sh
     fi
     sh arch/setup.sh
-    sh linux/zsh/bin/dotfiles-post-setup
+    sh linux/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   arch)
     echo "Executing Arch-related workarounds..."
     sh arch/setup.sh
-    sh linux/zsh/bin/dotfiles-post-setup
+    sh linux/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   rhel)
     echo "Executing RHEL-related workarounds..."
     sh rhel/setup.sh
     echo "Installing VSCode..."
     sh rhel/vscode.sh
-    sh linux/zsh/bin/dotfiles-post-setup
+    sh linux/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   *)
     echo "Unable to identify the distro to begin! Exiting..."

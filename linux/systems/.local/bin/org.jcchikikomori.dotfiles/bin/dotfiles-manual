@@ -23,7 +23,7 @@ echo "Setup fzf"
 echo "Setting up fasd"
 cd ~/.fasd
 PREFIX=$HOME make install
-$HOME/bin/fasd --init auto
+$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/fasd --init auto
 
 cd $HOME
 
