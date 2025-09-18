@@ -1,6 +1,6 @@
 #!/bin/sh
 
-WORKFILES_DIR="linux/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
+WORKFILES_DIR="linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
 WORKDIR=$(mktemp -d)
 
 setup_directory() {
