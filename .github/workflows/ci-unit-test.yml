@@ -17,7 +17,7 @@ jobs:
         run: |
           mkdir -p $HOME/.dotfiles
           mkdir -p $HOME/.local/state/dotstow
-          mkdir -p $HOME/bin
+          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
@@ -25,19 +25,19 @@ jobs:
           ./start.sh
       - name: Execute post-setup (git)
         run: |
-          ./linux/zsh/bin/dotfiles-git
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
       - name: Execute post-setup (homebrew)
         run: |
-          ./linux/zsh/bin/dotfiles-homebrew install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/zsh/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
-          ./linux/zsh/bin/dotfiles-python--pre-commit
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
       - name: Execute post-setup (php)
         run: |
-          ./linux/zsh/bin/dotfiles-php install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir -p $HOME/.dotfiles
           mkdir -p $HOME/.local/state/dotstow
-          mkdir -p $HOME/bin
+          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
@@ -76,19 +76,19 @@ jobs:
           ./start.sh
       - name: Execute post-setup (git)
         run: |
-          ./linux/zsh/bin/dotfiles-git
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
       - name: Execute post-setup (homebrew)
         run: |
-          ./linux/zsh/bin/dotfiles-homebrew install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/zsh/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
-          ./linux/zsh/bin/dotfiles-python--pre-commit
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
       - name: Execute post-setup (php)
         run: |
-          ./linux/zsh/bin/dotfiles-php install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -119,7 +119,7 @@ jobs:
         run: |
           mkdir -p $HOME/.dotfiles
           mkdir -p $HOME/.local/state/dotstow
-          mkdir -p $HOME/bin
+          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
@@ -127,19 +127,19 @@ jobs:
           ./start.sh
       - name: Execute post-setup (git)
         run: |
-          ./linux/zsh/bin/dotfiles-git
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
       - name: Execute post-setup (homebrew)
         run: |
-          ./linux/zsh/bin/dotfiles-homebrew install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/zsh/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
       - name: Execute post-setup (pre-commit)
         run: |
-          ./linux/zsh/bin/dotfiles-python--pre-commit
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
       - name: Execute post-setup (php)
         run: |
-          ./linux/zsh/bin/dotfiles-php install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
       - name: Simulate Stowing
         if: always()
         run: |

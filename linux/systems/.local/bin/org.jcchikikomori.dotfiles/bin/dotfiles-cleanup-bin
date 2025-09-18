@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "Cleaning up scripts in $HOME/.local/bin/org.jcchikikomori.dotfiles/bin..."
+
+# Check if the file is a symlink
+if [ -L "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin" ]; then
+  echo "Deleting symlink $HOME/.local/bin/org.jcchikikomori.dotfiles/bin..."
+  rm -f $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
+fi
+
+echo "Scripts cleanup completed."

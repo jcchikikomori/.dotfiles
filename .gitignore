@@ -62,7 +62,17 @@ linux/systems/.dotfiles-python-version
 
 # EmuDeck
 linux/zsh/.config/systemd/user/EmuDeckCloudSync.service
+
 # Other services (such as appimagelauncherd, sdgyrodsu, etc.)
 linux/zsh/.config/systemd/user/default.target.wants/*
+
 # Steam Deck Gyro DSU service
 linux/zsh/.config/systemd/user/sdgyrodsu.service
+
+# Other systemd user services
+linux/zsh/.config/systemd/user/*
+
+# Other binaries
+linux/zsh/bin/pyNPU.py
+linux/zsh/bin/t7z
+linux/zsh/bin/nps_*.sh
