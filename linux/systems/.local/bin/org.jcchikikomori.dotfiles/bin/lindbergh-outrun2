@@ -6,5 +6,5 @@ cd "$HOME/.config/lindbergh-loader" || exit 1
 
 "$HOME/AppImages/lindbergh_loader.appimage" \
   --gamepath "$HOME/Games/Lindbergh/outrun2/disk0/Jennifer" \
-  --config "$HOME/.config/lindbergh-loader/lindbergh.ini" \
-  --controls "$HOME/.config/lindbergh-loader/controls.ini"
+  --config "$HOME/.config/lindbergh-loader/configs/lindbergh.ini" \
+  --controls "$HOME/.config/lindbergh-loader/controls/default.ini"
