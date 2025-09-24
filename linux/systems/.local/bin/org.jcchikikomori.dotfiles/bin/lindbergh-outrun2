@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+
+# Ensure controls.ini in this directory is discovered by the loader
+cd "$HOME/.config/lindbergh-loader" || exit 1
+
+"$HOME/AppImages/lindbergh_loader.appimage" \
+  --gamepath "$HOME/Games/Lindbergh/outrun2/disk0/Jennifer" \
+  --config "$HOME/.config/lindbergh-loader/lindbergh.ini" \
+  --controls "$HOME/.config/lindbergh-loader/controls.ini" \
