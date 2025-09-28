@@ -1,0 +1,13 @@
+[Unit]
+Description=Waydroid Session on %i
+After=weston-waydroid@%i.service
+Requires=weston-waydroid@%i.service
+[Service]
+Type=simple
+Environment=WAYLAND_DISPLAY=%i
+ExecStartPre=/usr/bin/bash -lc 'for n in {1..100}; do [ -S "$XDG_RUNTIME_DIR/%i" ] && exit 0; sleep .1; done; exit 1'
+ExecStart=/usr/bin/waydroid session start
+ExecStop=/usr/bin/waydroid session stop
+Restart=on-failure
+[Install]
+WantedBy=default.target

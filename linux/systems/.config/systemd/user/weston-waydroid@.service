@@ -1,0 +1,9 @@
+[Unit]
+Description=Weston for Waydroid (%i)
+After=graphical-session.target
+[Service]
+Type=simple
+ExecStart=/usr/bin/weston --backend=x11 --xwayland --socket=%i --idle-time=0
+Restart=on-failure
+[Install]
+WantedBy=default.target

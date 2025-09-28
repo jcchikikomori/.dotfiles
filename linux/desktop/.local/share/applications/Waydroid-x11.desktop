@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Waydroid (X11)
+Comment=Launch Waydroid with X11 backend inside Game Mode
+Exec=sh -c 'systemctl --user start waydroid-session@x11.service && waydroid show-full-ui; systemctl --user stop waydroid-session@x11.service'
+Terminal=false
+Type=Application
+Icon=waydroid
+Categories=System;Utility;Waydroid;
