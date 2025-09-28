@@ -1,0 +1,11 @@
+session_name: steamdeck
+windows:
+  - name: steamdeck
+    layout: tiled
+    shell_command_before:
+      - cd ~
+    panes:
+      - screenfetch -E
+      - distrobox-enter ubuntu
+      - podman -ps
+      - htop

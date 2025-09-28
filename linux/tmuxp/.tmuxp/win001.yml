@@ -1,9 +1,0 @@
-session_name: win001
-windows:
-  - name: win001
-    layout: c00e,269x60,0,0{76x60,0,0,3,192x60,77,0[192x30,77,0,4,192x29,77,31{96x29,77,31,6,95x29,174,31,7}]}
-    panes:
-      - echo "PANE 1"
-      - echo "PANE 2"
-      - echo "PANE 3"
-      - echo "PANE 4"
