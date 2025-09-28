@@ -4,8 +4,9 @@ windows:
     layout: tiled
     shell_command_before:
       - cd ~
+      - clear
     panes:
-      - screenfetch -E
+      - clear && screenfetch -ENt
       - distrobox-enter ubuntu
       - podman ps
       - htop
