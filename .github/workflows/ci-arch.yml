@@ -23,6 +23,7 @@ jobs:
           id deck
           sudo -u deck true
           chown -R deck:deck "$PWD"
+          adduser deck sudo
           passwd -d deck
       - name: Setup some directories
         run: |
