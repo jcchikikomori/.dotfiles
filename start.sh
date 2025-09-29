@@ -131,7 +131,6 @@ if [ -n "$DETECTED_DISTRO" ]; then
   steamos)
     echo "Executing SteamOS-related workarounds..."
     sh steamos/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
     sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   rhel)

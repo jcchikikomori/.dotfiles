@@ -8,41 +8,21 @@ jobs:
     container: ianburgwin/steamos:latest
     env:
       SKIP_SETTING_USER: true
-      SKIP_INSTALL_PROGLANG: true
-      PUID: 1000
-      PGID: 1000
-      TZ: Etc/UTC
-      USERNAME: deck
+      SKIP_INSTALL_PROGLANG: false
     steps:
       - uses: actions/checkout@v3
-      - name: Ensure sudo and deck ownership
-        run: |
-          if ! command -v sudo >/dev/null 2>&1; then
-            pacman -Sy --noconfirm sudo
-          fi
-          id deck
-          sudo -u deck true
-          chown -R deck:deck "$PWD"
-          useradd deck sudo
-          passwd -d deck
       - name: Setup some directories
         run: |
-          sudo --preserve-env=SKIP_SETTING_USER,SKIP_INSTALL_PROGLANG,PUID,PGID,TZ,USER \
-            -u deck bash <<'SCRIPT'
-          set -euo pipefail
-          mkdir -p "$HOME/.dotfiles"
-          mkdir -p "$HOME/.local/state/dotstow"
-          mkdir -p "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin"
-          cp -r "$PWD"/* "$HOME/.dotfiles/"
-          SCRIPT
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
+          cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |
-          sudo --preserve-env=SKIP_SETTING_USER,SKIP_INSTALL_PROGLANG,PUID,PGID,TZ,USER \
-            -u deck bash -lc 'sh start.sh'
+          ./start.sh
       - name: Simulate Stowing
         run: |
-          sudo --preserve-env=SKIP_SETTING_USER,SKIP_INSTALL_PROGLANG,PUID,PGID,TZ,USER \
-            -u deck bash -lc 'sh steamos/stowme.sh'
+          sh steamos/stowme.sh
   manjaro:
     runs-on: ubuntu-latest
     container: manjarolinux/base:latest
