@@ -3,8 +3,9 @@
 # Unlocking SteamOS rootfs...
 sudo steamos-readonly disable
 
-# Install bare minimum packages...
-sudo pacman -S --noconfirm --noprogressbar stow tmux tmuxp
+# Install essentials
+sudo pacman -Syy --noconfirm --noprogressbar gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
+  base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget
 
 # Workarounds & Misc software
 sudo pacman -S --noconfirm --noprogressbar xsel ncdu
