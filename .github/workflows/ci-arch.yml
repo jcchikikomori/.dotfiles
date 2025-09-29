@@ -23,6 +23,7 @@ jobs:
           id deck
           sudo -u deck true
           chown -R deck:deck "$PWD"
+          passwd -d deck
       - name: Setup some directories
         run: |
           sudo --preserve-env=SKIP_SETTING_USER,SKIP_INSTALL_PROGLANG,PUID,PGID,TZ,USER \
