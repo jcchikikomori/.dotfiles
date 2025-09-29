@@ -35,6 +35,10 @@ prelim
 
 # OS-related workarounds
 export DETECTED_DISTRO="unknown"
+# Ensure config directory exists
+mkdir -p $HOME/.config
+touch $HOME/.config/dotfiles-distro
+# begin detection
 if [ -f /etc/os-release ]; then
   . /etc/os-release
   case $ID in
