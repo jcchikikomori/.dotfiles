@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ianburgwin/steamos:latest
     env:
-      SKIP_SETTING_USER: true
+      SKIP_SETTING_USER: false
       SKIP_INSTALL_PROGLANG: false
       PUID: 1000
       PGID: 1000
@@ -22,10 +22,10 @@ jobs:
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |
-          ./start.sh
+          su deck -c "./start.sh"
       - name: Simulate Stowing
         run: |
-          sh steamos/stowme.sh
+          su deck -c "sh steamos/stowme.sh"
   manjaro:
     runs-on: ubuntu-latest
     container: manjarolinux/base:latest
