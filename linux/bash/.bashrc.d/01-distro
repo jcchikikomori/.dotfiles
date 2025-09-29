@@ -10,7 +10,7 @@ if [ -f /etc/os-release ]; then
             # Red Hat-based systems
             export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
             ;;
-        arch|garuda|manjaro)
+        arch|garuda|manjaro|cachyos|steamos)
             # Arch-based systems
             export MAKEFLAGS="-j$(nproc)"
 	        # Docker support (rootless)
@@ -23,6 +23,8 @@ if [ -f /etc/os-release ]; then
             echo -e "\nWarning: Unable to detect distribution. Default settings will be used."
             ;;
     esac
-    echo -e "Detected distribution: $NAME ($VERSION_ID)"
-    echo -e "\nWelcome, $USER!"
+    if [ -z "$TMUX" ]; then
+        echo -e "Detected distribution: $NAME ($VERSION_ID)"
+        echo -e "\nWelcome, $USER!"
+    fi
 fi

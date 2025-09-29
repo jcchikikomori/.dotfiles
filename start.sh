@@ -35,6 +35,10 @@ prelim
 
 # OS-related workarounds
 export DETECTED_DISTRO="unknown"
+# Ensure config directory exists
+mkdir -p $HOME/.config
+touch $HOME/.config/dotfiles-distro
+# begin detection
 if [ -f /etc/os-release ]; then
   . /etc/os-release
   case $ID in
@@ -58,6 +62,11 @@ if [ -f /etc/os-release ]; then
       export DETECTED_DISTRO="arch"
     fi
     export MAKEFLAGS="-j$(nproc)"
+    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
+    ;;
+  steamos)
+    echo "You are using SteamOS"
+    export DETECTED_DISTRO="steamos"
     echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
     ;;
   fedora|centos|rhel)
@@ -118,6 +127,12 @@ if [ -n "$DETECTED_DISTRO" ]; then
     echo "Executing Arch-related workarounds..."
     sh arch/setup.sh
     sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
+    ;;
+  steamos)
+    echo "Executing SteamOS-related workarounds..."
+    sh steamos/setup.sh
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install
     ;;
   rhel)
     echo "Executing RHEL-related workarounds..."

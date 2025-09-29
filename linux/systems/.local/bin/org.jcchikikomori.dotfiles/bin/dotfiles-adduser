@@ -17,7 +17,12 @@ if [ -n "$CI" ]; then
     echo "Running in CI/CD environment. Skipping non-root user check."
     SKIP_CREATING_USER=0
     SKIP_SETTING_USER=1
-    USERNAME=$(whoami)
+    # Check if a username is provided as an argument
+    if [ -n "$1" ]; then
+        USERNAME=$1
+    else
+        USERNAME=$(whoami)
+    fi
 else
     # Check if you are not using administrative privileges
     if [ "$EUID" -eq 0 ]; then

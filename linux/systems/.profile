@@ -15,7 +15,7 @@ if [ -f /etc/os-release ]; then
             export DETECTED_DISTRO="rhel"
             export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
             ;;
-        arch|garuda|manjaro|cachyos)
+        arch|garuda|manjaro|cachyos|steamos)
             # Arch-based systems
             export DETECTED_DISTRO="arch"
             export MAKEFLAGS="-j$(nproc)"
@@ -33,12 +33,15 @@ if [ -f /etc/os-release ]; then
     if [ -f /usr/bin/clear ]; then
         clear
     fi
-    if [ -n "$VERSION_ID" ]; then
-        echo -e "Detected distribution: $NAME ($VERSION_ID)"
-    else
-        echo -e "Detected distribution: $NAME"
+    # Suppress welcome message is the shell is being run from tmux session (if $TMUX exists).
+    if [ -z "$TMUX" ]; then
+        if [ -n "$VERSION_ID" ]; then
+            echo -e "Detected distribution: $NAME ($VERSION_ID)"
+        else
+            echo -e "Detected distribution: $NAME"
+        fi
+        echo -e "\nWelcome, $USER!"
     fi
-    echo -e "\nWelcome, $USER!"
 fi
 
 # Core environment variables
