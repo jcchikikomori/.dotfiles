@@ -132,6 +132,7 @@ if [ -n "$DETECTED_DISTRO" ]; then
     echo "Executing SteamOS-related workarounds..."
     sh steamos/setup.sh
     sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install
     ;;
   rhel)
     echo "Executing RHEL-related workarounds..."
