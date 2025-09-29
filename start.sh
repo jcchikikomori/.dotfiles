@@ -60,6 +60,11 @@ if [ -f /etc/os-release ]; then
     export MAKEFLAGS="-j$(nproc)"
     echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
     ;;
+  steamos)
+    echo "You are using SteamOS"
+    export DETECTED_DISTRO="steamos"
+    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
+    ;;
   fedora|centos|rhel)
     echo "You are using Fedora/CentOS/RHEL"
     # Ensure include the installed libraries from system before compiling software
@@ -117,6 +122,12 @@ if [ -n "$DETECTED_DISTRO" ]; then
   arch)
     echo "Executing Arch-related workarounds..."
     sh arch/setup.sh
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
+    ;;
+  steamos)
+    echo "Executing SteamOS-related workarounds..."
+    sh steamos/setup.sh
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
     sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   rhel)
