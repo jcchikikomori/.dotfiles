@@ -121,19 +121,6 @@ if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
     source "$SDKMAN_DIR/bin/sdkman-init.sh"
 fi
 
-# Starship
-# Initialize starship for zsh.
-export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
-if command -v starship &> /dev/null; then
-    eval "$(starship init zsh)"
-    function set_win_title(){
-        echo -ne "\033]0; $USER@$HOST:${PWD/$HOME/~} \007"
-    }
-    precmd_functions+=(set_win_title)
-else
-    echo -e "\nWarning: starship is not installed or not executable."
-fi
-
 # Start TMUX if not already running
 if [ -z "$TMUX" ] && [ -z "$TMUX_DISABLE_AT_BOOT" ]; then
     tmux attach || tmux new
