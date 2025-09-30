@@ -61,33 +61,40 @@ fetch_release_json() {
 ensure_asset_index() {
     if [ -z "$ASSET_INDEX" ]; then
         fetch_release_json
-        require_cmd python3
-        set +e
-        ASSET_INDEX=$(
-            printf '%s' "$RELEASE_JSON" | python3 - <<'PY'
-import json
-import sys
-
-data = json.load(sys.stdin)
-lines = []
-for asset in data.get("assets", []):
-    name = asset.get("name", "")
-    url = asset.get("browser_download_url", "")
-    if not name.endswith('.zip'):
-        continue
-    if 'Windows' in name:
-        continue
-    lines.append(f"{name[:-4]}|{url}")
-
-if not lines:
-    sys.exit(1)
-
-print('\n'.join(lines))
-PY
-        )
-        status=$?
-        set -e
-        if [ $status -ne 0 ] || [ -z "$ASSET_INDEX" ]; then
+        if ! ASSET_INDEX=$(
+            printf '%s\n' "$RELEASE_JSON" | awk '
+BEGIN {
+    FS = "\""
+    current_font = ""
+}
+$2 == "name" {
+    raw = $4
+    sub(/^[[:space:]]+/, "", raw)
+    sub(/[[:space:]]+$/, "", raw)
+    if (raw ~ /\.zip$/ && raw !~ /Windows/) {
+        font = raw
+        sub(/\.zip$/, "", font)
+        current_font = font
+    } else {
+        current_font = ""
+    }
+    next
+}
+$2 == "browser_download_url" {
+    if (current_font == "") {
+        next
+    }
+    url = $4
+    sub(/^[[:space:]]+/, "", url)
+    sub(/[[:space:]]+$/, "", url)
+    print current_font "|" url
+    current_font = ""
+}
+'
+        ); then
+            ASSET_INDEX=""
+        fi
+        if [ -z "$ASSET_INDEX" ]; then
             err "Failed to parse release metadata"
         fi
     fi
