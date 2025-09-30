@@ -1,24 +1,28 @@
+"$schema" = 'https://starship.rs/config-schema.json'
 add_newline = true
 format = "$all$character"
 right_format = "$custom.cmd_status_ok$custom.cmd_status_fail $custom.clock"
 
+[character] # The name of the module we are configuring is 'character'
+success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'
+
 [time]
 disabled = true
 
-[[custom.cmd_status_ok]]
-command = "sh -c 'printf \"%s\" \"${STARSHIP_CMD_STATUS:-0}\"'"
-when = 'test "${STARSHIP_CMD_STATUS:-0}" -eq 0'
-style = 'fg:bold green'
-format = '[$output]($style) '
+# [[custom.cmd_status_ok]]
+# command = "sh -c 'printf \"%s\" \"${STARSHIP_CMD_STATUS:-0}\"'"
+# when = 'test "${STARSHIP_CMD_STATUS:-0}" -eq 0'
+# style = 'fg:bold green'
+# format = '[$output]($style) '
 
-[[custom.cmd_status_fail]]
-command = "sh -c 'printf \"%s\" \"${STARSHIP_CMD_STATUS:-0}\"'"
-when = 'test "${STARSHIP_CMD_STATUS:-0}" -ne 0'
-style = 'fg:bold red'
-format = '[$output]($style) '
+# [[custom.cmd_status_fail]]
+# command = "sh -c 'printf \"%s\" \"${STARSHIP_CMD_STATUS:-0}\"'"
+# when = 'test "${STARSHIP_CMD_STATUS:-0}" -ne 0'
+# style = 'fg:bold red'
+# format = '[$output]($style) '
 
-[[custom.clock]]
-command = "date +\"%Y-%m-%d %H:%M:%S\""
-when = "true"
-style = 'fg:bright-black'
-format = '[$output]($style)'
+# [[custom.clock]]
+# command = "date +\"%Y-%m-%d %H:%M:%S\""
+# when = "true"
+# style = 'fg:bright-black'
+# format = '[$output]($style)'
