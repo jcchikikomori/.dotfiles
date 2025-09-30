@@ -17,6 +17,7 @@ setup_directory() {
     cp -r "dotfiles-ruby" "$WORKDIR"
     cp -r "dotfiles-vim" "$WORKDIR"
     cp -r "dotfiles-git" "$WORKDIR"
+    cp -r "dotfiles-nerf" "$WORKDIR"
     echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
@@ -101,6 +102,9 @@ main() {
     echo 'Setting up Alacritty themes...'
     mkdir -p ~/.config/alacritty/themes
     git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
+
+    echo 'Setting up Nerd Fonts...'
+    sh $WORKDIR/dotfiles-nerf --all
 
     prompt_installation "python with pyenv" "dotfiles-python"
     prompt_installation "pre-commit" "dotfiles-python--pre-commit"
