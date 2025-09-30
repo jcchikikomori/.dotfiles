@@ -30,9 +30,9 @@ if [ -f /etc/os-release ]; then
     esac
     # Include $VERSION_ID if exists
     # Execute `clear` if exists
-    if [ -f /usr/bin/clear ]; then
-        clear
-    fi
+    # if [ -f /usr/bin/clear ]; then
+    #     clear
+    # fi
     # Suppress welcome message is the shell is being run from tmux session (if $TMUX exists).
     if [ -z "$TMUX" ]; then
         if [ -n "$VERSION_ID" ]; then

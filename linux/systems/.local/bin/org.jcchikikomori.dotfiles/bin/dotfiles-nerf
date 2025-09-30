@@ -1,0 +1,304 @@
+#!/bin/sh
+set -eu
+
+API_URL="${NERDFONTS_RELEASE_API:-https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest}"
+DEFAULT_FONT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/NerdFonts"
+
+RELEASE_JSON=""
+ASSET_INDEX=""
+FONT_DIR="$DEFAULT_FONT_DIR"
+REFRESH_NEEDED=0
+
+usage() {
+    cat <<USAGE
+Usage: dotfiles-nerf [options] [FONT...]
+
+Install Nerdfonts locally from the upstream release metadata.
+
+Options:
+  --list              List fonts available for download
+  --all               Install every available font (large download)
+  --font-dir DIR      Override the target directory (default: $DEFAULT_FONT_DIR)
+  --smoke-test        Print sample glyphs to verify rendering
+  -h, --help          Show this help text
+
+FONT arguments (without flags) install the named fonts.
+Examples:
+  dotfiles-nerf --list
+  dotfiles-nerf JetBrainsMono FiraCode
+  dotfiles-nerf --font-dir "$HOME/.fonts" Meslo
+  dotfiles-nerf --smoke-test
+USAGE
+}
+
+log() {
+    printf '%s\n' "$*" >&2
+}
+
+err() {
+    log "Error: $*"
+    exit 1
+}
+
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+require_cmd() {
+    if ! command_exists "$1"; then
+        err "'$1' is required but not installed"
+    fi
+}
+
+fetch_release_json() {
+    if [ -z "$RELEASE_JSON" ]; then
+        require_cmd curl
+        log "Fetching Nerd Fonts release metadata..."
+        RELEASE_JSON=$(curl -fsSL "$API_URL") || err "Failed to download release information"
+    fi
+}
+
+ensure_asset_index() {
+    if [ -z "$ASSET_INDEX" ]; then
+        fetch_release_json
+        if ! ASSET_INDEX=$(
+            printf '%s\n' "$RELEASE_JSON" | awk '
+BEGIN {
+    FS = "\""
+    current_font = ""
+}
+$2 == "name" {
+    raw = $4
+    sub(/^[[:space:]]+/, "", raw)
+    sub(/[[:space:]]+$/, "", raw)
+    if (raw ~ /\.zip$/ && raw !~ /Windows/) {
+        font = raw
+        sub(/\.zip$/, "", font)
+        current_font = font
+    } else {
+        current_font = ""
+    }
+    next
+}
+$2 == "browser_download_url" {
+    if (current_font == "") {
+        next
+    }
+    url = $4
+    sub(/^[[:space:]]+/, "", url)
+    sub(/[[:space:]]+$/, "", url)
+    print current_font "|" url
+    current_font = ""
+}
+'
+        ); then
+            ASSET_INDEX=""
+        fi
+        if [ -z "$ASSET_INDEX" ]; then
+            err "Failed to parse release metadata"
+        fi
+    fi
+}
+
+normalize() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+list_fonts() {
+    ensure_asset_index
+    printf '%s\n' "$ASSET_INDEX" | cut -d'|' -f1 | sort
+}
+
+find_asset() {
+    ensure_asset_index
+    wanted=$(normalize "$1")
+    match=$(printf '%s\n' "$ASSET_INDEX" | awk -F'|' -v target="$wanted" 'tolower($1) == target { print $1 "|" $2; exit }')
+    if [ -z "$match" ]; then
+        return 1
+    fi
+    printf '%s' "$match"
+}
+
+install_font() {
+    font="$1"
+    asset=$(find_asset "$font") || err "Font '$font' not found. Use --list to view available names."
+    actual_name=${asset%%|*}
+    download_url=${asset#*|}
+    download_and_install "$actual_name" "$download_url"
+    REFRESH_NEEDED=1
+}
+
+download_and_install() {
+    font_name="$1"
+    url="$2"
+
+    require_cmd unzip
+    require_cmd install
+
+    tmpdir=$(mktemp -d)
+    cleanup() {
+        rm -rf "$tmpdir"
+    }
+    trap cleanup EXIT
+
+    zip_path="$tmpdir/${font_name}.zip"
+    log "Downloading $font_name..."
+    curl -fL "$url" -o "$zip_path" || err "Failed to download $font_name"
+
+    unzip_dir="$tmpdir/unpacked"
+    mkdir -p "$unzip_dir"
+    unzip -q "$zip_path" -d "$unzip_dir" || err "Failed to unzip $font_name"
+
+    mkdir -p "$FONT_DIR"
+
+    files_list="$tmpdir/files.list"
+    if ! find "$unzip_dir" -type f \( -iname '*.ttf' -o -iname '*.otf' -o -iname '*.ttc' \) -print >"$files_list"; then
+        err "Failed to enumerate font files for $font_name"
+    fi
+
+    if [ ! -s "$files_list" ]; then
+        err "No font files found in the $font_name archive"
+    fi
+
+    while IFS= read -r file_path; do
+        install -m 644 "$file_path" "$FONT_DIR/"
+    done <"$files_list"
+
+    log "Installed $font_name to $FONT_DIR"
+
+    trap - EXIT
+    cleanup
+}
+
+install_all_fonts() {
+    ensure_asset_index
+    while IFS= read -r font; do
+        [ -n "$font" ] || continue
+        install_font "$font"
+    done <<EOF
+$(printf '%s\n' "$ASSET_INDEX" | cut -d'|' -f1)
+EOF
+}
+
+smoke_test() {
+    cat <<'SMOKE_PREAMBLE'
+Nerd Font smoke test (ensure your terminal font is set to a Nerd Font).
+
+Expected sample glyph lines:
+SMOKE_PREAMBLE
+    if command_exists python3; then
+        python3 <<'PY'
+print('Powerline: \uE0B0 \uE0B1 \uE0B2 \uE0B3')
+print('Devicons : \uE79B \uE7A8 \uE7AF \uE7C5')
+print('Octicons : \uF408 \uF43A \uF499 \uF4A1')
+print('Misc     : \uF0E7 \uF013 \uF120 \uF1EB')
+PY
+    else
+        cat <<'SMOKE_FALLBACK'
+Powerline: \ue0b0 \ue0b1 \ue0b2 \ue0b3
+Devicons : \ue79b \ue7a8 \ue7af \ue7c5
+Octicons : \uf408 \uf43a \uf499 \uf4a1
+Misc     : \uf0e7 \uf013 \uf120 \uf1eb
+SMOKE_FALLBACK
+    fi
+    printf '\nIf glyphs appear as boxes, switch your terminal font to a Nerd Font.\n'
+}
+
+refresh_cache() {
+    if [ "$REFRESH_NEEDED" -eq 0 ]; then
+        return
+    fi
+    if command_exists fc-cache; then
+        log "Refreshing font cache..."
+        if ! fc-cache -f "$FONT_DIR" >/dev/null 2>&1; then
+            log "Warning: fc-cache failed; you may need to refresh fonts manually."
+        fi
+    else
+        log "Skipping fc-cache refresh (fc-cache not available)."
+    fi
+}
+
+main() {
+    if [ $# -eq 0 ]; then
+        usage
+        exit 0
+    fi
+
+    fonts_to_install=""
+    install_all=0
+    run_list=0
+    run_smoke=0
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            --list)
+                run_list=1
+                ;;
+            --all)
+                install_all=1
+                ;;
+            --font-dir)
+                shift
+                [ $# -gt 0 ] || err "--font-dir requires a path"
+                FONT_DIR="$1"
+                ;;
+            --smoke-test)
+                run_smoke=1
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                err "Unknown option: $1"
+                ;;
+            *)
+                fonts_to_install="$fonts_to_install
+$1"
+                ;;
+        esac
+        shift
+    done
+
+    # Append any remaining positional arguments after --
+    while [ $# -gt 0 ]; do
+        fonts_to_install="$fonts_to_install
+$1"
+        shift
+    done
+
+    if [ $run_list -eq 1 ]; then
+        list_fonts
+        if [ $install_all -eq 0 ] && [ -z "$(printf '%s' "$fonts_to_install" | tr -d '\n\t ')" ]; then
+            [ $run_smoke -eq 0 ] || smoke_test
+            exit 0
+        fi
+    fi
+
+    if [ $install_all -eq 1 ]; then
+        log "Installing all Nerd Fonts (this may take a while)..."
+        install_all_fonts
+    fi
+
+    trimmed_fonts=$(printf '%s' "$fonts_to_install" | sed '/^$/d')
+    if [ -n "$trimmed_fonts" ]; then
+        while IFS= read -r font; do
+            [ -n "$font" ] || continue
+            install_font "$font"
+        done <<EOF
+$trimmed_fonts
+EOF
+    fi
+
+    refresh_cache
+
+    if [ $run_smoke -eq 1 ]; then
+        smoke_test
+    fi
+}
+
+main "$@"
