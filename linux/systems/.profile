@@ -30,9 +30,9 @@ if [ -f /etc/os-release ]; then
     esac
     # Include $VERSION_ID if exists
     # Execute `clear` if exists
-    if [ -f /usr/bin/clear ]; then
-        clear
-    fi
+    # if [ -f /usr/bin/clear ]; then
+    #     clear
+    # fi
     # Suppress welcome message is the shell is being run from tmux session (if $TMUX exists).
     if [ -z "$TMUX" ]; then
         if [ -n "$VERSION_ID" ]; then
@@ -119,6 +119,19 @@ fi
 
 if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
     source "$SDKMAN_DIR/bin/sdkman-init.sh"
+fi
+
+# Starship
+# Initialize starship for zsh.
+export STARSHIP_CONFIG="$XDG_CONFIG_HOME/starship.toml"
+if command -v starship &> /dev/null; then
+    eval "$(starship init zsh)"
+    function set_win_title(){
+        echo -ne "\033]0; $USER@$HOST:${PWD/$HOME/~} \007"
+    }
+    precmd_functions+=(set_win_title)
+else
+    echo -e "\nWarning: starship is not installed or not executable."
 fi
 
 # Start TMUX if not already running
