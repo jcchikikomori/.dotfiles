@@ -50,6 +50,7 @@ export PATH="${HOME}/bin:${PATH}"
 
 # Development environments
 export PYENV_ROOT="$HOME/.pyenv"
+export RBENV_ROOT="$HOME/.rbenv"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 export SDKMAN_DIR="$HOME/.sdkman"
 export GOPATH="${HOME}/go"
@@ -111,6 +112,11 @@ if [ -d "$PYENV_ROOT" ]; then
     export PYENV_VERSION="system"
     eval "$(pyenv init --path)"
     eval "$(pyenv init -)"
+fi
+
+if [ -d "$RBENV_ROOT" ]; then
+    export PATH="$RBENV_ROOT/bin:$PATH"
+    eval "$(rbenv init -)"
 fi
 
 if [ -s "$NVM_DIR/nvm.sh" ]; then

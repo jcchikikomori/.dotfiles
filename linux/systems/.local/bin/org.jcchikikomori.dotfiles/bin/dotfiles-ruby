@@ -1,56 +1,174 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Exit on any error
-set -e
+set -euo pipefail
 
-# Suppress progress bars and interactive prompts
-export DEBIAN_FRONTEND=noninteractive
-export RBENV_ROOT="${HOME}/.rbenv"
+RBENV_ROOT="${RBENV_ROOT:-${HOME}/.rbenv}"
+TARGET_RUBY_VERSION="${TARGET_RUBY_VERSION:-2.5.1}"
+REQUIRED_FORMULAE=(rbenv ruby-build openssl@3 readline libyaml gdbm libffi zlib)
 
-# Install rbenv
-echo "Installing rbenv..."
-curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+log() {
+  printf '[dotfiles-ruby] %s\n' "$*"
+}
 
-# Verify rbenv installation
-echo "Verifying rbenv installation..."
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-type rbenv
+script_dir() {
+  cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
+}
 
-# Install ruby-build plugin only if the plugins directory does not exist
-if [ ! -d "${RBENV_ROOT}/plugins" ]; then
-  echo "Installing ruby-build plugin..."
-  mkdir -p "${RBENV_ROOT}/plugins"
-  git clone --quiet https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build"
-else
-  echo "ruby-build plugin already installed. Skipping..."
-fi
+ensure_homebrew() {
+  local brew_bin
 
-# List available Ruby versions
-rbenv install -l > /dev/null
+  if brew_bin="$(command -v brew 2>/dev/null)" && [ -n "${brew_bin}" ]; then
+    eval "$(${brew_bin} shellenv)"
+    return
+  fi
 
-# Install Ruby 2.5.1
-echo "Installing Ruby 2.5.1..."
-if ! rbenv install --verbose 2.5.1; then
-  echo "Error: Failed to install Ruby 2.5.1. Exiting..."
+  for brew_bin in \
+    "${HOMEBREW_PREFIX:-}/bin/brew" \
+    "${HOME}/.linuxbrew/bin/brew" \
+    "/home/linuxbrew/.linuxbrew/bin/brew"; do
+    if [ -x "${brew_bin}" ]; then
+      log "Using Homebrew at ${brew_bin}"
+      eval "$("${brew_bin}" shellenv)"
+      return
+    fi
+  done
+
+  log "Homebrew not found. Installing Linuxbrew locally..."
+  "$(script_dir)/dotfiles-homebrew" install
+
+  if brew_bin="$(command -v brew 2>/dev/null)" && [ -n "${brew_bin}" ]; then
+    eval "$(${brew_bin} shellenv)"
+    return
+  fi
+
+  for brew_bin in \
+    "${HOME}/.linuxbrew/bin/brew" \
+    "/home/linuxbrew/.linuxbrew/bin/brew"; do
+    if [ -x "${brew_bin}" ]; then
+      eval "$("${brew_bin}" shellenv)"
+      return
+    fi
+  done
+
+  log "Error: Homebrew installation failed or brew not found in PATH."
   exit 1
-fi
+}
 
-# Set global Ruby version
-echo "Setting Ruby 2.5.1 as global version..."
-if ! rbenv global 2.5.1; then
-  echo "Error: Ruby version '2.5.1' is not installed. Please check the installation and try again."
-  exit 1
-fi
+install_formulae() {
+  local formula
+  for formula in "$@"; do
+    if brew list --formula "${formula}" >/dev/null 2>&1; then
+      log "${formula} already installed."
+    else
+      log "Installing ${formula} via Homebrew..."
+      brew install "${formula}"
+    fi
+  done
+}
 
-# Rehash to update shims
-echo "Updating shims..."
-rbenv rehash
+prepare_build_environment() {
+  local brew_prefix openssl_prefix readline_prefix libyaml_prefix gdbm_prefix libffi_prefix zlib_prefix pkg_paths
 
-# Verify installation
-if ! ruby -v | grep "2.5.1" > /dev/null; then
-  echo "Error: Ruby 2.5.1 is not properly installed. Exiting..."
-  exit 1
-fi
+  brew_prefix="$(brew --prefix)"
+  openssl_prefix="$(brew --prefix openssl@3)"
+  readline_prefix="$(brew --prefix readline)"
+  libyaml_prefix="$(brew --prefix libyaml)"
+  gdbm_prefix="$(brew --prefix gdbm)"
+  libffi_prefix="$(brew --prefix libffi)"
+  zlib_prefix="$(brew --prefix zlib)"
 
-echo "Installation complete!"
+  export PATH="${brew_prefix}/bin:${brew_prefix}/sbin:${PATH}"
+
+  local lib_path include_path path
+  local filtered_pkg_paths=()
+
+  for lib_path in \
+    "${openssl_prefix}/lib" \
+    "${readline_prefix}/lib" \
+    "${libyaml_prefix}/lib" \
+    "${gdbm_prefix}/lib" \
+    "${libffi_prefix}/lib" \
+    "${zlib_prefix}/lib"; do
+    if [ -d "${lib_path}" ]; then
+      LDFLAGS="-L${lib_path} ${LDFLAGS:-}"
+    fi
+  done
+  export LDFLAGS
+
+  for include_path in \
+    "${openssl_prefix}/include" \
+    "${readline_prefix}/include" \
+    "${libyaml_prefix}/include" \
+    "${gdbm_prefix}/include" \
+    "${libffi_prefix}/include" \
+    "${zlib_prefix}/include"; do
+    if [ -d "${include_path}" ]; then
+      CPPFLAGS="-I${include_path} ${CPPFLAGS:-}"
+    fi
+  done
+  export CPPFLAGS
+
+  local pkg_paths=(
+    "${openssl_prefix}/lib/pkgconfig"
+    "${readline_prefix}/lib/pkgconfig"
+    "${libyaml_prefix}/lib/pkgconfig"
+    "${gdbm_prefix}/lib/pkgconfig"
+    "${libffi_prefix}/lib/pkgconfig"
+    "${zlib_prefix}/lib/pkgconfig"
+  )
+  for path in "${pkg_paths[@]}"; do
+    if [ -d "${path}" ]; then
+      filtered_pkg_paths+=("${path}")
+    fi
+  done
+  if [ "${#filtered_pkg_paths[@]}" -gt 0 ]; then
+    export PKG_CONFIG_PATH="$(IFS=:; echo "${filtered_pkg_paths[*]}")${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
+  fi
+
+  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=${openssl_prefix} --with-readline-dir=${readline_prefix} ${RUBY_CONFIGURE_OPTS:-}"
+}
+
+bootstrap_rbenv() {
+  export RBENV_ROOT
+  export PATH="${RBENV_ROOT}/bin:${PATH}"
+
+  if ! command -v rbenv >/dev/null 2>&1; then
+    log "Error: rbenv not found even after installation."
+    exit 1
+  fi
+
+  eval "$(rbenv init -)"
+}
+
+install_ruby_version() {
+  log "Installing Ruby ${TARGET_RUBY_VERSION} with Homebrew-provided dependencies..."
+  if ! rbenv install --skip-existing --verbose "${TARGET_RUBY_VERSION}"; then
+    log "Error: Failed to install Ruby ${TARGET_RUBY_VERSION}."
+    exit 1
+  fi
+
+  log "Setting Ruby ${TARGET_RUBY_VERSION} as global version..."
+  rbenv global "${TARGET_RUBY_VERSION}"
+  rbenv rehash
+
+  if ! ruby -v | grep -F "${TARGET_RUBY_VERSION}" >/dev/null; then
+    log "Error: Ruby ${TARGET_RUBY_VERSION} is not active after installation."
+    exit 1
+  fi
+}
+
+main() {
+  log "Preparing isolated Ruby toolchain using Homebrew..."
+  ensure_homebrew
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+
+  install_formulae "${REQUIRED_FORMULAE[@]}"
+  prepare_build_environment
+  bootstrap_rbenv
+  install_ruby_version
+
+  log "Installation complete."
+}
+
+main "$@"
