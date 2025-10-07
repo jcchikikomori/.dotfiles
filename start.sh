@@ -37,7 +37,7 @@ prelim
 export DETECTED_DISTRO="unknown"
 # Ensure config directory exists
 mkdir -p $HOME/.config
-touch $HOME/.config/dotfiles-distro
+touch $HOME/.dotfiles-distro
 # begin detection
 if [ -f /etc/os-release ]; then
   . /etc/os-release
@@ -45,13 +45,13 @@ if [ -f /etc/os-release ]; then
   ubuntu)
     echo "You are using Ubuntu"
     export DETECTED_DISTRO="ubuntu"
-    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
+    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
     ;;
   debian)
     echo "You are using Debian"
     export DETECTED_DISTRO="debian"
     export DEBIAN_FRONTEND=noninteractive
-    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
+    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
     ;;
   arch|garuda|manjaro|cachyos)
     if [[ $NAME == *"Arch Linux"* ]]; then
@@ -62,12 +62,12 @@ if [ -f /etc/os-release ]; then
       export DETECTED_DISTRO="arch"
     fi
     export MAKEFLAGS="-j$(nproc)"
-    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
+    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
     ;;
   steamos)
     echo "You are using SteamOS"
     export DETECTED_DISTRO="steamos"
-    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
+    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
     ;;
   fedora|centos|rhel)
     echo "You are using Fedora/CentOS/RHEL"
@@ -76,7 +76,7 @@ if [ -f /etc/os-release ]; then
     # Ensure path for GO programming language
     export GOPATH="${HOME}/go"
     export DETECTED_DISTRO="rhel"
-    echo $DETECTED_DISTRO >> $HOME/.config/dotfiles-distro
+    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
     ;;
   bazzite)
     echo "You are using Bazzite Linux. Please install using distrobox. Exiting..."

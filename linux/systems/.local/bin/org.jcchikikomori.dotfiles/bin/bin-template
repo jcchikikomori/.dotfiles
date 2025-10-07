@@ -1,11 +1,13 @@
 #!/bin/sh
 
+set -eu
+
 # THIS IS A BINARY/BASH SCRIPT TEMPLATE
 
 if [ "$1" = "install" ]; then
-  echo "Install Test"
+  echo "[bin-template] Install Test"
 elif [ "$1" = "update" ]; then
-  echo "Update Test"
+  echo "[bin-template] Update Test"
 else
   echo "Usage: $0 {install|update}"
   echo "  install: Badabing badaboom"

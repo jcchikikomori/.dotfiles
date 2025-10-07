@@ -1,5 +1,23 @@
 #!/bin/sh
 
+set -eu
+
+script_dir() {
+  script="$0"
+  case "$script" in
+    */*)
+      path="$script"
+      ;;
+    *)
+      path=$(command -v "$script" 2>/dev/null || printf '%s' "$script")
+      ;;
+  esac
+  dir=$(dirname "$path")
+  (CDPATH=; cd "$dir" 2>/dev/null && pwd) || pwd
+}
+
+SCRIPT_DIR=$(script_dir)
+
 # THIS IS A BINARY/BASH SCRIPT TEMPLATE
 
 if [ "$1" = "install" ]; then
@@ -9,11 +27,32 @@ if [ "$1" = "install" ]; then
   else
     echo "Homebrew is not installed or not in PATH."
     echo "Installing homebrew..."
-    # TODO: Re-executable binary for installing homebrew.
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    if [ -x "${SCRIPT_DIR}/dotfiles-homebrew" ]; then
+      "${SCRIPT_DIR}/dotfiles-homebrew" install
+    elif command -v dotfiles-homebrew >/dev/null 2>&1; then
+      dotfiles-homebrew install
+    else
+      echo "dotfiles-homebrew helper not found." >&2
+      exit 1
+    fi
   fi
-  # Ensure Homebrew is in the PATH
-  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  if ! command -v brew >/dev/null 2>&1; then
+    for brew_bin in \
+      "${HOMEBREW_PREFIX:-}/bin/brew" \
+      "${HOME}/.linuxbrew/bin/brew" \
+      "/home/linuxbrew/.linuxbrew/bin/brew"; do
+      if [ -x "$brew_bin" ]; then
+        eval "$("$brew_bin" shellenv)"
+        break
+      fi
+    done
+  fi
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew installation failed or brew not in PATH." >&2
+    exit 1
+  fi
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
   # Install PHP 8.2 using Homebrew
   brew install php@8.2
 elif [ "$1" = "env" ]; then

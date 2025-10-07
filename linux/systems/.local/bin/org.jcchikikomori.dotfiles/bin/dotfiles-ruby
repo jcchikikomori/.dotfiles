@@ -1,203 +1,209 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
-set -euo pipefail
+set -eu
 
-RBENV_ROOT="${RBENV_ROOT:-${HOME}/.rbenv}"
-TARGET_RUBY_VERSION="${TARGET_RUBY_VERSION:-2.5.1}"
-REQUIRED_FORMULAE=(rbenv ruby-build openssl@3 readline libyaml gdbm libffi zlib)
-ENV_ONLY_FORMULAE=(rbenv ruby-build)
+DISTRO_FILE="${HOME}/.dotfiles-distro"
 
 log() {
   printf '[dotfiles-ruby] %s\n' "$*"
 }
 
 script_dir() {
-  cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
+  script="$0"
+  case "$script" in
+    */*)
+      path="$script"
+      ;;
+    *)
+      path=$(command -v "$script" 2>/dev/null || printf '%s' "$script")
+      ;;
+  esac
+  dir=$(dirname "$path")
+  (CDPATH=; cd "$dir" 2>/dev/null && pwd) || pwd
+}
+
+SCRIPT_DIR=$(script_dir)
+
+run_sudo() {
+  if command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    "$@"
+  fi
 }
 
 ensure_homebrew() {
-  local brew_bin
-
-  if brew_bin="$(command -v brew 2>/dev/null)" && [ -n "${brew_bin}" ]; then
-    eval "$(${brew_bin} shellenv)"
-    return
+  if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+    return 0
   fi
 
   for brew_bin in \
     "${HOMEBREW_PREFIX:-}/bin/brew" \
     "${HOME}/.linuxbrew/bin/brew" \
     "/home/linuxbrew/.linuxbrew/bin/brew"; do
-    if [ -x "${brew_bin}" ]; then
-      log "Using Homebrew at ${brew_bin}"
-      eval "$("${brew_bin}" shellenv)"
-      return
+    if [ -x "$brew_bin" ]; then
+      log "Using Homebrew at $brew_bin"
+      eval "$("$brew_bin" shellenv)"
+      return 0
     fi
   done
 
-  log "Homebrew not found. Installing Linuxbrew locally..."
-  "$(script_dir)/dotfiles-homebrew" install
-
-  if brew_bin="$(command -v brew 2>/dev/null)" && [ -n "${brew_bin}" ]; then
-    eval "$(${brew_bin} shellenv)"
-    return
-  fi
-
-  for brew_bin in \
-    "${HOME}/.linuxbrew/bin/brew" \
-    "/home/linuxbrew/.linuxbrew/bin/brew"; do
-    if [ -x "${brew_bin}" ]; then
-      eval "$("${brew_bin}" shellenv)"
-      return
-    fi
-  done
-
-  log "Error: Homebrew installation failed or brew not found in PATH."
-  exit 1
+  return 1
 }
 
-install_formulae() {
-  local formula
-  for formula in "$@"; do
-    if brew list --formula "${formula}" >/dev/null 2>&1; then
-      log "${formula} already installed."
+ensure_distro_file() {
+  if [ -r "$DISTRO_FILE" ]; then
+    return 0
+  fi
+
+  if [ -x "${SCRIPT_DIR}/dotfiles-distro" ]; then
+    "${SCRIPT_DIR}/dotfiles-distro" install >/dev/null 2>&1 || "${SCRIPT_DIR}/dotfiles-distro" install
+  elif command -v dotfiles-distro >/dev/null 2>&1; then
+    dotfiles-distro install >/dev/null 2>&1 || dotfiles-distro install
+  else
+    log "dotfiles-distro helper not found; assuming unknown distribution."
+    return 1
+  fi
+}
+
+read_distro() {
+  ensure_distro_file || true
+  if [ -r "$DISTRO_FILE" ]; then
+    distro=$(sed -n '1p' "$DISTRO_FILE" | tr '[:upper:]' '[:lower:]')
+    if [ -n "$distro" ]; then
+      printf '%s\n' "$distro"
+      return 0
+    fi
+  fi
+  printf 'unknown\n'
+}
+
+install_ruby_debian() {
+  log "Installing Ruby via apt..."
+  run_sudo apt-get update
+  run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full build-essential
+}
+
+install_ruby_fedora() {
+  installer="dnf"
+  if ! command -v dnf >/dev/null 2>&1; then
+    installer="yum"
+  fi
+  log "Installing Ruby via $installer..."
+  run_sudo "$installer" -y install ruby
+}
+
+install_ruby_arch() {
+  log "Installing Ruby via pacman..."
+  run_sudo pacman -Sy --needed --noconfirm ruby base-devel
+}
+
+install_ruby_opensuse() {
+  log "Installing Ruby via zypper..."
+  run_sudo zypper --non-interactive refresh
+  run_sudo zypper --non-interactive install ruby ruby-devel make gcc gcc-c++
+}
+
+install_ruby_alpine() {
+  log "Installing Ruby via apk..."
+  run_sudo apk add --no-cache ruby ruby-dev build-base
+}
+
+install_ruby_gentoo() {
+  log "Installing Ruby via emerge..."
+  run_sudo emerge --quiet dev-lang/ruby
+}
+
+install_ruby_void() {
+  log "Installing Ruby via xbps..."
+  run_sudo xbps-install -Sy ruby ruby-devel base-devel
+}
+
+install_ruby_clearlinux() {
+  log "Installing Ruby via swupd..."
+  run_sudo swupd bundle-add ruby-basic
+}
+
+install_ruby_homebrew() {
+  log "Falling back to Homebrew/Linuxbrew for Ruby installation..."
+  if ! ensure_homebrew; then
+    log "Homebrew not detected; installing via dotfiles-homebrew..."
+    if [ -x "${SCRIPT_DIR}/dotfiles-homebrew" ]; then
+      "${SCRIPT_DIR}/dotfiles-homebrew" install
+    elif command -v dotfiles-homebrew >/dev/null 2>&1; then
+      dotfiles-homebrew install
     else
-      log "Installing ${formula} via Homebrew..."
-      brew install "${formula}"
+      log "dotfiles-homebrew helper not found."
+      exit 1
     fi
-  done
+    if ! ensure_homebrew; then
+      log "Homebrew still unavailable after installation."
+      exit 1
+    fi
+  fi
+
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  brew update
+  brew install ruby
 }
 
-prepare_build_environment() {
-  local brew_prefix openssl_prefix readline_prefix libyaml_prefix gdbm_prefix libffi_prefix zlib_prefix pkg_paths
-
-  brew_prefix="$(brew --prefix)"
-  openssl_prefix="$(brew --prefix openssl@3)"
-  readline_prefix="$(brew --prefix readline)"
-  libyaml_prefix="$(brew --prefix libyaml)"
-  gdbm_prefix="$(brew --prefix gdbm)"
-  libffi_prefix="$(brew --prefix libffi)"
-  zlib_prefix="$(brew --prefix zlib)"
-
-  export PATH="${brew_prefix}/bin:${brew_prefix}/sbin:${PATH}"
-
-  local lib_path include_path path
-  local filtered_pkg_paths=()
-
-  for lib_path in \
-    "${openssl_prefix}/lib" \
-    "${readline_prefix}/lib" \
-    "${libyaml_prefix}/lib" \
-    "${gdbm_prefix}/lib" \
-    "${libffi_prefix}/lib" \
-    "${zlib_prefix}/lib"; do
-    if [ -d "${lib_path}" ]; then
-      LDFLAGS="-L${lib_path} ${LDFLAGS:-}"
-    fi
-  done
-  export LDFLAGS
-
-  for include_path in \
-    "${openssl_prefix}/include" \
-    "${readline_prefix}/include" \
-    "${libyaml_prefix}/include" \
-    "${gdbm_prefix}/include" \
-    "${libffi_prefix}/include" \
-    "${zlib_prefix}/include"; do
-    if [ -d "${include_path}" ]; then
-      CPPFLAGS="-I${include_path} ${CPPFLAGS:-}"
-    fi
-  done
-  export CPPFLAGS
-
-  local pkg_paths=(
-    "${openssl_prefix}/lib/pkgconfig"
-    "${readline_prefix}/lib/pkgconfig"
-    "${libyaml_prefix}/lib/pkgconfig"
-    "${gdbm_prefix}/lib/pkgconfig"
-    "${libffi_prefix}/lib/pkgconfig"
-    "${zlib_prefix}/lib/pkgconfig"
-  )
-  for path in "${pkg_paths[@]}"; do
-    if [ -d "${path}" ]; then
-      filtered_pkg_paths+=("${path}")
-    fi
-  done
-  if [ "${#filtered_pkg_paths[@]}" -gt 0 ]; then
-    export PKG_CONFIG_PATH="$(IFS=:; echo "${filtered_pkg_paths[*]}")${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
-  fi
-
-  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=${openssl_prefix} --with-readline-dir=${readline_prefix} ${RUBY_CONFIGURE_OPTS:-}"
-}
-
-bootstrap_rbenv() {
-  export RBENV_ROOT
-  export PATH="${RBENV_ROOT}/bin:${PATH}"
-
-  if ! command -v rbenv >/dev/null 2>&1; then
-    log "Error: rbenv not found even after installation."
-    exit 1
-  fi
-
-  eval "$(rbenv init -)"
-}
-
-install_ruby_version() {
-  log "Installing Ruby ${TARGET_RUBY_VERSION} with Homebrew-provided dependencies..."
-  if ! rbenv install --skip-existing --verbose "${TARGET_RUBY_VERSION}"; then
-    log "Error: Failed to install Ruby ${TARGET_RUBY_VERSION}."
-    exit 1
-  fi
-
-  log "Setting Ruby ${TARGET_RUBY_VERSION} as global version..."
-  rbenv global "${TARGET_RUBY_VERSION}"
-  rbenv rehash
-
-  if ! ruby -v | grep -F "${TARGET_RUBY_VERSION}" >/dev/null; then
-    log "Error: Ruby ${TARGET_RUBY_VERSION} is not active after installation."
-    exit 1
-  fi
+install_ruby_for() {
+  distro="$1"
+  case "$distro" in
+    debian|ubuntu|linuxmint|pop|neon|zorin|kali|raspbian)
+      install_ruby_debian
+      ;;
+    fedora|centos|rhel|rocky|almalinux|oracle|scientific|sangoma)
+      install_ruby_fedora
+      ;;
+    arch|archbtw|manjaro|endeavouros|garuda|arcolinux|steamos)
+      install_ruby_arch
+      ;;
+    opensuse|opensuse-leap|opensuse-tumbleweed)
+      install_ruby_opensuse
+      ;;
+    alpine)
+      install_ruby_alpine
+      ;;
+    gentoo)
+      install_ruby_gentoo
+      ;;
+    void|voidlinux)
+      install_ruby_void
+      ;;
+    clearlinux)
+      install_ruby_clearlinux
+      ;;
+    unknown|*)
+      install_ruby_homebrew
+      ;;
+  esac
 }
 
 install_action() {
-  log "Preparing isolated Ruby toolchain using Homebrew..."
-  ensure_homebrew
-  export HOMEBREW_NO_ANALYTICS=1
-  export HOMEBREW_NO_ENV_HINTS=1
-
-  install_formulae "${REQUIRED_FORMULAE[@]}"
-  prepare_build_environment
-  bootstrap_rbenv
-  install_ruby_version
-
-  log "Installation complete."
+  distro=$(read_distro)
+  log "Detected distribution from cache: $distro"
+  install_ruby_for "$distro"
+  log "Ruby installation complete."
 }
 
-env_action() {
-  log "Ensuring Homebrew-backed rbenv environment..."
-  ensure_homebrew
-  export HOMEBREW_NO_ANALYTICS=1
-  export HOMEBREW_NO_ENV_HINTS=1
-
-  install_formulae "${ENV_ONLY_FORMULAE[@]}"
-  bootstrap_rbenv
-
-  log "rbenv root: ${RBENV_ROOT}"
-  log "Add the following to your shell profile to activate rbenv:"
-  log "  export RBENV_ROOT=\"${RBENV_ROOT}\""
-  log "  export PATH=\"\\$RBENV_ROOT/bin:\\$PATH\""
-  log "  eval \"\\$(rbenv init -)\""
+update_action() {
+  distro=$(read_distro)
+  log "Updating Ruby for distribution: $distro"
+  install_ruby_for "$distro"
+  log "Ruby update complete."
 }
 
 usage() {
-  cat <<'USAGE'
-Usage: dotfiles-ruby {install|env}
-  install : Install Homebrew dependencies, rbenv, and the target Ruby version via rbenv
-  env     : Ensure rbenv is available and output environment setup instructions
-USAGE
+  echo "Usage: $0 {install|update}"
+  echo "  install: Install Ruby using the distribution package manager"
+  echo "  update: Update Ruby via the distribution package manager"
 }
 
 main() {
-  if [ $# -lt 1 ]; then
+  if [ $# -eq 0 ]; then
     usage
     exit 1
   fi
@@ -206,8 +212,8 @@ main() {
     install)
       install_action
       ;;
-    env)
-      env_action
+    update)
+      update_action
       ;;
     *)
       usage
