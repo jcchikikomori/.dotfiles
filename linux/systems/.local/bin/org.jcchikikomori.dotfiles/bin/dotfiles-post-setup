@@ -46,11 +46,12 @@ prompt_installation() {
     echo "Do you want to install $name? (y/n): " >&2
     read choice
     if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
-        echo "Installing $name..."
-        # TODO: Will include the "install" argument to all scripts.
+        echo "Executing $name..."
         if [ "$script" = "dotfiles-python" ]; then
             $WORKDIR/$script install
         elif [ "$script" = "dotfiles-php" ]; then
+            $WORKDIR/$script install
+        elif [ "$script" = "dotfiles-ruby" ]; then
             $WORKDIR/$script install
         else
             $WORKDIR/$script
