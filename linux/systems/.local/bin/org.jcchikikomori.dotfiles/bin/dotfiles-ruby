@@ -1,56 +1,222 @@
-#!/bin/bash
+#!/bin/sh
 
-# Exit on any error
-set -e
+set -eu
 
-# Suppress progress bars and interactive prompts
-export DEBIAN_FRONTEND=noninteractive
-export RBENV_ROOT="${HOME}/.rbenv"
+DISTRO_FILE="${HOME}/.dotfiles-distro"
 
-# Install rbenv
-echo "Installing rbenv..."
-curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+log() {
+  printf '[dotfiles-ruby] %s\n' "$*"
+}
 
-# Verify rbenv installation
-echo "Verifying rbenv installation..."
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
-type rbenv
+install_complete_msg() {
+  log "System-wide Ruby installation complete. Version: $(ruby --version)"
+}
 
-# Install ruby-build plugin only if the plugins directory does not exist
-if [ ! -d "${RBENV_ROOT}/plugins" ]; then
-  echo "Installing ruby-build plugin..."
-  mkdir -p "${RBENV_ROOT}/plugins"
-  git clone --quiet https://github.com/rbenv/ruby-build.git "${RBENV_ROOT}/plugins/ruby-build"
-else
-  echo "ruby-build plugin already installed. Skipping..."
-fi
+script_dir() {
+  script="$0"
+  case "$script" in
+    */*)
+      path="$script"
+      ;;
+    *)
+      path=$(command -v "$script" 2>/dev/null || printf '%s' "$script")
+      ;;
+  esac
+  dir=$(dirname "$path")
+  (CDPATH=; cd "$dir" 2>/dev/null && pwd) || pwd
+}
 
-# List available Ruby versions
-rbenv install -l > /dev/null
+SCRIPT_DIR=$(script_dir)
 
-# Install Ruby 2.5.1
-echo "Installing Ruby 2.5.1..."
-if ! rbenv install --verbose 2.5.1; then
-  echo "Error: Failed to install Ruby 2.5.1. Exiting..."
-  exit 1
-fi
+run_sudo() {
+  if command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    "$@"
+  fi
+}
 
-# Set global Ruby version
-echo "Setting Ruby 2.5.1 as global version..."
-if ! rbenv global 2.5.1; then
-  echo "Error: Ruby version '2.5.1' is not installed. Please check the installation and try again."
-  exit 1
-fi
+ensure_homebrew() {
+  if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+    return 0
+  fi
 
-# Rehash to update shims
-echo "Updating shims..."
-rbenv rehash
+  for brew_bin in \
+    "${HOMEBREW_PREFIX:-}/bin/brew" \
+    "${HOME}/.linuxbrew/bin/brew" \
+    "/home/linuxbrew/.linuxbrew/bin/brew"; do
+    if [ -x "$brew_bin" ]; then
+      log "Using Homebrew at $brew_bin"
+      eval "$("$brew_bin" shellenv)"
+      return 0
+    fi
+  done
 
-# Verify installation
-if ! ruby -v | grep "2.5.1" > /dev/null; then
-  echo "Error: Ruby 2.5.1 is not properly installed. Exiting..."
-  exit 1
-fi
+  return 1
+}
 
-echo "Installation complete!"
+ensure_distro_file() {
+  if [ -r "$DISTRO_FILE" ]; then
+    return 0
+  fi
+
+  if [ -x "${SCRIPT_DIR}/dotfiles-distro" ]; then
+    "${SCRIPT_DIR}/dotfiles-distro" install >/dev/null 2>&1 || "${SCRIPT_DIR}/dotfiles-distro" install
+  elif command -v dotfiles-distro >/dev/null 2>&1; then
+    dotfiles-distro install >/dev/null 2>&1 || dotfiles-distro install
+  else
+    log "dotfiles-distro helper not found; assuming unknown distribution."
+    return 1
+  fi
+}
+
+read_distro() {
+  ensure_distro_file || true
+  if [ -r "$DISTRO_FILE" ]; then
+    distro=$(sed -n '1p' "$DISTRO_FILE" | tr '[:upper:]' '[:lower:]')
+    if [ -n "$distro" ]; then
+      printf '%s\n' "$distro"
+      return 0
+    fi
+  fi
+  printf 'unknown\n'
+}
+
+install_ruby_debian() {
+  log "Installing Ruby via apt..."
+  run_sudo apt-get update
+  run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full build-essential
+  log "Installing rbenv via apt..."
+  run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y rbenv ruby-ffi rubocop rubygems
+  install_complete_msg
+}
+
+install_ruby_fedora() {
+  installer="dnf"
+  if ! command -v dnf >/dev/null 2>&1; then
+    installer="yum"
+  fi
+  log "Installing Ruby via $installer..."
+  run_sudo "$installer" -y install ruby
+  log "Installing rbenv via $installer..."
+  run_sudo "$installer" -y install rbenv ruby-build-rbenv
+}
+
+install_ruby_arch() {
+  log "Installing Ruby via pacman..."
+  run_sudo pacman -Sy --needed --noconfirm ruby base-devel
+  log "Installing rbenv via pacman..."
+  run_sudo pacman -Sy --needed --noconfirm rbenv ruby-ffi ruby-lsp rubocop rubygems
+  install_complete_msg
+}
+
+install_ruby_opensuse() {
+  log "Installing Ruby via zypper..."
+  run_sudo zypper --non-interactive refresh
+  run_sudo zypper --non-interactive install ruby ruby-devel make gcc gcc-c++
+}
+
+install_ruby_alpine() {
+  log "Installing Ruby via apk..."
+  run_sudo apk add --no-cache ruby ruby-dev build-base
+}
+
+install_ruby_gentoo() {
+  log "Installing Ruby via emerge..."
+  run_sudo emerge --quiet dev-lang/ruby
+}
+
+install_ruby_void() {
+  log "Installing Ruby via xbps..."
+  run_sudo xbps-install -Sy ruby ruby-devel base-devel
+}
+
+install_ruby_clearlinux() {
+  log "Installing Ruby via swupd..."
+  run_sudo swupd bundle-add ruby-basic
+}
+
+install_ruby_homebrew() {
+  log "Falling back to Homebrew/Linuxbrew for Ruby installation..."
+  if ! ensure_homebrew; then
+    log "Homebrew not detected; installing via dotfiles-homebrew..."
+    if [ -x "${SCRIPT_DIR}/dotfiles-homebrew" ]; then
+      "${SCRIPT_DIR}/dotfiles-homebrew" install
+    elif command -v dotfiles-homebrew >/dev/null 2>&1; then
+      dotfiles-homebrew install
+    else
+      log "dotfiles-homebrew helper not found."
+      exit 1
+    fi
+    if ! ensure_homebrew; then
+      log "Homebrew still unavailable after installation."
+      exit 1
+    fi
+  fi
+
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  brew update
+  brew install ruby
+}
+
+install_ruby_for() {
+  distro="$1"
+  case "$distro" in
+    debian|ubuntu|linuxmint|pop|neon|zorin|kali|raspbian)
+      install_ruby_debian
+      ;;
+    fedora|centos|rhel)
+      install_ruby_fedora
+      ;;
+    arch|archbtw|manjaro|endeavouros|garuda|arcolinux|steamos)
+      install_ruby_arch
+      ;;
+    unknown|*)
+      install_ruby_homebrew
+      ;;
+  esac
+}
+
+install_action() {
+  distro=$(read_distro)
+  log "Detected distribution from cache: $distro"
+  install_ruby_for "$distro"
+  log "Ruby installation complete."
+}
+
+update_action() {
+  distro=$(read_distro)
+  log "Updating Ruby for distribution: $distro"
+  install_ruby_for "$distro"
+  log "Ruby update complete."
+}
+
+usage() {
+  echo "Usage: $0 {install|update}"
+  echo "  install: Install Ruby using the distribution package manager"
+  echo "  update: Update Ruby via the distribution package manager"
+}
+
+main() {
+  if [ $# -eq 0 ]; then
+    usage
+    exit 1
+  fi
+
+  case "$1" in
+    install)
+      install_action
+      ;;
+    update)
+      update_action
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
