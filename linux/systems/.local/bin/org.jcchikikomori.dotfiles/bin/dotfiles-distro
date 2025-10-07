@@ -10,14 +10,22 @@ log() {
 
 normalize_distro() {
   case "$1" in
-    ubuntu|debian|linuxmint|elementary|pop|neon|zorin|kali|raspbian|mx|deepin|galliumos)
+    # separate ubuntu from this category, for stability reasons
+    debian|pop|neon|raspbian)
       printf 'debian\n'
+      ;;
+    # ubuntu and other derivatives
+    ubuntu|linuxmint|pop|zorin|kali)
+      printf 'ubuntu\n'
       ;;
     fedora|centos|rhel|rocky|almalinux|oracle|scientific|sangoma)
       printf 'fedora\n'
       ;;
     arch|manjaro|endeavouros|garuda|arcolinux)
       printf 'arch\n'
+      ;;
+    steamos)
+      printf 'steamos\n'
       ;;
     opensuse|suse|sled|sles|opensuse-leap|opensuse-tumbleweed)
       printf 'opensuse\n'

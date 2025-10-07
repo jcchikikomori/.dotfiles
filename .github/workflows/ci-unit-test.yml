@@ -38,6 +38,9 @@ jobs:
       - name: Execute post-setup (php)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
+      - name: Execute post-setup (ruby)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
       - name: Simulate Stowing
         if: always()
         run: |

@@ -155,26 +155,11 @@ install_ruby_for() {
     debian|ubuntu|linuxmint|pop|neon|zorin|kali|raspbian)
       install_ruby_debian
       ;;
-    fedora|centos|rhel|rocky|almalinux|oracle|scientific|sangoma)
+    fedora|centos|rhel)
       install_ruby_fedora
       ;;
     arch|archbtw|manjaro|endeavouros|garuda|arcolinux|steamos)
       install_ruby_arch
-      ;;
-    opensuse|opensuse-leap|opensuse-tumbleweed)
-      install_ruby_opensuse
-      ;;
-    alpine)
-      install_ruby_alpine
-      ;;
-    gentoo)
-      install_ruby_gentoo
-      ;;
-    void|voidlinux)
-      install_ruby_void
-      ;;
-    clearlinux)
-      install_ruby_clearlinux
       ;;
     unknown|*)
       install_ruby_homebrew
