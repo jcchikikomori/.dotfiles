@@ -69,6 +69,9 @@ rm -f $HOME/.config/alacritty/alacritty.toml
 rm -f $HOME/.config/autostart/com.discordapp.Discord.desktop
 rm -f $HOME/.config/htop/htoprc
 rm -f $HOME/.pyenv/version
+rm -f $HOME/.ruby-version
+rm -f $HOME/.gemrc
+rm -f $HOME/.railsrc
 
 # Avoid removing ssh
 echo 'y' || cp -rf $HOME/.ssh $HOME/.ssh-backup

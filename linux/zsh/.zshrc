@@ -131,8 +131,6 @@ if [ -d "$HOME/.local/bin" ]; then
     export PATH=$HOME/.local/bin:$PATH
 fi
 
-# Starship
-eval "$(starship init zsh)"
 function set_win_title(){
     echo -ne "\033]0; $USER@$HOST:${PWD/$HOME/~} \007"
 }
@@ -189,3 +187,7 @@ source $HOME/.antigenrc
 # Note: Ensure to execute this to the last order/sequence of the .zshrc
 #       to avoid any conflicts with other profiles.
 source $HOME/.brewphp82
+
+# Starship
+# Note: always load at the end of it.
+eval "$(starship init zsh)"
