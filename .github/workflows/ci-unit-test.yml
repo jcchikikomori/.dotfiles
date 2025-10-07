@@ -48,7 +48,7 @@ jobs:
       - name: Generate list from $HOME dir
         if: always()
         run: |
-          ls -lah $HOME > $HOME/logs/userfilelslah.txt
+          ls -lah $HOME >> $HOME/logs/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
       - name: Upload logs as artifact
         if: always()
@@ -92,6 +92,9 @@ jobs:
       - name: Execute post-setup (php)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
+      - name: Execute post-setup (ruby)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -99,7 +102,7 @@ jobs:
       - name: Generate list from $HOME dir
         if: always()
         run: |
-          ls -lah $HOME > $HOME/logs/userfilelslah.txt
+          ls -lah $HOME >> $HOME/logs/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
       - name: Upload logs as artifact
         if: always()
@@ -143,6 +146,9 @@ jobs:
       - name: Execute post-setup (php)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
+      - name: Execute post-setup (ruby)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -150,7 +156,7 @@ jobs:
       - name: Generate list from $HOME dir
         if: always()
         run: |
-          ls -lah $HOME > $HOME/logs/userfilelslah.txt
+          ls -lah $HOME >> $HOME/logs/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > $HOME/logs/userfilelist.txt
       - name: Upload logs as artifact
         if: always()

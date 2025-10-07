@@ -8,6 +8,10 @@ log() {
   printf '[dotfiles-ruby] %s\n' "$*"
 }
 
+install_complete_msg() {
+  log "System-wide Ruby installation complete. Version: $(ruby --version)"
+}
+
 script_dir() {
   script="$0"
   case "$script" in
@@ -83,6 +87,9 @@ install_ruby_debian() {
   log "Installing Ruby via apt..."
   run_sudo apt-get update
   run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y ruby-full build-essential
+  log "Installing rbenv via apt..."
+  run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y rbenv ruby-ffi rubocop rubygems
+  install_complete_msg
 }
 
 install_ruby_fedora() {
@@ -92,11 +99,16 @@ install_ruby_fedora() {
   fi
   log "Installing Ruby via $installer..."
   run_sudo "$installer" -y install ruby
+  log "Installing rbenv via $installer..."
+  run_sudo "$installer" -y install rbenv ruby-build-rbenv
 }
 
 install_ruby_arch() {
   log "Installing Ruby via pacman..."
   run_sudo pacman -Sy --needed --noconfirm ruby base-devel
+  log "Installing rbenv via pacman..."
+  run_sudo pacman -Sy --needed --noconfirm rbenv ruby-ffi ruby-lsp rubocop rubygems
+  install_complete_msg
 }
 
 install_ruby_opensuse() {
