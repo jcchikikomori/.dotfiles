@@ -13,7 +13,7 @@ mkdir -p temp && cd temp/
 # Install yay
 git clone https://aur.archlinux.org/yay.git $HOME/yay
 cd $HOME/yay
-sudo makepkg -si --noconfirm
+makepkg -si --noconfirm
 cd ../..
 rm -rf temp/
 
