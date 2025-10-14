@@ -94,6 +94,7 @@ main() {
     git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 
     echo 'Setting up Starship prompt...'
+    mkdir -p ~/.local/bin
     curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin -f
 
     echo 'Setting up Antigen...'
