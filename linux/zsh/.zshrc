@@ -71,7 +71,7 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 # Note: Ensure to execute ~/.dotfiles/git-flow.sh before using other plugins
-plugins=(git git-flow-completion zsh-autosuggestions fast-syntax-highlighting)
+plugins=(brew git globalias gradle grails git-flow-completion zsh-autosuggestions fast-syntax-highlighting)
 
 
 # User configuration
