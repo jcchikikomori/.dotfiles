@@ -3,7 +3,7 @@ export PATH="${HOME}/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles/bin:${PATH}"
 
 # Development environments
-export EDITOR=nano
+export EDITOR=vim
 export PYENV_ROOT="$HOME/.pyenv"
 export RBENV_ROOT="$HOME/.rbenv"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"

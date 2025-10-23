@@ -7,6 +7,7 @@ filetype indent on
 " Disable audible sound
 set vb
 
+" Initialize plugins first (vim-plug)
 call plug#begin('~/.vim/plugged')
 
 Plug 'morhetz/gruvbox'                  " color scheme
@@ -26,12 +27,29 @@ Plug 'editorconfig/editorconfig-vim'    " Editor config plugin
 
 Plug 'powerline/powerline'              " Powerline
 Plug 'preservim/nerdtree'               " FileTree View
+Plug 'sheerun/vim-polyglot'             " Syntax and indent support
+Plug 'LunarWatcher/auto-pairs'          " Pair autocompletion
+Plug 'maxboisvert/vim-simple-complete'  " Keyword autocompletion
+Plug 'matze/vim-move'                   " Moves lines and selections in a more visual manner
 
 call plug#end()
 
 " Gruvbox configuration
 let g:gruvbox_contrast_dark = 'hard'
 let g:gruvbox_invert_selection = '0'
+
+" Pair autocompletion
+let g:AutoPairsShortcutToggle = '<C-P>'
+
+" vim-move
+" NOTE: Key modifier NOT FINAL
+" <C-k>   Move current line/selections up
+" <C-j>   Move current line/selections down
+let g:move_key_modifier = 'C'
+" <S-k>   Move currently selected block up
+" <S-j>   Move currently selected block down
+let g:move_key_modifier_visualmode = 'S'
+
 " Color scheme
 colorscheme gruvbox
 
@@ -59,9 +77,9 @@ set smarttab
 highlight ColorColumn ctermbg=gray
 set colorcolumn=80
 
-" 1 tab == 4 spaces
-set shiftwidth=4
-set tabstop=4
+" 1 tab == 2 spaces
+set shiftwidth=2
+set tabstop=2
 set expandtab
 
 " Set colors
@@ -84,10 +102,13 @@ set listchars=tab:>-,eol:$  " for non-printable characters
 
 " Show tabs correctly when doing 'set list'
 set statusline+=%F
+
 " allow backspacing over everything in insert mode
 set backspace=indent,eol,start
+
 " When a bracket is inserted, briefly jump to matching one
 set showmatch
+
 " Show matches very breifly (tenths of a second)
 set matchtime=1
 

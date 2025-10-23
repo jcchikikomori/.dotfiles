@@ -43,6 +43,31 @@ install_plugins() {
         esac
         exit $STATUS
     ) 200>$LOCK_FILE
+
+    log_message "Installing Vundle..."
+    git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/autoload/vundle.vim
+
+    log_message "Installing vim-fugitive..."
+    (
+        flock -n 200 || {
+            log_message "Another installation is in progress"
+            exit 1
+        }
+        mkdir -p ~/.vim/pack/tpope/start
+        git clone https://tpope.io/vim/fugitive.git ~/.vim/pack/tpope/start/fugitive
+        vim -u NONE -c "helptags fugitive/doc" -c q
+        STATUS=$?
+        case $STATUS in
+            0)
+                log_message "vim-fugitive was installed successfully"
+                ;;
+            *)
+                log_message "vim-fugitive installation failed with status $STATUS"
+                ;;
+        esac
+        esac
+        exit $STATUS
+    ) 200>$LOCK_FILE
 }
 
 # Main execution
