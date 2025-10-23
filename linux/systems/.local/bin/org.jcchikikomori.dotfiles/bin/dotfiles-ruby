@@ -183,7 +183,6 @@ install_action() {
   distro=$(read_distro)
   log "Detected distribution from cache: $distro"
   install_ruby_for "$distro"
-  log "Ruby installation complete."
 }
 
 update_action() {
