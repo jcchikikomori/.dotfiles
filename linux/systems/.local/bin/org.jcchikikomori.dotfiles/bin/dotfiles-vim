@@ -53,7 +53,7 @@ install_plugins() {
         }
         mkdir -p ~/.vim/pack/tpope/start
         git clone https://tpope.io/vim/fugitive.git ~/.vim/pack/tpope/start/fugitive
-        vim -u NONE -c "helptags fugitive/doc" -c q
+        cd ~/.vim/pack/tpope/start && vim -u NONE -c "helptags fugitive/doc" -c q
         STATUS=$?
         case $STATUS in
             0)
