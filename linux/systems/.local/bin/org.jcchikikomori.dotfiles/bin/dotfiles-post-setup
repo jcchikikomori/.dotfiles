@@ -1,6 +1,6 @@
 #!/bin/sh
 
-WORKFILES_DIR="linux/zsh/bin"
+WORKFILES_DIR="linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
 WORKDIR=$(mktemp -d)
 
 setup_directory() {
@@ -17,6 +17,7 @@ setup_directory() {
     cp -r "dotfiles-ruby" "$WORKDIR"
     cp -r "dotfiles-vim" "$WORKDIR"
     cp -r "dotfiles-git" "$WORKDIR"
+    cp -r "dotfiles-nerf" "$WORKDIR"
     echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
@@ -45,11 +46,12 @@ prompt_installation() {
     echo "Do you want to install $name? (y/n): " >&2
     read choice
     if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
-        echo "Installing $name..."
-        # TODO: Will include the "install" argument to all scripts.
+        echo "Executing $name..."
         if [ "$script" = "dotfiles-python" ]; then
             $WORKDIR/$script install
         elif [ "$script" = "dotfiles-php" ]; then
+            $WORKDIR/$script install
+        elif [ "$script" = "dotfiles-ruby" ]; then
             $WORKDIR/$script install
         else
             $WORKDIR/$script
@@ -84,8 +86,7 @@ main() {
     git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
 
     echo 'Setting up Tmux configuration...'
-    git clone https://github.com/jcchikikomori/.tmux.git ~/.tmux || true
-    cd ~/.tmux && git reset --hard fd1bbb56148101f4b286ddafd98f2ac2dcd69cd8
+    git clone https://github.com/gpakosz/.tmux.git ~/.tmux || true
     cd "$ORIGINAL_DIR"
     ln -s -f ~/.tmux/.tmux.conf ~/.tmux.conf
 
@@ -93,7 +94,8 @@ main() {
     git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 
     echo 'Setting up Starship prompt...'
-    curl -sS https://starship.rs/install | sh -s -- -y
+    mkdir -p ~/.local/bin
+    curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin -f
 
     echo 'Setting up Antigen...'
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
@@ -102,6 +104,10 @@ main() {
     echo 'Setting up Alacritty themes...'
     mkdir -p ~/.config/alacritty/themes
     git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
+
+    echo 'Setting up some Nerd Fonts...'
+    sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode
+    sh $WORKDIR/dotfiles-nerf --smoke-test
 
     prompt_installation "python with pyenv" "dotfiles-python"
     prompt_installation "pre-commit" "dotfiles-python--pre-commit"

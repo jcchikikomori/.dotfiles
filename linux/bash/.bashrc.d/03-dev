@@ -7,6 +7,13 @@ if [ -d "$PYENV_ROOT" ]; then
     eval "$(pyenv init -)"
 fi
 
+# ruby - rbenv
+if [ -d "$RBENV_ROOT" ]; then
+    export PATH="$RBENV_ROOT/bin:$PATH"
+    # eval "$(rbenv init -)"
+    eval "$(rbenv init - --no-rehash bash)"
+fi
+
 # Linuxbrew/Homebrew
 if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

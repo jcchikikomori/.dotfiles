@@ -15,7 +15,7 @@ if [ -f /etc/os-release ]; then
             export DETECTED_DISTRO="rhel"
             export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
             ;;
-        arch|garuda|manjaro|cachyos)
+        arch|garuda|manjaro|cachyos|steamos)
             # Arch-based systems
             export DETECTED_DISTRO="arch"
             export MAKEFLAGS="-j$(nproc)"
@@ -30,15 +30,18 @@ if [ -f /etc/os-release ]; then
     esac
     # Include $VERSION_ID if exists
     # Execute `clear` if exists
-    if [ -f /usr/bin/clear ]; then
-        clear
+    # if [ -f /usr/bin/clear ]; then
+    #     clear
+    # fi
+    # Suppress welcome message is the shell is being run from tmux session (if $TMUX exists).
+    if [ -z "$TMUX" ]; then
+        if [ -n "$VERSION_ID" ]; then
+            echo -e "Detected distribution: $NAME ($VERSION_ID)"
+        else
+            echo -e "Detected distribution: $NAME"
+        fi
+        echo -e "\nWelcome, $USER!"
     fi
-    if [ -n "$VERSION_ID" ]; then
-        echo -e "Detected distribution: $NAME ($VERSION_ID)"
-    else
-        echo -e "Detected distribution: $NAME"
-    fi
-    echo -e "\nWelcome, $USER!"
 fi
 
 # Core environment variables
@@ -47,6 +50,7 @@ export PATH="${HOME}/bin:${PATH}"
 
 # Development environments
 export PYENV_ROOT="$HOME/.pyenv"
+export RBENV_ROOT="$HOME/.rbenv"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
 export SDKMAN_DIR="$HOME/.sdkman"
 export GOPATH="${HOME}/go"
@@ -94,12 +98,25 @@ export QT_SCREEN_SCALE_FACTORS=
 export QT_SCALE_FACTOR=
 export QT_AUTO_SCREEN_SCALE_FACTOR=
 
+# libvrt
+export LIBVIRT_DEFAULT_URI="qemu:///system"
+
+# Rootless Docker
+# https://docs.docker.com/engine/security/rootless/
+# export PATH=/home/patatasdeck/bin:$PATH
+export DOCKER_HOST="unix:///run/user/$UID/docker.sock"
+
 # Initialize development tools
 if [ -d "$PYENV_ROOT" ]; then
     export PATH="$PYENV_ROOT/bin:$PATH"
     export PYENV_VERSION="system"
     eval "$(pyenv init --path)"
     eval "$(pyenv init -)"
+fi
+
+if [ -d "$RBENV_ROOT" ]; then
+    export PATH="$RBENV_ROOT/bin:$PATH"
+    eval "$(rbenv init -)"
 fi
 
 if [ -s "$NVM_DIR/nvm.sh" ]; then

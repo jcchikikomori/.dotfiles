@@ -15,7 +15,7 @@ jobs:
         run: |
           mkdir -p $HOME/.dotfiles
           mkdir -p $HOME/.local/state/dotstow
-          mkdir -p $HOME/bin
+          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
         run: |

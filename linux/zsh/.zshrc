@@ -1,5 +1,5 @@
 # If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+# export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -71,7 +71,7 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 # Note: Ensure to execute ~/.dotfiles/git-flow.sh before using other plugins
-plugins=(git git-flow-completion zsh-autosuggestions fast-syntax-highlighting)
+plugins=(brew git globalias gradle grails git-flow-completion zsh-autosuggestions fast-syntax-highlighting)
 
 
 # User configuration
@@ -122,13 +122,15 @@ autoload -Uz add-zsh-hook
 source $ZSH/oh-my-zsh.sh
 
 ## Path section
+# Default
+export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:$PATH
+
+# Additional, separated from dotfiles package.
 # Set $PATH if ~/.local/bin exist
 if [ -d "$HOME/.local/bin" ]; then
     export PATH=$HOME/.local/bin:$PATH
 fi
 
-# Starship
-eval "$(starship init zsh)"
 function set_win_title(){
     echo -ne "\033]0; $USER@$HOST:${PWD/$HOME/~} \007"
 }
@@ -185,3 +187,7 @@ source $HOME/.antigenrc
 # Note: Ensure to execute this to the last order/sequence of the .zshrc
 #       to avoid any conflicts with other profiles.
 source $HOME/.brewphp82
+
+# Starship
+# Note: always load at the end of it.
+eval "$(starship init zsh)"

@@ -17,18 +17,18 @@ EOF
 if [ "$1" = "install" ]; then
   echo "Opening the webpage.. Automatic installation is not supported yet."
   if command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "https://docs.docker.com/engine/install/"
+    xdg-open "https://collabnix.com/how-to-run-docker-in-a-rootless-mode/"
   elif command -v gnome-open >/dev/null 2>&1; then
-    gnome-open "https://docs.docker.com/engine/install/"
+    gnome-open "https://collabnix.com/how-to-run-docker-in-a-rootless-mode/"
   elif command -v open >/dev/null 2>&1; then
-    open "https://docs.docker.com/engine/install/"
+    open "https://collabnix.com/how-to-run-docker-in-a-rootless-mode/"
   else
     echo "Please open the following URL in your browser to install Docker:"
-    echo "https://docs.docker.com/engine/install/"
+    echo "https://collabnix.com/how-to-run-docker-in-a-rootless-mode/"
   fi
 elif [ "$1" = "start" ]; then
-  sudo systemctl start docker.service
-  sudo systemctl start docker.socket
+  systemctl --user start docker.service
+  systemctl --user start docker.socket
   thunder
   if command -v zenity >/dev/null 2>&1; then
     zenity --info --title="Docker started" --text="Docker services started."
@@ -37,8 +37,8 @@ elif [ "$1" = "start" ]; then
     echo "Docker services started."
   fi
 elif [ "$1" = "stop" ]; then
-  sudo systemctl disable --now docker.service
-  sudo systemctl disable --now docker.socket
+  systemctl --user disable --now docker.service
+  systemctl --user disable --now docker.socket
   if command -v zenity >/dev/null 2>&1; then
     zenity --info --title="Docker stopped" --text="Docker services stopped."
   else
@@ -46,8 +46,8 @@ elif [ "$1" = "stop" ]; then
     echo "Docker services stopped."
   fi
 elif [ "$1" = "startup" ]; then
-  sudo systemctl enable --now docker.service
-  sudo systemctl enable --now docker.socket
+  systemctl --user enable --now docker.service
+  systemctl --user enable --now docker.socket
   thunder
   if command -v zenity >/dev/null 2>&1; then
     zenity --info --title="Docker will be started on startup." --text="Please make sure to execute dotfiles-docker stop if you want to disable this."
@@ -56,8 +56,8 @@ elif [ "$1" = "startup" ]; then
     echo "Please make sure to execute dotfiles-docker stop if you want to disable this."
   fi
 else
-  echo "Usage: $0 {start|startup|stop}"
-  echo "  install: Installs docker and configures it for the current user"
+  echo "Usage: $0 {install|start|startup|stop}"
+  echo "  install: Installs docker and configures it for the current user (Rootless)"
   echo "  start: Starts docker services"
   echo "  startup: Starts docker services on startup. Will also execute 'start'"
   echo "  stop: Stops docker from running"

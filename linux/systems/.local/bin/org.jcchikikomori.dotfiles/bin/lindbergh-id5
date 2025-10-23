@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+
+# Ensure controls.ini in this directory is discovered by the loader
+cd "$HOME/.config/lindbergh-loader" || exit 1
+
+# Add `--test \` to force boot into test mode
+"$HOME/AppImages/lindbergh_loader.appimage" \
+  --gamepath "$HOME/Games/Lindbergh/initiald5" \
+  --config "$HOME/.config/lindbergh-loader/configs/initiald.ini" \
+  --controls "$HOME/.config/lindbergh-loader/controls/initiald.ini"
