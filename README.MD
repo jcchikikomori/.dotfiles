@@ -1,15 +1,15 @@
 # .dotfiles
 
 A collection of configuration files and scripts to streamline setting up your favorite terminal shell across various systems.
-
-Forked from another [repository](https://github.com/sreerajkksd/dotfiles), with additional customizations and improvements.
+Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forked then put optimizations & adjustments to sustain my needs, and lessen the friction on configuring, every time i'm doing the setup on my fresh installed Linux hardware.
 
 ## Features
 
-- Programmer-focused dotfiles.
-- Personal customizations alongside the forked files.
+- Personalized features.
+- Customizations alongside the forked files.
 - Includes specific patches and workarounds for various platforms.
 - Designed to minimize the risk of system misconfiguration.
+- Added programs that i personally use.
 
 ### Added packages (post-setup)
 
@@ -19,15 +19,15 @@ Forked from another [repository](https://github.com/sreerajkksd/dotfiles), with 
 |pre-commit | Adds validation/features on git before committing|          |
 |sdkman     | Java JDK/JRE manager       |          |
 |vim        | Duh?                       |          |
-|pyenv      | Python version manager     |Untested  |
+|pyenv      | Python version manager     |          |
 |phpenv     | PHP version manager        |Untested  |
 |rbenv      | Ruby version manager       |Untested  |
 
 ## Supported Platforms
 
-- Windows Subsystem for Linux (WSL)
+- Windows Subsystem for Linux (WSL version 2)
 - Ubuntu/Debian-based distributions
-- Arch Linux and its derivatives (e.g., Garuda, Manjaro)
+- Arch Linux and its derivatives (e.g., Garuda, Manjaro, SteamOS)
 - Fedora/RHEL-based distributions
 
 ## Installation
@@ -41,6 +41,24 @@ Ensure the following prerequisites are met before running the setup:
 1. A 64-bit operating system.
 2. The `stow` package installed on your system.
 3. [dotstow](https://github.com/jcchikikomori/dotstow) installed for managing dotfiles.
+
+#### For Steam Deck or any device that runs SteamOS
+
+Since SteamOS runs in an immutable file system, i'd recommend to use `distrobox` which is already available on the system out-of-the-box.
+
+Then you can install `dotstow` & `stow` within the container.
+
+Recommended images to use:
+
+- Ubuntu 22.04 and higher
+- Arch Linux (barebones)
+- Fedora 38 and higher
+
+More information regarding [virtualization & managing containers](docs/Virtualization.md) here.
+
+#### For any Immutable distros
+
+Same as Steam Deck's SteamOS, you needed to ensure that you have `distrobox` & `podman` installed either out-of-the-box or manually which is acceptable in some by putting layers on top of the base system (best example is Fedora Silverblue & Bazzite).
 
 ### Setup Instructions
 
@@ -87,10 +105,12 @@ Adds a user and simulates stowing dotfiles.
 
 ## Workarounds
 
-### Arch Linux
+### Arch Linux Barebones
 
 For Arch Linux, please follow the [instructions here](arch/README.MD).
 
 ## Disclaimer & Legal Notices
 
 Please refer to this [article here](DISCLAIMER.md).
+
+Please refer to the [license](LICENSE) for any related to distributing the software or using it.
