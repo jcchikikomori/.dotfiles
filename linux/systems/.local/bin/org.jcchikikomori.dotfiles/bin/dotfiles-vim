@@ -65,7 +65,6 @@ install_plugins() {
                 log_message "vim-fugitive installation failed with status $STATUS"
                 ;;
         esac
-        esac
         exit $STATUS
     ) 200>$LOCK_FILE
 }
