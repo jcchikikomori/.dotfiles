@@ -13,14 +13,14 @@ mkdir -p temp && cd temp/
 # Install yay
 git clone https://aur.archlinux.org/yay.git $HOME/yay
 cd $HOME/yay
-sudo makepkg -si --noconfirm
+makepkg -si --noconfirm
 cd ../..
 rm -rf temp/
 
 # Chaotic AUR
 if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
   echo 'Importing essential keys...'
-  sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com
+  sudo pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keyserver.ubuntu.com:80
   echo 'Signing keys...'
   sudo pacman-key --lsign-key 3056513887B78AEB
   echo 'Begin installing Chaotic AUR...'

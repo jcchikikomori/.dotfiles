@@ -94,6 +94,7 @@ main() {
     git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 
     echo 'Setting up Starship prompt...'
+    mkdir -p ~/.local/bin
     curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin -f
 
     echo 'Setting up Antigen...'
@@ -104,8 +105,9 @@ main() {
     mkdir -p ~/.config/alacritty/themes
     git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
 
-    echo 'Setting up Nerd Fonts...'
-    sh $WORKDIR/dotfiles-nerf --all
+    echo 'Setting up some Nerd Fonts...'
+    sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode
+    sh $WORKDIR/dotfiles-nerf --smoke-test
 
     prompt_installation "python with pyenv" "dotfiles-python"
     prompt_installation "pre-commit" "dotfiles-python--pre-commit"
