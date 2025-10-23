@@ -51,7 +51,7 @@ let g:move_key_modifier = 'C'
 let g:move_key_modifier_visualmode = 'S'
 
 " Color scheme
-colorscheme gruvbox
+silent! colorscheme gruvbox
 
 set autoread
 set smartcase

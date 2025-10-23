@@ -29,9 +29,7 @@ install_plugins() {
             exit 1
         }
         log_message "Starting plugin installation..."
-        vim +"set verbosefile=/tmp/vim-verbose.log" \
-            "+PlugInstall --sync" \
-            "+qall!"
+        vim +PlugInstall +qall >/dev/null 2>&1
         STATUS=$?
         case $STATUS in
             0)
