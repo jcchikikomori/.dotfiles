@@ -3,7 +3,7 @@ set -eu
 
 precommit() {
   cp -f $HOME/.dotfiles/linux/git/.pre-commit-config.yaml .
-  pre-commit install --hook-type commit-msg --hook-type pre-push
+  pre-commit install --hook-type commit-msg
 }
 
 # TODO: Check if .git folder/directory exists
@@ -12,13 +12,16 @@ initial() {
 }
 
 if [ "$1" = "initialize" ]; then
-  echo "[dotfiles-git-repo] Initializing"
-  git init
-if [ "$1" = "initialize" ]; then
-  echo "[dotfiles-git-repo] Initializing"
-  git init
+  echo "[dotfiles-git-repo] Initializing..."
+  initial
+  exit 0
+elif [ "$1" = "precommit" ]; then
+  echo "[dotfiles-git-repo] Installing pre-commit..."
+  precommit
+  exit 0
 elif [ "$1" = "validate" ]; then
-  echo "[dotfiles-git-repo] Update Test"
+  echo "[dotfiles-git-repo] Under construction! Exiting..."
+  exit 1
 else
   echo "Usage: $0 {initialize|precommit|validate}"
   echo "  initialize: Initialize Git with pre-commit support."
