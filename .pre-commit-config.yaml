@@ -6,6 +6,8 @@ repos:
     -   id: commitizen
         stages: [commit-msg]
     -   id: commitizen-branch
+        args: ["--", "--check", "--", "--message", "$(git log -1 --pretty=%B)"]
+        exclude: '^fixup!|^squash!'
         stages: [pre-push]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
