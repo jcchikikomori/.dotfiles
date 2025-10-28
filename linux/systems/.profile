@@ -45,7 +45,7 @@ if [ -f /etc/os-release ]; then
 fi
 
 # Core environment variables
-export EDITOR=nano
+export EDITOR=vim
 export PATH="${HOME}/bin:${PATH}"
 
 # Development environments
