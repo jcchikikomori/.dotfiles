@@ -104,7 +104,19 @@ export LIBVIRT_DEFAULT_URI="qemu:///system"
 # Rootless Docker
 # https://docs.docker.com/engine/security/rootless/
 # export PATH=/home/patatasdeck/bin:$PATH
-export DOCKER_HOST="unix:///run/user/$UID/docker.sock"
+if command -v docker &> /dev/null; then
+    echo "Found Docker CLI at: $(which docker)"
+    # Detect if running inside WSL
+    if grep -qi microsoft /proc/version; then
+        echo "WSL2 was detected thru Docker Desktop integration with Docker."
+        unset DOCKER_HOST
+        echo "DOCKER_HOST has been UN-set for WSL2!"
+    else
+        export DOCKER_HOST="unix:///run/user/$UID/docker.sock"
+    fi
+else
+    echo "Warning: Docker not found in PATH. Install or add it first."
+fi
 
 # Initialize development tools
 if [ -d "$PYENV_ROOT" ]; then

@@ -22,6 +22,7 @@ Using Docker in rootless mode is highly recommended to avoid conflicts with syst
   ```bash
   export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
   ```
+  NOTE: This implementation is not compatible with Docker Desktop for Windows!
 
 #### **Persistent Storage**
 
