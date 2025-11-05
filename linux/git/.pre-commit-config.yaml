@@ -4,14 +4,25 @@ repos:
     rev: v4.9.1
     hooks:
     -   id: commitizen
+        stages: [commit-msg]
     -   id: commitizen-branch
+        args: ["--", "--check", "--", "--message", "$(git log -1 --pretty=%B)"]
+        exclude: '^fixup!|^squash!'
+        stages: [pre-push]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v6.0.0
     hooks:
     -   id: check-yaml
+        stages: [pre-commit]
     -   id: end-of-file-fixer
+        stages: [pre-commit]
     -   id: trailing-whitespace
+        stages: [pre-commit]
+    -   id: pretty-format-json
+        stages: [pre-commit]
+    -   id: check-merge-conflict
+        stages: [pre-commit]
 -   repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 25.9.0
     hooks:
     -   id: black
