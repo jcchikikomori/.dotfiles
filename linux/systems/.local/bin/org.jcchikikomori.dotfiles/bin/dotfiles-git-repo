@@ -15,6 +15,7 @@ initial() {
 if [ "$1" = "initialize" ]; then
   echo "[dotfiles-git-repo] Initializing"
   initial
+  precommit
   exit 0
 elif [ "$1" = "precommit" ]; then
   echo "[dotfiles-git-repo] Initializing"
@@ -27,6 +28,6 @@ else
   echo "Usage: $0 {initialize|precommit|validate}"
   echo "  initialize: Initialize Git with pre-commit support."
   echo "  precommit: Initialize pre-commit support (without git init)."
-  echo "  validate: Validates the repository if it's being initialized or not."
+  # echo "  validate: Validates the repository if it's being initialized or not."
   exit 1
 fi
