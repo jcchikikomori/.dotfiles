@@ -211,21 +211,30 @@ steps:
 ## Termux-Specific Development Notes
 
 **Critical pre-setup requirements:**
-1. Verify `pkg` mirrors are accessible and working
+1. Verify `pkg` mirrors are accessible and working (`termux-change-repo`)
 2. Run `pkg update && pkg upgrade` before dotfiles installation
 3. Check `$PREFIX` is correctly set (should be `/data/data/com.termux/files/usr`)
 
+**Termux detection mechanism:**
+- Uses `$PREFIX` environment variable containing "com.termux" for detection
+- Runs before `/etc/os-release` check in `start.sh` (Termux doesn't have standard Linux paths)
+- Sets `DETECTED_DISTRO=termux`
+
+**Programming language support:**
+- **Only Python (pyenv) is officially supported** on Termux/ARM
+- Other language managers (Ruby, PHP, Java, NodeJS) have compatibility issues with Android userspace
+- `dotfiles-post-setup` only prompts for Python installation on Termux
+- Users must manually install other languages if needed
+
 **Common Termux gotchas:**
-- No `/etc/skel/.bashrc` - need fallback for bash config generation
+- No `/etc/skel/.bashrc` - fallback handled in `generate_bashrc()` function
 - `stow` must be installed via `pkg install stow`
 - Git repos should use HTTPS (SSH requires additional Termux setup)
 - Some build tools require `pkg install binutils` for compilation
+- `termux-reload-settings` may fail with app_process errors (gracefully handled with `2>/dev/null || true`)
 
 **Testing Termux changes:**
-- Cannot use GitHub Actions (no Android runners)
-- Test manually on Termux app or in Termux Docker container
-- Validate `pkg` package availability before adding to setup scripts
-
-## Current Branch Context
-
-Working on: `feature/22-termux` - Adding Termux (Android terminal emulator) support to the multi-distro setup. Priority: Ensure `pkg` mirror functionality before proceeding with full dotfiles installation.
+- Cannot use real Termux in GitHub Actions (no Android runners)
+- `ci-termux.yml` simulates Termux by setting `PREFIX=/data/data/com.termux/files/usr`
+- Full validation requires manual testing on Termux app or specialized Docker container
+- Validate `pkg` package availability before adding to `termux/setup.sh`
