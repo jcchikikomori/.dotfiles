@@ -113,7 +113,7 @@ main() {
     if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
         echo ""
         echo "=== Termux Environment Detected ==="
-        echo "Only Python (pyenv) is officially supported on Termux/ARM."
+        echo "Only Python (pyenv) is officially supported on Linux distributions."
         echo "Other language managers (Ruby, PHP, Java, NodeJS) may have compatibility issues."
         echo "You can install them manually later if needed."
         echo ""
