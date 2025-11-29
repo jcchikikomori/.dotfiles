@@ -29,10 +29,11 @@ check_command git
 # Clone dotstow repository and install
 git clone https://github.com/jcchikikomori/dotstow "$WORKDIR/.dotstow"
 cd "$WORKDIR/.dotstow"
-git checkout b013bfefec0b52254e8faaa77427ae31ef04dcfa
+# Tentative implementation, will be merged into the main branch soon.
+git checkout termux
 
 if [ "$IS_TERMUX" -eq 1 ]; then
-    make PREFIX="$DOTSTOW_PREFIX" install
+    make install
 else
     sudo make install
 fi
