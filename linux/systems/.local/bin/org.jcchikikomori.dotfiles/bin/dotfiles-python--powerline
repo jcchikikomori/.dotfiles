@@ -19,31 +19,40 @@ setup() {
     fi
 }
 
-# Ensure pip or pip3 is installed. Otherwise, prompt the user to install Python
-if ! command -v pip &> /dev/null && ! command -v pip3 &> /dev/null; then
-    echo "pip or pip3 not found."
-    echo "Checking pyenv installation..."
-    if [ -d "$PYENV_ROOT" ]; then
-        echo "pyenv found."
-        # Temporarily load pyenv
-        export PATH="$PYENV_ROOT/bin:$PATH"
-        eval "$(pyenv init -)"
+# Detect Termux environment and install Python accordingly
+if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+    echo ""
+    echo "=== Termux Environment Detected ==="
+    echo "Installing pre-commit via pip in Termux..."
+    setup
+else
+    # Default
+    # Ensure pip or pip3 is installed. Otherwise, prompt the user to install Python
+    if ! command -v pip &> /dev/null && ! command -v pip3 &> /dev/null; then
+        echo "pip or pip3 not found."
+        echo "Checking pyenv installation..."
+        if [ -d "$PYENV_ROOT" ]; then
+            echo "pyenv found."
+            # Temporarily load pyenv
+            export PATH="$PYENV_ROOT/bin:$PATH"
+            eval "$(pyenv init -)"
 
-        # Get the latest installed Python version and set it globally
-        LATEST_VERSION=$(pyenv versions --bare | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
-        if [ -n "$LATEST_VERSION" ]; then
-            echo "Setting Python $LATEST_VERSION as the global version..."
-            pyenv global "$LATEST_VERSION"
-            pyenv rehash
-            setup
+            # Get the latest installed Python version and set it globally
+            LATEST_VERSION=$(pyenv versions --bare | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+            if [ -n "$LATEST_VERSION" ]; then
+                echo "Setting Python $LATEST_VERSION as the global version..."
+                pyenv global "$LATEST_VERSION"
+                pyenv rehash
+                setup
+            else
+                echo "Error: No Python versions found in pyenv. Please install a Python version using pyenv." >&2
+                exit 1
+            fi
         else
-            echo "Error: No Python versions found in pyenv. Please install a Python version using pyenv." >&2
+            echo "Error: pyenv not found. Please install pyenv first." >&2
             exit 1
         fi
     else
-        echo "Error: pyenv not found. Please install pyenv first." >&2
-        exit 1
+        setup
     fi
-else
-    setup
 fi
