@@ -8,4 +8,5 @@ sh $HOME/.dotfiles/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfi
 sh $HOME/.dotfiles/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ssh
 cd $HOME || return
 dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems flatpak alacritty wireplumber flags lindbergh starship
+git reset --hard HEAD
 exit 0
