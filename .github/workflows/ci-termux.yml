@@ -5,25 +5,31 @@ on:
 jobs:
   termux-simulation:
     runs-on: ubuntu-latest
-    # Use official Termux Docker image for accurate environment testing
-    container: termux/termux-docker:latest
-    env:
-      SKIP_SETTING_USER: true
-      SKIP_INSTALL_PROGLANG: false
+    strategy:
+      matrix:
+        CPU_ARCH:
+          - aarch64
+          - arm
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4  # Run this on the host, not in the container
+      - name: Setup binfmt_misc
+        if: (matrix.CPU_ARCH == 'aarch64') || (matrix.CPU_ARCH == 'arm')
+        run: docker run --rm --privileged aptman/qus -s -- -p aarch64 arm
       - name: Setup Termux environment
-        run: |
-          # Update package manager
-          pkg update -y
-          pkg upgrade -y
-          # Install required packages
-          pkg install -y git curl wget stow
-          # Create dotfiles directory structure
-          mkdir -p $HOME/.dotfiles
-          mkdir -p $HOME/.local/state/dotstow
-          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
-          cp -r $PWD/* $HOME/.dotfiles/
+        uses: addnab/docker-run-action@v3
+        with:
+          image: termux/termux-docker:latest
+          run: |
+            # Update package manager
+            pkg update -y
+            pkg upgrade -y
+            # Install required packages
+            pkg install -y git curl wget stow
+            # Create dotfiles directory structure
+            mkdir -p $HOME/.dotfiles
+            mkdir -p $HOME/.local/state/dotstow
+            mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
+            cp -r $PWD/* $HOME/.dotfiles/
       - name: Verify Termux detection
         run: |
           cd $HOME/.dotfiles
