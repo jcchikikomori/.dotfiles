@@ -1,0 +1,65 @@
+name: CI - Termux
+on:
+  workflow_dispatch:
+jobs:
+  termux-simulation:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        CPU_ARCH:
+          - aarch64
+          - arm
+    steps:
+      - uses: actions/checkout@v4  # Run this on the host, not in the container
+      - name: Setup binfmt_misc
+        if: (matrix.CPU_ARCH == 'aarch64') || (matrix.CPU_ARCH == 'arm')
+        run: docker run --rm --privileged aptman/qus -s -- -p aarch64 arm
+      - name: Setup Termux environment
+        uses: addnab/docker-run-action@v3
+        with:
+          image: termux/termux-docker:latest
+          run: |
+            # Update package manager
+            pkg update -y
+            pkg upgrade -y
+            # Install required packages
+            pkg install -y git curl wget stow
+            # Create dotfiles directory structure
+            mkdir -p $HOME/.dotfiles
+            mkdir -p $HOME/.local/state/dotstow
+            mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
+            cp -r $PWD/* $HOME/.dotfiles/
+      - name: Verify Termux detection
+        run: |
+          cd $HOME/.dotfiles
+          # Test that PREFIX is detected (should be set automatically in Termux container)
+          if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+            echo "✓ Termux environment variables detected correctly"
+            echo "PREFIX=$PREFIX"
+          else
+            echo "✗ Termux environment detection failed"
+            echo "PREFIX=$PREFIX"
+            exit 1
+          fi
+      - name: Run setup script
+        run: |
+          cd $HOME/.dotfiles
+          ./start.sh
+      - name: Verify dotfiles installation
+        run: |
+          # Check if dotfiles-distro file was created
+          if [ -f "$HOME/.dotfiles-distro" ]; then
+            distro=$(cat $HOME/.dotfiles-distro)
+            echo "✓ Detected distro: $distro"
+            if [ "$distro" != "termux" ]; then
+              echo "✗ Expected 'termux', got '$distro'"
+              exit 1
+            fi
+          else
+            echo "✗ .dotfiles-distro file not created"
+            exit 1
+          fi
+      - name: Note about testing
+        run: |
+          echo "✓ Termux Docker container testing complete"
+          echo "⚠️  Note: Full validation still requires testing on actual Termux app"
