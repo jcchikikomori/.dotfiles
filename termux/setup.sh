@@ -11,7 +11,7 @@ termux-change-repo
 pkg update
 
 pkg install -y apt ca-certificates curl
-pkg install -y stow vim nano htop git zsh build-essential
+pkg install -y stow vim nano htop git zsh build-essential which
 pkg install -y python zip openssh ncdu wget tmux unzip
 
 # Setting default locale

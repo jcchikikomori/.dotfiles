@@ -4,10 +4,9 @@ if [ "$1" = "install" ]; then
   if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
     echo ""
     echo "=== Termux Environment Detected ==="
-    echo "Installing required python packages via Termux package manager..."
-    pkg install -y python-tkinter python-numpy electrum opencv-python asciinema matplotlib python-cryptography
     echo "Installing python via Termux package manager..."
-    pkg install -y python
+    pkg install -y python python-tkinter python-numpy electrum asciinema matplotlib python-cryptography
+    pkg install -y python2
   else
     echo "Installing pyenv..."
     echo "Removing any existing pyenv installation..."

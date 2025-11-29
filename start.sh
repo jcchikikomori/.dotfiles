@@ -111,6 +111,7 @@ if [ -n "$DETECTED_DISTRO" ]; then
     echo "Executing Termux-related workarounds..."
     sh termux/setup.sh
     sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install
     ;;
   debian)
     echo "Executing Debian-related workarounds..."

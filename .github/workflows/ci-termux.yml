@@ -1,6 +1,5 @@
 name: CI - Termux
 on:
-  pull_request:
   workflow_dispatch:
 jobs:
   termux-simulation:
