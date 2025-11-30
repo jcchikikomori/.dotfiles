@@ -3,6 +3,7 @@
 # Issues occurring with the script: vim, zsh & systems (.profile file)
 echo 'Unstowing...'
 dotstow unstow git antigen tmux tmuxp vscode dxvk bash
+dotstow unstow flatpak systems wireplumber
 
 echo 'Backing up...'
 rm -rf $HOME/.backups
