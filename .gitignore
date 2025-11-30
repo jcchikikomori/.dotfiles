@@ -9,6 +9,7 @@
 fedora/zsh/bin/nps_*.sh
 fedora/zsh/bin/pyNPU.py
 fedora/zsh/bin/t7z
+linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/starship
 
 # GPG
 # Ignore all files and directories within ~/.gnupg

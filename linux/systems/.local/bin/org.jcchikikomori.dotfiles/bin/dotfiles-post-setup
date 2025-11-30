@@ -94,8 +94,8 @@ main() {
     git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 
     echo 'Setting up Starship prompt...'
-    mkdir -p ~/.local/bin
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin -f
+    mkdir -p ~/.local/bin/org.jcchikikomori.dotfiles/bin
+    curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin/org.jcchikikomori.dotfiles/bin -f
 
     echo 'Setting up Antigen...'
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
