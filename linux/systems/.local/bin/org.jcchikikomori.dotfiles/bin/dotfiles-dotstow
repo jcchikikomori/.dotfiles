@@ -47,10 +47,19 @@ cd "$WORKDIR/.dotstow"
 git checkout termux
 
 if [ "$IS_TERMUX" -eq 1 ]; then
+    echo "========================================================="
+    echo "Installing dotstow for Termux..."
+    echo "========================================================="
     make install
 elif [ "$IS_STEAMOS" -eq 1 ]; then
+    echo "========================================================="
+    echo "Installing dotstow for SteamOS..."
+    echo "========================================================="
     make install PREFIX="$DOTSTOW_PREFIX"
 else
+    echo "========================================================="
+    echo "Installing dotstow for standard Linux..."
+    echo "========================================================="
     sudo make install
 fi
 
