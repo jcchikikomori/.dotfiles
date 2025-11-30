@@ -3,12 +3,26 @@
 # Detect Termux
 if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
     IS_TERMUX=1
+    IS_STEAMOS=0
     WORKDIR="$HOME"
     DOTSTOW_PREFIX="$PREFIX"
 else
     IS_TERMUX=0
+    # Detect SteamOS (by /etc/os-release or .dotfiles-distro)
+    if [ -f "$HOME/.dotfiles-distro" ] && grep -qi steamos "$HOME/.dotfiles-distro"; then
+        IS_STEAMOS=1
+    elif [ -f /etc/os-release ] && grep -qi steamos /etc/os-release; then
+        IS_STEAMOS=1
+    else
+        IS_STEAMOS=0
+    fi
     WORKDIR="$HOME"
-    DOTSTOW_PREFIX="/usr/local"
+    if [ "$IS_STEAMOS" -eq 1 ]; then
+        DOTSTOW_PREFIX="$HOME/.local/bin/org.jcchikikomori.dotfiles/bin"
+        mkdir -p "$DOTSTOW_PREFIX"
+    else
+        DOTSTOW_PREFIX="/usr/local"
+    fi
 fi
 
 ORIGINAL_DIR=$(pwd)
@@ -34,6 +48,8 @@ git checkout termux
 
 if [ "$IS_TERMUX" -eq 1 ]; then
     make install
+elif [ "$IS_STEAMOS" -eq 1 ]; then
+    make install PREFIX="$DOTSTOW_PREFIX"
 else
     sudo make install
 fi
