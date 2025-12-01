@@ -94,8 +94,8 @@ main() {
     git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
 
     echo 'Setting up Starship prompt...'
-    mkdir -p ~/.local/bin
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin -f
+    mkdir -p ~/.local/bin/org.jcchikikomori.dotfiles/bin
+    curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin/org.jcchikikomori.dotfiles/bin -f
 
     echo 'Setting up Antigen...'
     curl -L https://git.io/antigen >"$HOME/antigen.zsh"
@@ -109,13 +109,26 @@ main() {
     sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode
     sh $WORKDIR/dotfiles-nerf --smoke-test
 
-    prompt_installation "python with pyenv" "dotfiles-python"
-    prompt_installation "pre-commit" "dotfiles-python--pre-commit"
-    prompt_installation "Ruby with rbenv" "dotfiles-ruby"
-    prompt_installation "SDKMAN" "dotfiles-java-sdkman"
-    prompt_installation "NodeJS with NVM" "dotfiles-nodejs"
-    prompt_installation "PHP with phpenv" "dotfiles-php"
-    prompt_installation "Vim with plugins" "dotfiles-vim"
+    # Check if running on Termux
+    if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+        echo ""
+        echo "=== Termux Environment Detected ==="
+        echo "Only Python (pyenv) is officially supported on Linux distributions."
+        echo "Other language managers (Ruby, PHP, Java, NodeJS) may have compatibility issues."
+        echo "You can install them manually later if needed."
+        echo ""
+        prompt_installation "python" "dotfiles-python"
+        prompt_installation "pre-commit" "dotfiles-python--pre-commit"
+        prompt_installation "Vim with plugins" "dotfiles-vim"
+    else
+        prompt_installation "python with pyenv" "dotfiles-python"
+        prompt_installation "pre-commit" "dotfiles-python--pre-commit"
+        prompt_installation "Ruby with rbenv" "dotfiles-ruby"
+        prompt_installation "SDKMAN" "dotfiles-java-sdkman"
+        prompt_installation "NodeJS with NVM" "dotfiles-nodejs"
+        prompt_installation "PHP with phpenv" "dotfiles-php"
+        prompt_installation "Vim with plugins" "dotfiles-vim"
+    fi
 
     echo 'Setting up oh-my-zsh...'
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"

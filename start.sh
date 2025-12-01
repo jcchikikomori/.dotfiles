@@ -38,8 +38,14 @@ export DETECTED_DISTRO="unknown"
 # Ensure config directory exists
 mkdir -p $HOME/.config
 touch $HOME/.dotfiles-distro
+
+# Check for Termux environment first (before /etc/os-release)
+if [ -n "$PREFIX" ] && [ -d "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+  echo "You are using Termux (Android)"
+  export DETECTED_DISTRO="termux"
+  echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
 # begin detection
-if [ -f /etc/os-release ]; then
+elif [ -f /etc/os-release ]; then
   . /etc/os-release
   case $ID in
   ubuntu)
@@ -101,6 +107,12 @@ fi
 if [ -n "$DETECTED_DISTRO" ]; then
   echo "Detected distro: $DETECTED_DISTRO"
   case $DETECTED_DISTRO in
+  termux)
+    echo "Executing Termux-related workarounds..."
+    sh termux/setup.sh
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install
+    ;;
   debian)
     echo "Executing Debian-related workarounds..."
     sh debian/setup.sh

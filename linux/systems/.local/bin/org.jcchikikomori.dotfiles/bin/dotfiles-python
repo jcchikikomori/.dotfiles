@@ -1,30 +1,38 @@
 #!/bin/sh
 
 if [ "$1" = "install" ]; then
-  echo "Installing pyenv..."
-  echo "Removing any existing pyenv installation..."
-  if [ -d "$HOME/.pyenv" ]; then
-    rm -rf "$HOME/.pyenv"
-  fi
-  curl https://pyenv.run | bash
-  echo "Loading ccache..."
-  if command -v ccache >/dev/null 2>&1; then
-    export CC="ccache gcc"
-    export CXX="ccache g++"
-    export KERNEL_CC="ccache gcc"
-    export UTILS_CC="ccache gcc"
-    export UTILS_CXX="ccache g++"
-  fi
-  echo "Installing python3 from pyenv..."
-  export PYENV_ROOT="$HOME/.pyenv"
-  if [ -d "$PYENV_ROOT" ]; then
-    export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init --path)"
-    eval "$(pyenv init -)"
+  if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+    echo ""
+    echo "=== Termux Environment Detected ==="
+    echo "Installing python via Termux package manager..."
+    pkg install -y python python-tkinter python-numpy electrum asciinema matplotlib python-cryptography
+    pkg install -y python2
+  else
+    echo "Installing pyenv..."
+    echo "Removing any existing pyenv installation..."
+    if [ -d "$HOME/.pyenv" ]; then
+      rm -rf "$HOME/.pyenv"
+    fi
+    curl https://pyenv.run | bash
+    echo "Loading ccache..."
+    if command -v ccache >/dev/null 2>&1; then
+      export CC="ccache gcc"
+      export CXX="ccache g++"
+      export KERNEL_CC="ccache gcc"
+      export UTILS_CC="ccache gcc"
+      export UTILS_CXX="ccache g++"
+    fi
+    echo "Installing python3 from pyenv..."
+    export PYENV_ROOT="$HOME/.pyenv"
+    if [ -d "$PYENV_ROOT" ]; then
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init --path)"
+      eval "$(pyenv init -)"
 
-    pyenv install 3.11.4 -v
-    pyenv global 3.11.4
-    pyenv rehash
+      pyenv install 3.11.4 -v
+      pyenv global 3.11.4
+      pyenv rehash
+    fi
   fi
 elif [ "$1" = "update" ]; then
   # TODO: Bumping the version of python automatically.

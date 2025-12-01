@@ -9,25 +9,27 @@ Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forke
 - Customizations alongside the forked files.
 - Includes specific patches and workarounds for various platforms.
 - Designed to minimize the risk of system misconfiguration.
-- Added programs that i personally use.
+- Added configurations that i personally use.
 
 ### Added packages (post-setup)
 
 |Package    |Description                 |Remarks   |
 |-----------|----------------------------|----------|
-|homebrew   | Linuxbrew                  |          |
-|pre-commit | Adds validation/features on git before committing|          |
-|sdkman     | Java JDK/JRE manager       |          |
-|vim        | Duh?                       |          |
-|pyenv      | Python version manager     |          |
-|phpenv     | PHP version manager        |Untested  |
-|rbenv      | Ruby version manager       |Untested  |
+|homebrew   |Linuxbrew                   |Not working with Termux at this moment.|
+|pre-commit |Adds validation/features on git before committing||
+|sdkman     |Java JDK/JRE manager        |          |
+|vim        |Duh?                        |          |
+|pyenv      |Python version manager      |Not working with Termux at this moment.|
+|phpenv     |PHP version manager         |Untested  |
+|rbenv      |Ruby version manager        |Untested  |
 
 ## Supported Platforms
 
 - Windows Subsystem for Linux (WSL version 2)
 - Ubuntu/Debian-based distributions
 - Arch Linux and its derivatives (e.g., Garuda, Manjaro, SteamOS)
+- Immutable Linux distributions (e.g., Bazzite, SteamOS, etc.)
+- Termux (Untested)
 - Fedora/RHEL-based distributions
 
 ## Installation
@@ -35,6 +37,11 @@ Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forke
 The setup process is now fully automated using the `start.sh` script. This script detects your operating system and applies the appropriate configurations and workarounds.
 
 ### Requirements
+
+> [!NOTE]
+>
+> - ARM support is currently on the way, after supporting Termux.
+> - We are using the forked version of dotstow to support immutable Linux distributions and Termux.
 
 Ensure the following prerequisites are met before running the setup:
 
@@ -63,12 +70,14 @@ Same as Steam Deck's SteamOS, you needed to ensure that you have `distrobox` & `
 ### Setup Instructions
 
 Clone this repository to your system by executing the following...
+
 ```bash
 git clone https://github.com/jcchikikomori/.dotfiles.git $HOME/.dotfiles
 cd $HOME/.dotfiles
 ```
 
-**NOTE: Do not install this on somewhere else!**
+> [!WARNING]
+> Do not install this on somewhere else! Only in `$HOME/.dotfiles`.
 
 ## Setup
 
@@ -87,6 +96,7 @@ Execute `stowme.sh` to finally symlink the files properly.
 Then reboot your machine, and let the magic happen!
 
 ## Post-Setup
+
 After running the setup, the dotfiles-post-setup script will handle additional configurations, including:
 
 Installing essential tools like fzf, fasd, and oh-my-zsh.

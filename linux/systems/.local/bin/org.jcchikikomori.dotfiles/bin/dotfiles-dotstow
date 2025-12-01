@@ -1,11 +1,35 @@
 #!/bin/sh
 
-WORKDIR="$HOME"
+# Detect Termux
+if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+    IS_TERMUX=1
+    IS_STEAMOS=0
+    WORKDIR="$HOME"
+    DOTSTOW_PREFIX="$PREFIX"
+else
+    IS_TERMUX=0
+    # Detect SteamOS (by /etc/os-release or .dotfiles-distro)
+    if [ -f "$HOME/.dotfiles-distro" ] && grep -qi steamos "$HOME/.dotfiles-distro"; then
+        IS_STEAMOS=1
+    elif [ -f /etc/os-release ] && grep -qi steamos /etc/os-release; then
+        IS_STEAMOS=1
+    else
+        IS_STEAMOS=0
+    fi
+    WORKDIR="$HOME"
+    if [ "$IS_STEAMOS" -eq 1 ]; then
+        DOTSTOW_PREFIX="$HOME/.local/bin/org.jcchikikomori.dotfiles/bin"
+        mkdir -p "$DOTSTOW_PREFIX"
+    else
+        DOTSTOW_PREFIX="/usr/local/bin"
+    fi
+fi
+
 ORIGINAL_DIR=$(pwd)
 
 # Function to check if a command is installed
 check_command() {
-    if ! which "$1" >/dev/null 2>&1; then
+    if ! command -v "$1" >/dev/null 2>&1; then
         echo "ERROR: $1 is not installed on this system!"
         exit 1
     fi
@@ -17,10 +41,21 @@ check_command stow
 check_command git
 
 # Clone dotstow repository and install
-git clone https://github.com/jcchikikomori/dotstow $WORKDIR/.dotstow
-cd $WORKDIR/.dotstow
-git checkout b013bfefec0b52254e8faaa77427ae31ef04dcfa
-sudo make install
+git clone https://github.com/jcchikikomori/dotstow "$WORKDIR/.dotstow"
+cd "$WORKDIR/.dotstow"
+# Tentative implementation, will be merged into the main branch soon.
+git checkout termux
+
+if [ "$IS_TERMUX" -eq 1 ]; then
+    echo "Installing dotstow for Termux..."
+    make install
+elif [ "$IS_STEAMOS" -eq 1 ]; then
+    echo "Installing dotstow for SteamOS..."
+    make install PREFIX="$DOTSTOW_PREFIX"
+else
+    echo "Installing dotstow for standard Linux..."
+    sudo make install PREFIX="$DOTSTOW_PREFIX"
+fi
 
 # Return back to original/previous directory
-cd $ORIGINAL_DIR
+cd "$ORIGINAL_DIR"

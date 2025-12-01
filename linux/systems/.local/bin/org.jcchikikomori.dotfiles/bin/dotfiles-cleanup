@@ -1,8 +1,16 @@
 #!/bin/sh
 
 # Issues occurring with the script: vim, zsh & systems (.profile file)
+
+# Check if dotstow is available and executable
+if ! command -v dotstow >/dev/null 2>&1; then
+  echo "Error: dotstow command not found in PATH. Aborting." >&2
+  exit 1
+fi
+
 echo 'Unstowing...'
-dotstow unstow git antigen tmux tmuxp vscode dxvk
+dotstow unstow git antigen tmux tmuxp vscode dxvk bash
+dotstow unstow flatpak systems wireplumber
 
 echo 'Backing up...'
 rm -rf $HOME/.backups
