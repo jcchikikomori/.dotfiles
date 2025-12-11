@@ -9,11 +9,13 @@ sudo localectl set-locale LANG=en_US.UTF-8
 # Install essentials
 sudo pacman -Syyu --noconfirm --noprogressbar gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
 sudo pacman -S --noconfirm --noprogressbar base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget less
+# Ensure temp directory exists
 mkdir -p temp && cd temp/
 # Install yay
 git clone https://aur.archlinux.org/yay.git $HOME/yay
 cd $HOME/yay
 makepkg -si --noconfirm
+# Cleanup
 cd ../..
 rm -rf temp/
 
@@ -48,6 +50,8 @@ sudo pacman -S --noconfirm --noprogressbar aur/phpenv-git
 # Workarounds & Misc software
 sudo pacman -S --noconfirm --noprogressbar aur/pam_ssh_agent_auth
 sudo pacman -S --noconfirm --noprogressbar xsel ncdu
+# Install mirror management tools
+sudo pacman -S --noconfirm --noprogressbar rankmirrors reflector
 
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
