@@ -80,6 +80,7 @@ rm -f $HOME/.pyenv/version
 rm -f $HOME/.ruby-version
 rm -f $HOME/.gemrc
 rm -f $HOME/.railsrc
+rm -f $HOME/.supermodel/Config/Supermodel.ini
 
 # Avoid removing ssh
 echo 'y' || cp -rf $HOME/.ssh $HOME/.ssh-backup
