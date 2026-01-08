@@ -15,17 +15,22 @@ log_error() {
 
 # Check steamos-readonly status
 check_readonly_status() {
-  status=$(steamos-readonly status) || {
+  set +e
+  status=$(steamos-readonly status 2>&1)
+  local ret=$?
+  set -e
+
+  if [ $ret -ne 0 ]; then
     log_error "Failed to check steamos-readonly status"
     return 1
-  }
+  fi
 
   if echo "$status" | grep -q "enabled"; then
     echo "enabled"
   elif echo "$status" | grep -q "disabled"; then
     echo "disabled"
   else
-    log_error "Unable to determine steamos-readonly status"
+    log_error "Unable to determine steamos-readonly status (got: $status)"
     return 1
   fi
 }
@@ -70,7 +75,7 @@ make_readonly() {
 # Install yay (AUR helper)
 yay_install() {
   local status
-  status=$(check_readonly_status)
+  status=$(check_readonly_status) || return 1
 
   if [ "$status" = "enabled" ]; then
     log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
@@ -99,7 +104,7 @@ yay_install() {
 # Remove yay
 yay_remove() {
   local status
-  status=$(check_readonly_status)
+  status=$(check_readonly_status) || return 1
 
   if [ "$status" = "enabled" ]; then
     log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
@@ -119,7 +124,7 @@ yay_remove() {
 # Install Docker
 docker_install() {
   local status
-  status=$(check_readonly_status)
+  status=$(check_readonly_status) || return 1
 
   if [ "$status" = "enabled" ]; then
     log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
@@ -144,7 +149,7 @@ docker_install() {
 # Remove Docker
 docker_remove() {
   local status
-  status=$(check_readonly_status)
+  status=$(check_readonly_status) || return 1
 
   if [ "$status" = "enabled" ]; then
     log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
