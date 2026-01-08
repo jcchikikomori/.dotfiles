@@ -163,7 +163,7 @@ docker_remove() {
 # Main command dispatcher
 main() {
   if [ $# -eq 0 ]; then
-    echo "Usage: $0 {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+    echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
     echo ""
     echo "Commands:"
     echo "  reset-audio      Delete WirePlumber settings to fix corrupt audio"
@@ -200,7 +200,7 @@ main() {
       ;;
     *)
       log_error "Unknown command: $1"
-      echo "Usage: $0 {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+      echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
       exit 1
       ;;
   esac

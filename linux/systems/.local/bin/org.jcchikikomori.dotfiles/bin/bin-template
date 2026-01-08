@@ -9,7 +9,7 @@ if [ "$1" = "install" ]; then
 elif [ "$1" = "update" ]; then
   echo "[bin-template] Update Test"
 else
-  echo "Usage: $0 {install|update}"
+  echo "Usage: bin-template {install|update}"
   echo "  install: Badabing badaboom"
   echo "  update: Whoopididoop"
   exit 1
