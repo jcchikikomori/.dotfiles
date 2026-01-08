@@ -41,7 +41,7 @@ make_writeable() {
 
   if [ "$status" = "enabled" ]; then
     log_info "Making SteamOS writeable..."
-    steamos-readonly disable
+    sudo steamos-readonly disable
     log_info "SteamOS is now writeable"
   else
     log_info "SteamOS is already writeable"
@@ -56,7 +56,7 @@ make_readonly() {
 
   if [ "$status" = "disabled" ]; then
     log_info "Making SteamOS read-only..."
-    steamos-readonly enable
+    sudo steamos-readonly enable
     log_info "SteamOS is now read-only"
   else
     log_info "SteamOS is already read-only"
