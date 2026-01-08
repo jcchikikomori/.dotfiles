@@ -17,13 +17,7 @@ log_error() {
 check_readonly_status() {
   set +e
   status=$(steamos-readonly status 2>&1)
-  local ret=$?
   set -e
-
-  if [ $ret -ne 0 ]; then
-    log_error "Failed to check steamos-readonly status"
-    return 1
-  fi
 
   if echo "$status" | grep -q "enabled"; then
     echo "enabled"
