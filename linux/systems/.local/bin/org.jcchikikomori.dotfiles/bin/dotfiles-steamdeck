@@ -1,0 +1,212 @@
+#!/bin/sh
+
+set -eu
+
+# SteamOS-specific utility for managing system state and services
+
+# Color output for messages
+log_info() {
+  echo "[dotfiles-steamdeck] $1"
+}
+
+log_error() {
+  echo "[dotfiles-steamdeck] ERROR: $1" >&2
+}
+
+# Check steamos-readonly status
+check_readonly_status() {
+  set +e
+  status=$(steamos-readonly status 2>&1)
+  set -e
+
+  if echo "$status" | grep -q "enabled"; then
+    echo "enabled"
+  elif echo "$status" | grep -q "disabled"; then
+    echo "disabled"
+  else
+    log_error "Unable to determine steamos-readonly status (got: $status)"
+    return 1
+  fi
+}
+
+# Reset audio settings by deleting WirePlumber corrupt settings
+reset_audio() {
+  log_info "Resetting WirePlumber audio settings..."
+  rm -r ~/.local/state/wireplumber
+  log_info "WirePlumber settings deleted. Please restart your session."
+}
+
+# Make SteamOS writeable
+make_writeable() {
+  local status
+  status=$(check_readonly_status) || return 1
+  log_info "Current readonly status: $status"
+
+  if [ "$status" = "enabled" ]; then
+    log_info "Making SteamOS writeable..."
+    sudo steamos-readonly disable
+    log_info "SteamOS is now writeable"
+  else
+    log_info "SteamOS is already writeable"
+  fi
+}
+
+# Make SteamOS read-only
+make_readonly() {
+  local status
+  status=$(check_readonly_status) || return 1
+  log_info "Current readonly status: $status"
+
+  if [ "$status" = "disabled" ]; then
+    log_info "Making SteamOS read-only..."
+    sudo steamos-readonly enable
+    log_info "SteamOS is now read-only"
+  else
+    log_info "SteamOS is already read-only"
+  fi
+}
+
+# Install yay (AUR helper)
+yay_install() {
+  local status
+  status=$(check_readonly_status) || return 1
+
+  if [ "$status" = "enabled" ]; then
+    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
+    return 1
+  fi
+
+  if command -v yay >/dev/null 2>&1; then
+    log_info "yay is already installed"
+    return 0
+  fi
+
+  log_info "Installing yay..."
+
+  # Clone yay repository and build it
+  tmp_dir=$(mktemp -d)
+  trap "rm -rf $tmp_dir" EXIT
+
+  cd "$tmp_dir"
+  git clone https://aur.archlinux.org/yay-bin.git
+  cd yay-bin
+  makepkg -si --noconfirm
+
+  log_info "yay installed successfully"
+}
+
+# Remove yay
+yay_remove() {
+  local status
+  status=$(check_readonly_status) || return 1
+
+  if [ "$status" = "enabled" ]; then
+    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
+    return 1
+  fi
+
+  if ! command -v yay >/dev/null 2>&1; then
+    log_info "yay is not installed"
+    return 0
+  fi
+
+  log_info "Removing yay..."
+  pacman -R yay --noconfirm
+  log_info "yay removed successfully"
+}
+
+# Install Docker
+docker_install() {
+  local status
+  status=$(check_readonly_status) || return 1
+
+  if [ "$status" = "enabled" ]; then
+    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
+    return 1
+  fi
+
+  if command -v docker >/dev/null 2>&1; then
+    log_info "Docker is already installed"
+    return 0
+  fi
+
+  log_info "Installing Docker..."
+  pacman -Syu docker --noconfirm
+
+  log_info "Enabling Docker service..."
+  systemctl enable docker
+  systemctl start docker
+
+  log_info "Docker installed and started successfully"
+}
+
+# Remove Docker
+docker_remove() {
+  local status
+  status=$(check_readonly_status) || return 1
+
+  if [ "$status" = "enabled" ]; then
+    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
+    return 1
+  fi
+
+  if ! command -v docker >/dev/null 2>&1; then
+    log_info "Docker is not installed"
+    return 0
+  fi
+
+  log_info "Removing Docker..."
+  systemctl stop docker || true
+  systemctl disable docker || true
+  pacman -R docker --noconfirm
+
+  log_info "Docker removed successfully"
+}
+
+# Main command dispatcher
+main() {
+  if [ $# -eq 0 ]; then
+    echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+    echo ""
+    echo "Commands:"
+    echo "  reset-audio      Delete WirePlumber settings to fix corrupt audio"
+    echo "  writeable        Make SteamOS writeable"
+    echo "  readonly         Make SteamOS read-only"
+    echo "  yay-install      Install yay (AUR helper)"
+    echo "  yay-remove       Remove yay"
+    echo "  docker-install   Install Docker"
+    echo "  docker-remove    Remove Docker"
+    exit 1
+  fi
+
+  case "$1" in
+    reset-audio)
+      reset_audio
+      ;;
+    writeable)
+      make_writeable
+      ;;
+    readonly)
+      make_readonly
+      ;;
+    yay-install)
+      yay_install
+      ;;
+    yay-remove)
+      yay_remove
+      ;;
+    docker-install)
+      docker_install
+      ;;
+    docker-remove)
+      docker_remove
+      ;;
+    *)
+      log_error "Unknown command: $1"
+      echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
