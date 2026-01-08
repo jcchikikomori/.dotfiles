@@ -15,7 +15,11 @@ log_error() {
 
 # Check steamos-readonly status
 check_readonly_status() {
-  status=$(steamos-readonly status)
+  status=$(steamos-readonly status) || {
+    log_error "Failed to check steamos-readonly status"
+    return 1
+  }
+
   if echo "$status" | grep -q "enabled"; then
     echo "enabled"
   elif echo "$status" | grep -q "disabled"; then
@@ -36,7 +40,7 @@ reset_audio() {
 # Make SteamOS writeable
 make_writeable() {
   local status
-  status=$(check_readonly_status)
+  status=$(check_readonly_status) || return 1
   log_info "Current readonly status: $status"
 
   if [ "$status" = "enabled" ]; then
@@ -51,7 +55,7 @@ make_writeable() {
 # Make SteamOS read-only
 make_readonly() {
   local status
-  status=$(check_readonly_status)
+  status=$(check_readonly_status) || return 1
   log_info "Current readonly status: $status"
 
   if [ "$status" = "disabled" ]; then
