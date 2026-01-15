@@ -178,7 +178,7 @@ HISTSIZE=50000
 SAVEHIST=10000
 
 ## custom aliases
-source $HOME/.aliases
+source $HOME/.zalias
 
 ## emacs
 source $HOME/.emacsbinding
