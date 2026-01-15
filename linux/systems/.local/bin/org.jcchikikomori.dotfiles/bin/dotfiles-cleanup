@@ -71,6 +71,8 @@ rm -f $HOME/.gnupg/gpg-agent.conf
 rm -f $HOME/.zsh
 rm -f $HOME/.zshrc
 rm -f $HOME/.zshrc.pre-oh-my-zsh
+rm -f $HOME/.zalias
+rm -f $HOME/.zfunctions
 rm -f $HOME/.git
 rm -f $HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf
 rm -f $HOME/.config/alacritty/alacritty.toml
