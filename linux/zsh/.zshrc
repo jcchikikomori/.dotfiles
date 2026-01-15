@@ -136,6 +136,9 @@ function set_win_title(){
 }
 precmd_functions+=(set_win_title)
 
+# Set other functions
+source $HOME/.zfunctions
+
 ## Options section
 setopt correct                                                  # Auto correct mistakes
 setopt extendedglob                                             # Extended globbing. Allows using regular expressions with *
@@ -173,6 +176,9 @@ autoload -U +X bashcompinit && bashcompinit
 HISTFILE=~/.zhistory
 HISTSIZE=50000
 SAVEHIST=10000
+
+## custom aliases
+source $HOME/.aliases
 
 ## emacs
 source $HOME/.emacsbinding
