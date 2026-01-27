@@ -37,3 +37,27 @@ fi
 if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
     source "$SDKMAN_DIR/bin/sdkman-init.sh"
 fi
+
+# Autoload Python venv if .venv exists
+auto_load_venv() {
+    if [ -d "$PWD/.venv" ]; then
+        if [ -z "$VIRTUAL_ENV" ] || [ "$VIRTUAL_ENV" != "$PWD/.venv" ]; then
+            source "$PWD/.venv/bin/activate"
+        fi
+    else
+        if [ -n "$VIRTUAL_ENV" ]; then
+            deactivate
+        fi
+    fi
+}
+
+# Add to PROMPT_COMMAND to run on each prompt
+if [[ "$PROMPT_COMMAND" == *"auto_load_venv"* ]]; then
+    : # already exists
+else
+    PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}auto_load_venv"
+fi
+
+# Run on shell initialization too
+auto_load_venv
+

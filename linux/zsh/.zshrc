@@ -136,6 +136,21 @@ function set_win_title(){
 }
 precmd_functions+=(set_win_title)
 
+# Autoload Python venv if .venv exists
+function auto_load_venv() {
+    if [[ -d "$PWD/.venv" ]]; then
+        if [[ -z "$VIRTUAL_ENV" ]] || [[ "$VIRTUAL_ENV" != "$PWD/.venv" ]]; then
+            source "$PWD/.venv/bin/activate"
+        fi
+    else
+        if [[ -n "$VIRTUAL_ENV" ]]; then
+            deactivate
+        fi
+    fi
+}
+add-zsh-hook chpwd auto_load_venv
+auto_load_venv  # Run on shell initialization too
+
 # Set other functions
 source $HOME/.zfunctions
 
