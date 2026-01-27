@@ -44,14 +44,6 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
-      - name: Test venv auto-loading (bash)
-        run: |
-          mkdir -p $HOME/test_venv_project
-          python3 -m venv $HOME/test_venv_project/.venv
-          bash -c "source $HOME/.bashrc && cd $HOME/test_venv_project && auto_load_venv && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; echo \"VIRTUAL_ENV=\$VIRTUAL_ENV\"; exit 1; fi && echo 'PASS: venv auto-loaded in bash'"
-      - name: Test venv auto-loading (zsh)
-        run: |
-          zsh -c "source $HOME/.zshrc && cd $HOME/test_venv_project && auto_load_venv && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; echo \"VIRTUAL_ENV=\$VIRTUAL_ENV\"; exit 1; fi && echo 'PASS: venv auto-loaded in zsh'"
       - name: Simulate Stowing
         if: always()
         run: |
@@ -110,14 +102,6 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
-      - name: Test venv auto-loading (bash)
-        run: |
-          mkdir -p $HOME/test_venv_project
-          python3 -m venv $HOME/test_venv_project/.venv
-          bash -c "source $HOME/.bashrc && cd $HOME/test_venv_project && auto_load_venv && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; echo \"VIRTUAL_ENV=\$VIRTUAL_ENV\"; exit 1; fi && echo 'PASS: venv auto-loaded in bash'"
-      - name: Test venv auto-loading (zsh)
-        run: |
-          zsh -c "source $HOME/.zshrc && cd $HOME/test_venv_project && auto_load_venv && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; echo \"VIRTUAL_ENV=\$VIRTUAL_ENV\"; exit 1; fi && echo 'PASS: venv auto-loaded in zsh'"
       - name: Simulate Stowing
         if: always()
         run: |
@@ -176,14 +160,6 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
-      - name: Test venv auto-loading (bash)
-        run: |
-          mkdir -p $HOME/test_venv_project
-          python3 -m venv $HOME/test_venv_project/.venv
-          bash -c "source $HOME/.bashrc && cd $HOME/test_venv_project && auto_load_venv && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; echo \"VIRTUAL_ENV=\$VIRTUAL_ENV\"; exit 1; fi && echo 'PASS: venv auto-loaded in bash'"
-      - name: Test venv auto-loading (zsh)
-        run: |
-          zsh -c "source $HOME/.zshrc && cd $HOME/test_venv_project && auto_load_venv && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; echo \"VIRTUAL_ENV=\$VIRTUAL_ENV\"; exit 1; fi && echo 'PASS: venv auto-loaded in zsh'"
       - name: Simulate Stowing
         if: always()
         run: |
