@@ -46,11 +46,8 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
       - name: Test venv auto-loading (bash)
         run: |
-          mkdir -p $HOME/test_venv_project/.venv/bin
-          echo '#!/bin/sh' > $HOME/test_venv_project/.venv/bin/activate
-          echo 'export VIRTUAL_ENV=$PWD/.venv' >> $HOME/test_venv_project/.venv/bin/activate
-          echo 'export PATH=$VIRTUAL_ENV/bin:$PATH' >> $HOME/test_venv_project/.venv/bin/activate
-          chmod +x $HOME/test_venv_project/.venv/bin/activate
+          mkdir -p $HOME/test_venv_project
+          python3 -m venv $HOME/test_venv_project/.venv
           bash -c "source $HOME/.bashrc && cd $HOME/test_venv_project && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; exit 1; fi && echo 'PASS: venv auto-loaded in bash'"
       - name: Test venv auto-loading (zsh)
         run: |
@@ -115,11 +112,8 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
       - name: Test venv auto-loading (bash)
         run: |
-          mkdir -p $HOME/test_venv_project/.venv/bin
-          echo '#!/bin/sh' > $HOME/test_venv_project/.venv/bin/activate
-          echo 'export VIRTUAL_ENV=$PWD/.venv' >> $HOME/test_venv_project/.venv/bin/activate
-          echo 'export PATH=$VIRTUAL_ENV/bin:$PATH' >> $HOME/test_venv_project/.venv/bin/activate
-          chmod +x $HOME/test_venv_project/.venv/bin/activate
+          mkdir -p $HOME/test_venv_project
+          python3 -m venv $HOME/test_venv_project/.venv
           bash -c "source $HOME/.bashrc && cd $HOME/test_venv_project && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; exit 1; fi && echo 'PASS: venv auto-loaded in bash'"
       - name: Test venv auto-loading (zsh)
         run: |
@@ -184,11 +178,8 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
       - name: Test venv auto-loading (bash)
         run: |
-          mkdir -p $HOME/test_venv_project/.venv/bin
-          echo '#!/bin/sh' > $HOME/test_venv_project/.venv/bin/activate
-          echo 'export VIRTUAL_ENV=$PWD/.venv' >> $HOME/test_venv_project/.venv/bin/activate
-          echo 'export PATH=$VIRTUAL_ENV/bin:$PATH' >> $HOME/test_venv_project/.venv/bin/activate
-          chmod +x $HOME/test_venv_project/.venv/bin/activate
+          mkdir -p $HOME/test_venv_project
+          python3 -m venv $HOME/test_venv_project/.venv
           bash -c "source $HOME/.bashrc && cd $HOME/test_venv_project && if [ -z \"\$VIRTUAL_ENV\" ]; then echo 'FAIL: venv not activated'; exit 1; fi && echo 'PASS: venv auto-loaded in bash'"
       - name: Test venv auto-loading (zsh)
         run: |
