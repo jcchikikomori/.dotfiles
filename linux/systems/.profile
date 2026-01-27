@@ -121,7 +121,7 @@ fi
 # Initialize development tools
 if [ -d "$PYENV_ROOT" ]; then
     export PATH="$PYENV_ROOT/bin:$PATH"
-    export PYENV_VERSION="system"
+    export PYENV_VERSION="3.11.4"
     eval "$(pyenv init --path)"
     eval "$(pyenv init -)"
 fi
