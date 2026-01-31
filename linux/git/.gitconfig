@@ -9,9 +9,11 @@
 [credential]
 	helper = /mnt/c/Program\\ Files/Git/mingw64/bin/git-credential-manager.exe
 [alias]
-	l = log --pretty=oneline -n 20 --graph --abbrev-commit
+	ls = log --pretty=oneline -n 20 --graph --abbrev-commit
+	lsa = log --pretty=oneline -n 20 --graph --abbrev-commit --show-signature
 	contributors = shortlog --summary --numbered
 	whoami = config user.email
+	identity = !sh -c \"git config user.name \\\"$(git config user.$1.name)\\\" && git config user.email \\\"$(git config user.$1.email)\\\" && git config user.signingkey \\\"$(git config user.$1.signingkey)\\\"\" -
 [branch]
 	sort = -committerdate
 [core]
@@ -29,3 +31,11 @@
 	rebase = true
 [gpg]
 	program = /usr/bin/gpg
+[user "work"]
+	name = John Cyrill Corsanes
+	email = 241884659+jccven0msn4k33@users.noreply.github.com
+	signingkey = A990728CD1E77D62
+[user "personal"]
+	name = John Cyrill Corsanes
+	email = 4709030+jcchikikomori@users.noreply.github.com
+	signingkey = CC3FAD00C862B8A6

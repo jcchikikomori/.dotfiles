@@ -1,0 +1,232 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Export & restore GPG + SSH keys; ZIP uses store (-0). Works across distros & WSL.
+# Usage:
+#   dotfiles-creds-export backup [--windows-docs] [--dest PATH] [--force]
+#   dotfiles-creds-export restore --src PATH [--force]
+#
+# Notes:
+# - Requires: gpg, zip, unzip
+# - --windows-docs saves to C:\Users\<User>\Documents via /mnt/c/...
+# - --force allows overwrite of existing dest and replaces existing ~/.gnupg / ~/.ssh
+
+ACTION=""
+DEST=""
+SRC=""
+USE_WIN_DOCS="0"
+FORCE="0"
+
+log() { echo "[*] $*"; }
+err() { echo "[!] $*" >&2; }
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || { err "Missing dependency: $1"; exit 1; }
+}
+
+windows_docs_path() {
+  # Try to detect Windows Documents in WSL
+  if [ -d "/mnt/c/Users" ]; then
+    # Prefer PowerShell to get exact username
+    if command -v powershell.exe >/dev/null 2>&1; then
+      local u
+      u=$(powershell.exe -NoProfile -Command "$env:UserName" | tr -d '\r' || true)
+      if [ -n "${u:-}" ] && [ -d "/mnt/c/Users/$u/Documents" ]; then
+        echo "/mnt/c/Users/$u/Documents"
+        return
+      fi
+    fi
+    # Fallback: first user directory
+    local first
+    first=$(ls -1 /mnt/c/Users | head -n1 || true)
+    if [ -n "${first:-}" ] && [ -d "/mnt/c/Users/$first/Documents" ]; then
+      echo "/mnt/c/Users/$first/Documents"
+      return
+    fi
+  fi
+  return 1
+}
+
+usage() {
+  cat <<EOF
+Usage:
+  dotfiles-creds-export backup [--windows-docs] [--dest PATH] [--force]
+  dotfiles-creds-export restore --src PATH [--force]
+
+Options:
+  --windows-docs   Save backup ZIP to Windows Documents (WSL only).
+  --dest PATH      Explicit backup ZIP path.
+  --src PATH       ZIP path to restore from.
+  --force          Overwrite existing files/dirs when needed.
+EOF
+}
+
+# Parse args
+while [ $# -gt 0 ]; do
+  case "${1}" in
+    backup|restore) ACTION="${1}"; shift ;;
+    --windows-docs) USE_WIN_DOCS="1"; shift ;;
+    --dest) DEST="${2:-}"; shift 2 ;;
+    --src) SRC="${2:-}"; shift 2 ;;
+    --force) FORCE="1"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) err "Unknown arg: $1"; usage; exit 1 ;;
+  esac
+done
+
+[ -n "${ACTION}" ] || { usage; exit 1; }
+
+timestamp() { date +"%F_%H%M%S"; }
+
+backup() {
+  need_cmd gpg; need_cmd zip
+  local tmp; tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+
+  mkdir -p "$tmp/backup/gpg" "$tmp/backup/ssh" "$tmp/backup/meta"
+
+  log "Exporting GPG keys and data..."
+
+  # Display GPG key information
+  # log "=== GPG Keys Information ==="
+  # gpg --list-keys --keyid-format LONG || true
+  # echo ""
+  log "=== GPG Secret Keys ==="
+  gpg --list-secret-keys --keyid-format LONG || true
+  echo ""
+
+  # ASCII-armored exports (all public + all secret keys)
+  log "Exporting public keys..."
+  gpg --export --armor > "$tmp/backup/gpg/public_keys.asc" || true
+
+  log "Public key preview (first 20 lines):"
+  head -n 20 "$tmp/backup/gpg/public_keys.asc" 2>/dev/null || true
+  echo ""
+
+  log "Exporting secret keys..."
+  gpg --export-secret-keys --armor > "$tmp/backup/gpg/secret_keys.asc" || true
+
+  log "Exporting ownertrust..."
+  gpg --export-ownertrust > "$tmp/backup/gpg/ownertrust.txt" || true
+
+  # Copy entire keyring (includes private-keys-v1.d/, trustdb, etc.)
+  if [ -d "$HOME/.gnupg" ]; then
+    cp -a "$HOME/.gnupg/pubring.kbx" "$tmp/backup/gpg/" 2>/dev/null || true
+    cp -a "$HOME/.gnupg/trustdb.gpg" "$tmp/backup/gpg/" 2>/dev/null || true
+    cp -a "$HOME/.gnupg/gpg.conf" "$tmp/backup/gpg/" 2>/dev/null || true
+    cp -a "$HOME/.gnupg/dirmngr.conf" "$tmp/backup/gpg/" 2>/dev/null || true
+    [ -d "$HOME/.gnupg/private-keys-v1.d" ] && cp -a "$HOME/.gnupg/private-keys-v1.d" "$tmp/backup/gpg/" || true
+  fi
+
+  log "Exporting SSH keys..."
+  if [ -d "$HOME/.ssh" ]; then
+    cp -a "$HOME/.ssh/." "$tmp/backup/ssh/"
+  else
+    log "No ~/.ssh found; skipping."
+  fi
+
+  # Metadata
+  {
+    echo "created_at=$(date -Iseconds)"
+    echo "host=$(hostname)"
+    echo "os=$(uname -a)"
+    echo "user=$USER"
+    echo "gpg_version=$(gpg --version | head -n1 2>/dev/null || echo 'unknown')"
+  } > "$tmp/backup/meta/manifest.txt"
+
+  # Decide destination
+  local dest_path="${DEST:-}"
+  if [ -z "$dest_path" ]; then
+    if [ "$USE_WIN_DOCS" = "1" ]; then
+      if docs=$(windows_docs_path); then
+        dest_path="$docs/migration_keys_$(timestamp).zip"
+      else
+        err "Windows Documents not found; falling back to home."
+        dest_path="$HOME/migration_keys_$(timestamp).zip"
+      fi
+    else
+      dest_path="$HOME/migration_keys_$(timestamp).zip"
+    fi
+  fi
+
+  if [ -e "$dest_path" ] && [ "$FORCE" != "1" ]; then
+    err "Destination exists: $dest_path (use --force to overwrite)"; exit 1
+  fi
+
+  log "Creating ZIP (store, no compression): $dest_path"
+  (cd "$tmp" && zip -0 -r "$dest_path" backup) >/dev/null
+
+  log "Done. Backup saved to: $dest_path"
+}
+
+restore() {
+  need_cmd gpg; need_cmd unzip
+  [ -n "${SRC}" ] || { err "--src is required for restore"; exit 1; }
+  [ -f "${SRC}" ] || { err "Not found: ${SRC}"; exit 1; }
+
+  local tmp; tmp=$(mktemp -d)
+  trap 'rm -rf "$tmp"' EXIT
+
+  log "Unpacking: $SRC"
+  unzip -q "$SRC" -d "$tmp"
+
+  # GPG restore
+  log "Restoring GPG..."
+  mkdir -p "$HOME/.gnupg"
+  chmod 700 "$HOME/.gnupg"
+
+  # Copy keyring files if present
+  for f in pubring.kbx trustdb.gpg gpg.conf dirmngr.conf; do
+    if [ -f "$tmp/backup/gpg/$f" ]; then
+      if [ -f "$HOME/.gnupg/$f" ] && [ "$FORCE" != "1" ]; then
+        err "~/.gnupg/$f exists; use --force to replace"; exit 1
+      fi
+      cp -a "$tmp/backup/gpg/$f" "$HOME/.gnupg/$f"
+    fi
+  done
+  if [ -d "$tmp/backup/gpg/private-keys-v1.d" ]; then
+    if [ -d "$HOME/.gnupg/private-keys-v1.d" ] && [ "$FORCE" != "1" ]; then
+      err "~/.gnupg/private-keys-v1.d exists; use --force to replace"; exit 1
+    fi
+    rm -rf "$HOME/.gnupg/private-keys-v1.d"
+    cp -a "$tmp/backup/gpg/private-keys-v1.d" "$HOME/.gnupg/private-keys-v1.d"
+  fi
+
+  # Also import armored exports (safe even if files already copied)
+  [ -f "$tmp/backup/gpg/public_keys.asc" ] && gpg --import "$tmp/backup/gpg/public_keys.asc" || true
+  [ -f "$tmp/backup/gpg/secret_keys.asc" ] && gpg --import "$tmp/backup/gpg/secret_keys.asc" || true
+  [ -f "$tmp/backup/gpg/ownertrust.txt" ] && gpg --import-ownertrust "$tmp/backup/gpg/ownertrust.txt" || true
+
+  chmod 700 "$HOME/.gnupg"
+  [ -f "$HOME/.gnupg/trustdb.gpg" ] && chmod 600 "$HOME/.gnupg/trustdb.gpg" || true
+  [ -f "$HOME/.gnupg/pubring.kbx" ] && chmod 644 "$HOME/.gnupg/pubring.kbx" || true
+  [ -d "$HOME/.gnupg/private-keys-v1.d" ] && chmod 700 "$HOME/.gnupg/private-keys-v1.d" || true
+
+  # SSH restore
+  log "Restoring SSH..."
+  if [ -d "$tmp/backup/ssh" ]; then
+    if [ -d "$HOME/.ssh" ] && [ "$FORCE" != "1" ]; then
+      err "~/.ssh exists; use --force to replace"; exit 1
+    fi
+    rm -rf "$HOME/.ssh"
+    mkdir -p "$HOME/.ssh"
+    cp -a "$tmp/backup/ssh/." "$HOME/.ssh/"
+    chmod 700 "$HOME/.ssh"
+    # Permissions
+    find "$HOME/.ssh" -type f -name "*.pub" -exec chmod 644 {} \; || true
+    find "$HOME/.ssh" -type f -name "known_hosts" -exec chmod 644 {} \; || true
+    find "$HOME/.ssh" -type f -name "config" -exec chmod 600 {} \; || true
+    # Private keys (common names)
+    find "$HOME/.ssh" -type f \( -name "id_*" -o -name "*.key" \) ! -name "*.pub" -exec chmod 600 {} \; || true
+  else
+    log "No SSH data in archive; skipping."
+  fi
+
+  log "Restore complete."
+}
+
+case "$ACTION" in
+  backup)  backup ;;
+  restore) restore ;;
+  *) usage; exit 1 ;;
+esac

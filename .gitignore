@@ -77,3 +77,6 @@ linux/zsh/.config/systemd/user/*
 linux/zsh/bin/pyNPU.py
 linux/zsh/bin/t7z
 linux/zsh/bin/nps_*.sh
+
+# tmux
+tmux-client-*.log
