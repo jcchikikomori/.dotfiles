@@ -187,6 +187,10 @@ jobs:
       SKIP_INSTALL_PROGLANG: false
       DEBIAN_FRONTEND: noninteractive
     steps:
+      - name: Install prerequisites for checkout and setup
+        run: |
+          apt-get update
+          apt-get install -y git curl ca-certificates
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
