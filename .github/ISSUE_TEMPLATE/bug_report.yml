@@ -1,0 +1,213 @@
+name: 🐛 Bug Report
+description: Report an issue with the dotfiles setup or scripts
+title: "[Bug]: "
+labels: ["bug"]
+assignees:
+  - jcchikikomori
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 🙏
+        Please provide as much detail as possible to help us investigate.
+
+        **Note:** Based on your selections, maintainers will add appropriate labels like:
+        `Ubuntu`, `Debian`, `Arch`, `Fedora`, `Rhel`, `Steam Deck`, `WSL`, `x86 only`, `aarch64 only`, `For Setup`, `Config`, `Platform Support`
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: Which OS did you encounter the issue on?
+      options:
+        - Linux
+        - Windows (WSL2)
+        - macOS
+        - Android (Termux)
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: linux-distro
+    attributes:
+      label: Linux Distribution
+      description: |
+        If you selected Linux or WSL2, which distribution are you using?
+        Labels: `Ubuntu`, `Debian`, `Arch`, `Fedora`, `Rhel`, `Steam Deck`
+      options:
+        - Ubuntu
+        - Debian
+        - Arch Linux
+        - Manjaro (Arch-based)
+        - EndeavourOS (Arch-based)
+        - Fedora
+        - RHEL / CentOS / Rocky Linux
+        - SteamOS / Steam Deck
+        - Linux Mint (Ubuntu-based)
+        - Pop!_OS (Ubuntu-based)
+        - openSUSE
+        - Other (please specify in description)
+        - N/A (not Linux)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: CPU Architecture
+      description: |
+        What CPU architecture are you running on?
+        Labels: `x86 only`, `aarch64 only`
+      options:
+        - x86_64 (Intel/AMD 64-bit)
+        - aarch64 / ARM64 (Apple Silicon, Raspberry Pi, etc.)
+        - armv7 / ARM32
+        - Other / Unknown
+    validations:
+      required: true
+
+  - type: input
+    id: distro-version
+    attributes:
+      label: Distribution Version
+      description: What version of the OS/distro are you running? (e.g., Ubuntu 24.04, Arch rolling)
+      placeholder: e.g., Ubuntu 24.04 LTS, Fedora 41, Arch (2026-02-01)
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: environment
+    attributes:
+      label: Environment Details
+      description: |
+        Check all that apply to your setup.
+        Labels: `WSL`, `Platform Support`
+      options:
+        - label: Running inside WSL2
+        - label: Running inside a container (Docker/Podman/Distrobox)
+        - label: Running on bare metal
+        - label: Running in a VM (VirtualBox, VMware, QEMU, etc.)
+        - label: Running on Termux (Android)
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe the issue you encountered...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the behavior
+      placeholder: |
+        1. Clone the repository to `~/.dotfiles`
+        2. Run `./start.sh`
+        3. Select '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what you expected to happen...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened instead?
+      placeholder: Describe what actually happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Logs
+      description: |
+        If applicable, add screenshots or terminal output to help explain your problem.
+        **Tip:** You can attach images by clicking this area to highlight it and then dragging files in.
+      placeholder: Drag and drop screenshots here, or paste terminal output...
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs / Terminal Output
+      description: Please copy and paste any relevant log output. This will be automatically formatted into code.
+      render: shell
+    validations:
+      required: false
+
+  - type: dropdown
+    id: setup-stage
+    attributes:
+      label: At which stage did the issue occur?
+      description: |
+        Where in the setup process did you encounter this issue?
+        Labels: `For Setup`, `Config`
+      options:
+        - Running start.sh
+        - Running {distro}/setup.sh
+        - Running {distro}/stowme.sh
+        - Running dotfiles-post-setup
+        - Installing programming language (pyenv, nvm, rbenv, etc.)
+        - Shell/config issues after setup
+        - After reboot / shell restart
+        - Other (please specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-category
+    attributes:
+      label: Issue Category
+      description: What type of issue is this? (helps with labeling)
+      options:
+        - Setup / Installation problem
+        - Configuration file issue
+        - Platform compatibility
+        - Script error / crash
+        - Missing dependency
+        - Documentation mismatch
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: |
+        Add any other context about the problem here. For example:
+        - Shell being used (zsh, bash, fish)
+        - Terminal emulator (Alacritty, GNOME Terminal, Konsole, etc.)
+        - Any custom configurations you have
+      placeholder: Any other relevant information...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to make sure this is not a duplicate
+          required: true
+        - label: I have read the [README](https://github.com/jcchikikomori/dotfiles/blob/master/README.MD) and relevant documentation
+          required: true
+        - label: I am using the latest version of the dotfiles (pulled from master)
+          required: false

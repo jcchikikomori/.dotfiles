@@ -1,0 +1,102 @@
+name: Auto Label Issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  label-issues:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Auto-label based on issue form selections
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const labelsToAdd = [];
+
+            // === LINUX DISTRIBUTION LABELS ===
+            const distroMappings = {
+              'Ubuntu': 'Ubuntu',
+              'Linux Mint': 'Ubuntu',
+              'Pop!_OS': 'Ubuntu',
+              'Debian': 'Debian',
+              'Arch Linux': 'Arch',
+              'Manjaro': 'Arch',
+              'EndeavourOS': 'Arch',
+              'Fedora': 'Fedora',
+              'RHEL': 'Rhel',
+              'CentOS': 'Rhel',
+              'Rocky Linux': 'Rhel',
+              'SteamOS': 'Steam Deck',
+              'Steam Deck': 'Steam Deck'
+            };
+
+            for (const [keyword, label] of Object.entries(distroMappings)) {
+              if (body.includes(keyword)) {
+                labelsToAdd.push(label);
+                break; // Only add one distro label
+              }
+            }
+
+            // === WSL LABEL ===
+            if (body.includes('WSL2') || body.includes('Running inside WSL2')) {
+              labelsToAdd.push('WSL');
+            }
+
+            // === ARCHITECTURE LABELS ===
+            if (body.includes('aarch64') || body.includes('ARM64')) {
+              labelsToAdd.push('aarch64 only');
+            } else if (body.includes('x86_64')) {
+              labelsToAdd.push('x86 only');
+            }
+
+            // === ISSUE CATEGORY LABELS ===
+            const categoryMappings = {
+              'Setup / Installation problem': 'For Setup',
+              'Configuration file issue': 'Config',
+              'Platform compatibility': 'Platform Support',
+              'Documentation mismatch': 'documentation'
+            };
+
+            for (const [keyword, label] of Object.entries(categoryMappings)) {
+              if (body.includes(keyword)) {
+                labelsToAdd.push(label);
+              }
+            }
+
+            // === SETUP STAGE LABELS ===
+            if (body.includes('Running start.sh') ||
+                body.includes('setup.sh') ||
+                body.includes('stowme.sh') ||
+                body.includes('dotfiles-post-setup')) {
+              if (!labelsToAdd.includes('For Setup')) {
+                labelsToAdd.push('For Setup');
+              }
+            }
+
+            if (body.includes('Shell/config issues') || body.includes('After reboot')) {
+              if (!labelsToAdd.includes('Config')) {
+                labelsToAdd.push('Config');
+              }
+            }
+
+            // === ADD LABELS ===
+            if (labelsToAdd.length > 0) {
+              // Remove duplicates
+              const uniqueLabels = [...new Set(labelsToAdd)];
+
+              console.log(`Adding labels: ${uniqueLabels.join(', ')}`);
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: uniqueLabels
+              });
+            } else {
+              console.log('No labels to add based on issue content.');
+            }
