@@ -179,3 +179,66 @@ jobs:
           retention-days: 30
           compression-level: 9
           include-hidden-files: true
+  debian:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: Install prerequisites for checkout and setup
+        run: |
+          apt-get update
+          apt-get install -y git curl ca-certificates
+      - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
+          mkdir -p $HOME/logs
+          cp -r $PWD/* $HOME/.dotfiles/
+      - name: Getting Started
+        run: |
+          ./start.sh
+      - name: Execute post-setup (vim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
+      - name: Execute post-setup (git)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
+      - name: Execute post-setup (homebrew)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (python)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+      - name: Execute post-setup (pre-commit)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
+      - name: Execute post-setup (php)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
+      - name: Execute post-setup (ruby)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Simulate Stowing
+        if: always()
+        run: |
+          sh debian/stowme.sh
+      - name: Generate list from $HOME dir
+        if: always()
+        run: |
+          mkdir -p /tmp/org.jcchikikomori.dotfiles/
+          ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
+          find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotfiles-logs-debian
+          path: /tmp/org.jcchikikomori.dotfiles
+          retention-days: 30
+          compression-level: 9
+          include-hidden-files: true
