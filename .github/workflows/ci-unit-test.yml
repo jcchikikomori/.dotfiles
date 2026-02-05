@@ -44,6 +44,9 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (nodejs)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
       - name: Simulate Stowing
         if: always()
         run: |
@@ -102,6 +105,9 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (nodejs)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
       - name: Simulate Stowing
         if: always()
         run: |
@@ -160,6 +166,9 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (nodejs)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
       - name: Simulate Stowing
         if: always()
         run: |
@@ -223,6 +232,9 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (nodejs)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
       - name: Simulate Stowing
         if: always()
         run: |
