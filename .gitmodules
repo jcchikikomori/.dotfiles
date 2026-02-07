@@ -1,0 +1,3 @@
+[submodule "linux/vscode/.config/Code/User/prompts"]
+	path = linux/vscode/.config/Code/User/prompts
+	url = https://github.com/jcchikikomori/impromptu
