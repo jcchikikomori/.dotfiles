@@ -13,76 +13,83 @@ dotstow unstow git antigen tmux tmuxp vscode dxvk bash
 dotstow unstow flatpak systems wireplumber
 
 echo 'Backing up...'
-rm -rf $HOME/.backups
-mkdir -p $HOME/.backups
-mkdir -p $HOME/.binbackups
+rm -rf "$HOME/.backups"
+mkdir -p "$HOME/.backups"
+mkdir -p "$HOME/.binbackups"
 
 if [ -d "$HOME/.ssh" ]; then
-  cp -rf $HOME/.ssh $HOME/.backups
+  cp -rf "$HOME/.ssh" "$HOME/.backups"
 fi
+
 if [ -d "$HOME/.zsh" ]; then
-  cp -rf $HOME/.zsh $HOME/.backups
+  cp -rf "$HOME/.zsh" "$HOME/.backups"
 fi
+
 if [ -f "$HOME/.zshrc" ]; then
-  cp -f $HOME/.zshrc $HOME/.backups
+  cp -f "$HOME/.zshrc" "$HOME/.backups"
 fi
+
 if [ -f "$HOME/.zprofile" ]; then
-  cp -f $HOME/.zprofile $HOME/.backups
+  cp -f "$HOME/.zprofile" "$HOME/.backups"
 fi
+
 if [ -f "$HOME/.profile" ]; then
-  cp -f $HOME/.profile $HOME/.backups
+  cp -f "$HOME/.profile" "$HOME/.backups"
 fi
+
 if [ -f "$HOME/.zshrc.pre-oh-my-zsh" ]; then
-  cp -f $HOME/.zshrc.pre-oh-my-zsh $HOME/.backups
+  cp -f "$HOME/.zshrc.pre-oh-my-zsh" "$HOME/.backups"
 fi
+
 if [ -d "$HOME/.git" ]; then
-  cp -rf $HOME/.git $HOME/.backups
+  cp -rf "$HOME/.git" "$HOME/.backups"
 fi
 
 echo 'Cleaning up tmux...'
-rm -f $HOME/.tmux.conf.local
+rm -f "$HOME/.tmux.conf.local"
 
 echo 'Cleaning up VSCode...'
-rm -rf $HOME/.vscode
-rm -rf $HOME/.vscode-server
+rm -rf "$HOME/.vscode"
+rm -rf "$HOME/.vscode-server"
+rm -rf "$HOME/.config/Code/User/prompts"
 
 # echo 'Cleaning up scripts...'
 # if [ -f "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin" ]; then
-#   sh $HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin
+#   sh "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin"
 # else
 #   echo "Warning: $HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin does not exist. Skipping script cleanup."
 # fi
 
 echo 'Cleaning up other files...'
-rm -f $HOME/.gitconfig
-rm -f $HOME/.alacritty.yml
-rm -f $HOME/.antigenrc
-rm -f $HOME/bash_completion.d
-rm -f $HOME/default.yml
-rm -f $HOME/.dxvk
-rm -f $HOME/.hushlogin
-rm -f $HOME/.zprofile
-rm -f $HOME/.profile
-rm -f $HOME/.tmuxp
-rm -f $HOME/.vimrc
-rm -f $HOME/.virc
-rm -f $HOME/.gnupg/gpg.conf
-rm -f $HOME/.gnupg/gpg-agent.conf
-rm -f $HOME/.zsh
-rm -f $HOME/.zshrc
-rm -f $HOME/.zshrc.pre-oh-my-zsh
-rm -f $HOME/.zalias
-rm -f $HOME/.zfunctions
-rm -f $HOME/.git
-rm -f $HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf
-rm -f $HOME/.config/alacritty/alacritty.toml
-rm -f $HOME/.config/autostart/com.discordapp.Discord.desktop
-rm -f $HOME/.config/htop/htoprc
-rm -f $HOME/.pyenv/version
-rm -f $HOME/.ruby-version
-rm -f $HOME/.gemrc
-rm -f $HOME/.railsrc
-rm -f $HOME/.supermodel/Config/Supermodel.ini
+rm -f "$HOME/.gitconfig"
+rm -f "$HOME/.alacritty.yml"
+rm -f "$HOME/.antigenrc"
+rm -f "$HOME/bash_completion.d"
+rm -f "$HOME/default.yml"
+rm -f "$HOME/.dxvk"
+rm -f "$HOME/.hushlogin"
+rm -f "$HOME/.zprofile"
+rm -f "$HOME/.profile"
+rm -f "$HOME/.tmuxp"
+rm -f "$HOME/.vimrc"
+rm -f "$HOME/.virc"
+rm -f "$HOME/.gnupg/gpg.conf"
+rm -f "$HOME/.gnupg/gpg-agent.conf"
+rm -f "$HOME/.zsh"
+rm -f "$HOME/.zshrc"
+rm -f "$HOME/.zshrc.pre-oh-my-zsh"
+rm -f "$HOME/.zalias"
+rm -f "$HOME/.zfunctions"
+rm -f "$HOME/.git"
+rm -f "$HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf"
+rm -f "$HOME/.config/alacritty/alacritty.toml"
+rm -f "$HOME/.config/autostart/com.discordapp.Discord.desktop"
+rm -f "$HOME/.config/htop/htoprc"
+rm -f "$HOME/.pyenv/version"
+rm -f "$HOME/.ruby-version"
+rm -f "$HOME/.gemrc"
+rm -f "$HOME/.railsrc"
+rm -f "$HOME/.supermodel/Config/Supermodel.ini"
 
-# Avoid removing ssh
-echo 'y' || cp -rf $HOME/.ssh $HOME/.ssh-backup
+# Backup SSH directory
+echo 'y' || cp -rf "$HOME/.ssh" "$HOME/.ssh-backup"
