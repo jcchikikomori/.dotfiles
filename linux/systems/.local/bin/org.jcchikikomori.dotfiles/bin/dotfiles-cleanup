@@ -47,6 +47,7 @@ fi
 
 echo 'Cleaning up tmux...'
 rm -f "$HOME/.tmux.conf.local"
+rm -rf "$HOME/.config/tmux-powerline"
 
 echo 'Cleaning up VSCode...'
 rm -rf "$HOME/.vscode"
