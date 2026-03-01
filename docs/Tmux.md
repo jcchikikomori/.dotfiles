@@ -2,7 +2,7 @@
 
 ## Overview
 
-Simple tmux setup with **Powerline theme** support and **TPM (Tmux Plugin Manager)** for extensibility.
+Simple tmux setup with **SteamOS theme** styling and **Gitmux** integration for git status display in the status bar.
 
 ## Basic Keys
 
@@ -14,100 +14,74 @@ Simple tmux setup with **Powerline theme** support and **TPM (Tmux Plugin Manage
 | `Ctrl-b` + `c` | Create new window |
 | `Ctrl-b` + `x` | Close pane/window |
 | `Ctrl-b` + `r` | Reload config |
-| `Ctrl-b` + `I` | Install TPM plugins |
-| `Ctrl-b` + `U` | Update TPM plugins |
 
-## Powerline Theme
+## Status Bar - SteamOS Theme
 
 The status bar displays:
 
-- **Left:** Session name and window list
-- **Right:** Custom pane info, date, and time
+- **Left:** Session name (cyan highlight on dark background)
+- **Right:** Git status (via gitmux) + current time
 
-### Customizing Powerline
+### Color Scheme
 
-After first installation, the TPM plugin creates:
-
-```bash
-~/.tmux/plugins/tmux-powerline/
-```
-
-To customize:
-
-1. **Edit powerline config** (created after first plugin install):
-
-   ```bash
-   ~/.tmux/plugins/tmux-powerline/config.sh
-   ```
-
-2. **Available customizations:**
-
-   - `TMUX_POWERLINE_STATUS_INTERVAL_SEC` - Refresh rate (default: 1 second)
-   - Color schemes can be modified in `config.sh`
-   - Custom segments can be added in `segments/` directory
-
-3. **Reload after changes:**
-
-   ```bash
-   Ctrl-b + r
-   ```
+- **Background:** `#0E1419` (SteamOS dark)
+- **Highlight:** `#00BFFF` (Cyan)
+- **Pane borders:** Dark background with cyan active border
 
 ## Installation
 
-After running `dotfiles-post-setup`:
+### Gitmux Setup
 
-1. **Install plugins:**
-
-   ```bash
-   Ctrl-b + I
-   ```
-
-2. **Reload tmux:**
-
-   ```bash
-   tmux kill-server
-   tmux new-session
-   ```
-
-## Pane-Specific Configuration
-
-Powerline supports per-pane customization. You can:
-
-1. Set custom pane titles:
-
-   ```bash
-   Ctrl-b + ,   (then type new name)
-   ```
-
-2. Powerline will display active pane information in the status bar
-
-## Adding More Plugins
-
-Edit `~/.tmux.conf` and add plugins:
+Gitmux is optional but recommended for git status display. Install it:
 
 ```bash
-set -g @plugin 'tmux-plugins/tmux-resurrect'
-set -g @plugin 'tmux-plugins/tmux-continuum'
+~/.dotfiles/linux/tmux/.tmux/bin/gitmux.sh
 ```
 
-Then install with `Ctrl-b + I`.
+Or manually:
+
+```bash
+brew install gitmux      # macOS
+apt install gitmux       # Debian/Ubuntu
+dnf install gitmux       # RHEL/Fedora
+pacman -S gitmux        # Arch Linux
+pkg install gitmux      # Termux
+```
+
+If gitmux is not installed, the status bar will fall back to showing just the time.
+
+### Tmux Config
+
+The main config file is at `~/.tmux.conf`. After changes:
+
+```bash
+# Reload configuration
+Ctrl-b + r
+
+# Or reload from terminal
+tmux source ~/.tmux.conf
+```
 
 ## Troubleshooting
 
-**Powerline not showing:**
+**Gitmux not showing in status bar:**
 
-- Check if `~/.tmux/plugins/tmux-powerline/` exists
-- Run `Ctrl-b + I` to install
-- Reload with `Ctrl-b + r`
+- Ensure gitmux is installed: `command -v gitmux`
+- Check the config file exists: `~/.gitmux.conf`
+- The status bar will fall back to time-only if gitmux is missing (no errors)
 
-**Unicode/Color issues:**
+**Color issues:**
 
 - Ensure terminal supports 256 colors: `echo $TERM`
-- Set in shell: `export TERM=screen-256color`
+- Set in shell if needed: `export TERM=screen-256color`
 
-**Need to reset:**
+**Reset configuration:**
 
 ```bash
-rm -rf ~/.tmux/plugins/tmux-powerline
-# Then run Ctrl-b + I to reinstall
+# Remove tmux session
+tmux kill-server
+
+# Remove config and restore
+rm ~/.tmux.conf
+# Re-stow or copy from dotfiles
 ```
