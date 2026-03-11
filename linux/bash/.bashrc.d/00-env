@@ -1,6 +1,15 @@
 # Scripts
 export PATH="${HOME}/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.devtools/bin:${PATH}"
+
+# SonarQube Scanner
+export SONAR_SCANNER_VERSION="5.0.1.3006"
+export SONAR_SCANNER_HOME="$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux"
+export SONAR_SCANNER_OPTS="-server"
+if [ -d "$SONAR_SCANNER_HOME/bin" ]; then
+    export PATH="$SONAR_SCANNER_HOME/bin:$PATH"
+fi
 
 # Development environments
 export EDITOR=vim

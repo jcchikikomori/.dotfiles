@@ -1,6 +1,3 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:/usr/local/bin:$PATH
-
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -124,6 +121,16 @@ source $ZSH/oh-my-zsh.sh
 ## Path section
 # Default
 export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:$PATH
+# Dev tools
+export PATH=$HOME/.local/bin/org.jcchikikomori.devtools/bin:$PATH
+
+# SonarQube Scanner
+export SONAR_SCANNER_VERSION="5.0.1.3006"
+export SONAR_SCANNER_HOME="$HOME/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux"
+export SONAR_SCANNER_OPTS="-server"
+if [[ -d "$SONAR_SCANNER_HOME/bin" ]]; then
+    export PATH="$SONAR_SCANNER_HOME/bin:$PATH"
+fi
 
 # Additional, separated from dotfiles package.
 # Set $PATH if ~/.local/bin exist
