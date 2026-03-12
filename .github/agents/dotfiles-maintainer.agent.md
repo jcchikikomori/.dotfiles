@@ -1,6 +1,6 @@
 ---
 description: "Dotfiles maintenance agent. Use when: making cross-platform changes, ARM compatibility, propagating changes across distro families (debian/ubuntu, arch/steamos, rhel/fedora), detecting stow conflicts, refactoring shell scripts, validating setup.sh or stowme.sh changes, pre-cleanup conflict checking, reading GitHub issues, triaging issues, suggesting fixes for reported bugs."
-tools: [read, search, edit, execute, agent, todo, gh]
+tools: [read, search, edit, execute, agent, todo]
 argument-hint: "Describe the change or file to validate (e.g., 'add ARM support to dotfiles-python', 'propagate zsh config change to all distros')"
 ---
 
