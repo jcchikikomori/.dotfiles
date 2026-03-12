@@ -99,21 +99,10 @@ resolve_dotstow() {
   return 1
 }
 
-if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
-  log_error "Error: dotfiles-cleanup failed."
-  exit 1
-fi
-
-if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ssh"; then
-  log_error "Error: dotfiles-ssh failed."
-  exit 1
-fi
-
-cd "$HOME" || exit 1
-
-# On WSL, some cloud CLI directories are symlinks to the Windows host (/mnt/c/...).
-# Stow cannot resolve cross-filesystem symlinks and throws a "BUG in find_stowed_path"
-# error. Temporarily remove those symlinks before stowing and restore them after.
+# Some tools (AWS CLI, Azure CLI, GHCup) create $HOME/<dir> as an absolute symlink
+# pointing outside $HOME (e.g. /mnt/c/... on WSL, /usr/local/... in CI). Stow
+# cannot traverse these and throws "BUG in find_stowed_path". Remove them before
+# ANY stow/unstow operation (including the cleanup unstow below) and restore after.
 IS_WSL=0
 if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
   IS_WSL=1
@@ -129,6 +118,38 @@ if [ "$IS_WSL" = "1" ] && [ -L "$HOME/.azure" ]; then
   rm "$HOME/.azure"
 fi
 
+# GHCup symlinks ~/.ghcup -> /usr/local/.ghcup in many CI environments.
+if [ -L "$HOME/.ghcup" ]; then
+  GHCUP_LINK_TARGET=$(readlink "$HOME/.ghcup")
+  rm "$HOME/.ghcup"
+fi
+
+restore_external_symlinks() {
+  if [ "$IS_WSL" = "1" ] && [ -n "$AWS_LINK_TARGET" ]; then
+    ln -s "$AWS_LINK_TARGET" "$HOME/.aws"
+  fi
+  if [ "$IS_WSL" = "1" ] && [ -n "$AZURE_LINK_TARGET" ]; then
+    ln -s "$AZURE_LINK_TARGET" "$HOME/.azure"
+  fi
+  if [ -n "$GHCUP_LINK_TARGET" ]; then
+    ln -s "$GHCUP_LINK_TARGET" "$HOME/.ghcup"
+  fi
+}
+
+if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
+  log_error "Error: dotfiles-cleanup failed."
+  restore_external_symlinks
+  exit 1
+fi
+
+if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ssh"; then
+  log_error "Error: dotfiles-ssh failed."
+  restore_external_symlinks
+  exit 1
+fi
+
+cd "$HOME" || exit 1
+
 # Fedora/RHEL workaround for stow command path lookup through libgcrypt.
 if [ "$DETECTED_DISTRO" = "rhel" ]; then
   export LD_PRELOAD="/usr/lib64/libgcrypt.so.20"
@@ -139,12 +160,7 @@ if ! DOTSTOW_BIN=$(resolve_dotstow); then
   if [ "$DETECTED_DISTRO" = "rhel" ]; then
     export LD_PRELOAD=
   fi
-  if [ "$IS_WSL" = "1" ] && [ -n "$AWS_LINK_TARGET" ]; then
-    ln -s "$AWS_LINK_TARGET" "$HOME/.aws"
-  fi
-  if [ "$IS_WSL" = "1" ] && [ -n "$AZURE_LINK_TARGET" ]; then
-    ln -s "$AZURE_LINK_TARGET" "$HOME/.azure"
-  fi
+  restore_external_symlinks
   exit 1
 fi
 
@@ -154,12 +170,7 @@ if ! "$DOTSTOW_BIN" stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems
   if [ "$DETECTED_DISTRO" = "rhel" ]; then
     export LD_PRELOAD=
   fi
-  if [ "$IS_WSL" = "1" ] && [ -n "$AWS_LINK_TARGET" ]; then
-    ln -s "$AWS_LINK_TARGET" "$HOME/.aws"
-  fi
-  if [ "$IS_WSL" = "1" ] && [ -n "$AZURE_LINK_TARGET" ]; then
-    ln -s "$AZURE_LINK_TARGET" "$HOME/.azure"
-  fi
+  restore_external_symlinks
   exit 1
 fi
 
@@ -167,13 +178,7 @@ if [ "$DETECTED_DISTRO" = "rhel" ]; then
   export LD_PRELOAD=
 fi
 
-# Restore symlinks that were temporarily removed for WSL compatibility.
-if [ "$IS_WSL" = "1" ] && [ -n "$AWS_LINK_TARGET" ]; then
-  ln -s "$AWS_LINK_TARGET" "$HOME/.aws"
-fi
-
-if [ "$IS_WSL" = "1" ] && [ -n "$AZURE_LINK_TARGET" ]; then
-  ln -s "$AZURE_LINK_TARGET" "$HOME/.azure"
-fi
+# Restore symlinks that were temporarily removed for stow compatibility.
+restore_external_symlinks
 
 exit 0
