@@ -13,7 +13,7 @@ You are a cross-platform dotfiles maintenance specialist for this GNU Stow-based
 This dotfiles repo uses:
 
 - **Entry point:** `start.sh` → detects OS → runs `{distro}/setup.sh` → `dotfiles-post-setup`
-- **Symlinking:** `{distro}/stowme.sh` calls `dotstow stow` with consistent package list
+- **Symlinking:** Root `stowme.sh` is canonical; `{distro}/stowme.sh` wrappers delegate to root
 - **Scripts:** `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-*`
 - **Developer's scripts & tools:** `linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-*`
 - **Hardcoded path:** `$HOME/.dotfiles`
@@ -72,7 +72,7 @@ When a change applies to multiple distros:
 **Propagation rules:**
 
 - `setup.sh` changes: Adapt package names per distro's package manager
-- `stowme.sh` changes: Must stay identical across ALL distros
+- `stowme.sh` changes: Update root `stowme.sh` first, then keep distro wrappers as delegates only
 - `linux/*/` changes: Single source, stowed to all
 
 ### 4. Validate Changes

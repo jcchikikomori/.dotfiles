@@ -7,7 +7,7 @@ This is a cross-platform dotfiles management system that automates shell and dev
 **Key Architecture:**
 
 - **Entry point:** `start.sh` - detects OS, runs distro-specific `{distro}/setup.sh`, then `dotfiles-post-setup`
-- **Symlinking:** Each `{distro}/stowme.sh` calls `dotstow stow` with consistent package list
+- **Symlinking:** Root `./stowme.sh` is the canonical stow entrypoint; `{distro}/stowme.sh` scripts are compatibility wrappers that delegate to root
 - **Post-setup tools:** Shell scripts in `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/` install additional tools (pyenv, nvm, rbenv, sdkman, vim plugins, etc.)
 - **Dotfile packages:** `linux/{zsh,bash,git,tmux,vim,vscode,alacritty,starship}/` contain actual config files
 
@@ -17,7 +17,7 @@ This is a cross-platform dotfiles management system that automates shell and dev
 
 1. Clone to `$HOME/.dotfiles` (hardcoded path - DO NOT change)
 2. `./start.sh` - OS detection, package installation, calls `dotfiles-post-setup`
-3. `./{distro}/stowme.sh` - symlinks configs via dotstow
+3. `./stowme.sh` (preferred) or `./{distro}/stowme.sh` (compatibility wrapper) - symlinks configs via dotstow
 4. Reboot to activate shell changes
 
 **Environment variables set by `start.sh`:**
@@ -129,11 +129,13 @@ Programming language version managers are **optionally** installed by `dotfiles-
 
 ## Stow Package Consistency
 
-**All `stowme.sh` files must stow the same package list:**
+**Root `stowme.sh` is the only canonical package list owner:**
 
 ```bash
-dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems flatpak alacritty wireplumber flags lindbergh starship
+dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship
 ```
+
+**Distro `stowme.sh` files must only delegate to root `./stowme.sh` (no local package list duplication).**
 
 **Packages map to directories:**
 
@@ -171,7 +173,7 @@ steps:
   - name: Getting Started
     run: ./start.sh
   - name: Simulate Stowing
-    run: sh {distro}/stowme.sh
+    run: sh stowme.sh
 ```
 
 **Testing individual post-setup scripts in CI:**
@@ -226,7 +228,7 @@ steps:
 **When adding new dotfile configs:**
 
 1. Create directory under `linux/{package-name}/`
-2. Add `{package-name}` to ALL `stowme.sh` files
+2. Add `{package-name}` to root `stowme.sh` package list
 3. Test symlink paths match intended `$HOME` structure
 
 **When creating new utility scripts:**
