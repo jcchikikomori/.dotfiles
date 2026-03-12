@@ -39,7 +39,7 @@ run_tests() {
     docker compose run --rm \
         -e RAILS_ENV=test \
         -e RUBYOPT='-W0' \
-        app bundle exec rspec "$test_path" --format documentation
+        app bundle exec rspec "$test_path" --format progress
 }
 
 run_coverage() {
