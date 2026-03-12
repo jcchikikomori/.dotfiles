@@ -67,6 +67,19 @@ sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfi
 
 cd "$HOME" || exit 1
 
+# On WSL, ~/.aws is a symlink to the Windows host (/mnt/c/...) created by AWS CLI.
+# Stow cannot resolve cross-filesystem symlinks and throws a "BUG in find_stowed_path"
+# error. Temporarily remove the symlink before stowing and restore it after.
+IS_WSL=0
+if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
+  IS_WSL=1
+fi
+
+if [ "$IS_WSL" = "1" ] && [ -L "$HOME/.aws" ]; then
+  AWS_LINK_TARGET=$(readlink "$HOME/.aws")
+  rm "$HOME/.aws"
+fi
+
 # Fedora/RHEL workaround for stow command path lookup through libgcrypt.
 if [ "$DETECTED_DISTRO" = "rhel" ]; then
   export LD_PRELOAD="/usr/lib64/libgcrypt.so.20"
@@ -76,6 +89,11 @@ dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flat
 
 if [ "$DETECTED_DISTRO" = "rhel" ]; then
   export LD_PRELOAD=
+fi
+
+# Restore the ~/.aws symlink that was temporarily removed for WSL compatibility.
+if [ "$IS_WSL" = "1" ] && [ -n "$AWS_LINK_TARGET" ]; then
+  ln -s "$AWS_LINK_TARGET" "$HOME/.aws"
 fi
 
 exit 0
