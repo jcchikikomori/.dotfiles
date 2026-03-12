@@ -18,7 +18,7 @@ fi
 
 echo 'Unstowing...'
 "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode dxvk bash
-"$DOTSTOW_BIN" unstow flatpak systems wireplumber
+"$DOTSTOW_BIN" unstow flatpak systems plasma wireplumber
 
 echo 'Backing up...'
 rm -rf "$HOME/.backups"
@@ -91,6 +91,7 @@ rm -f "$HOME/.zalias"
 rm -f "$HOME/.zfunctions"
 rm -f "$HOME/.git"
 rm -f "$HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf"
+rm -f "$HOME/.config/kwinrulesrc"
 rm -f "$HOME/.config/alacritty/alacritty.toml"
 rm -f "$HOME/.config/autostart/com.discordapp.Discord.desktop"
 rm -f "$HOME/.config/htop/htoprc"
@@ -99,6 +100,14 @@ rm -f "$HOME/.ruby-version"
 rm -f "$HOME/.gemrc"
 rm -f "$HOME/.railsrc"
 rm -f "$HOME/.supermodel/Config/Supermodel.ini"
+
+if [ -L "$HOME/.local/share/kwin/scripts" ]; then
+  rm -f "$HOME/.local/share/kwin/scripts"
+fi
+
+if [ -L "$HOME/.local/share/kservices5" ]; then
+  rm -f "$HOME/.local/share/kservices5"
+fi
 
 # Backup SSH directory
 echo 'y' || cp -rf "$HOME/.ssh" "$HOME/.ssh-backup"

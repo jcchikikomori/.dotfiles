@@ -132,7 +132,7 @@ Programming language version managers are **optionally** installed by `dotfiles-
 **Root `stowme.sh` is the only canonical package list owner:**
 
 ```bash
-dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship
+dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty plasma wireplumber flags lindbergh supermodel starship
 ```
 
 **Distro `stowme.sh` files must only delegate to root `./stowme.sh` (no local package list duplication).**

@@ -1,0 +1,119 @@
+#!/bin/sh
+
+# Pre-stow conflict helper for plasma + wireplumber targets.
+# Reports SAFE/BLOCKING/CLEAN statuses. It is non-fatal by default.
+
+set -u
+
+DOTFILES_PATH=${DOTFILES_PATH:-"$HOME/.dotfiles"}
+STRICT=0
+
+if [ "${1-}" = "--strict" ]; then
+  STRICT=1
+fi
+
+if [ ! -d "$DOTFILES_PATH" ]; then
+  SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+  DOTFILES_PATH=$(CDPATH= cd -- "$SCRIPT_DIR/../../../../../../.." && pwd)
+fi
+
+resolve_symlink_target() {
+  link_path="$1"
+  link_target=$(readlink "$link_path" 2>/dev/null || printf '%s' '')
+
+  if [ -z "$link_target" ]; then
+    return 1
+  fi
+
+  case "$link_target" in
+  /*)
+    combined="$link_target"
+    ;;
+  *)
+    combined=$(dirname -- "$link_path")/$link_target
+    ;;
+  esac
+
+  combined_dir=$(dirname -- "$combined")
+  combined_base=$(basename -- "$combined")
+
+  if ! resolved_dir=$(CDPATH= cd -P -- "$combined_dir" 2>/dev/null && pwd); then
+    return 1
+  fi
+
+  printf '%s/%s\n' "$resolved_dir" "$combined_base"
+  return 0
+}
+
+resolve_existing_path() {
+  path="$1"
+  path_dir=$(dirname -- "$path")
+  path_base=$(basename -- "$path")
+
+  if ! resolved_dir=$(CDPATH= cd -P -- "$path_dir" 2>/dev/null && pwd); then
+    return 1
+  fi
+
+  printf '%s/%s\n' "$resolved_dir" "$path_base"
+  return 0
+}
+
+status_line() {
+  target="$1"
+
+  if [ -L "$target" ]; then
+    resolved=$(resolve_symlink_target "$target" || printf '%s' '')
+    case "$resolved" in
+    "$DOTFILES_PATH"/*)
+      printf 'SAFE      %s\n' "$target"
+      return 0
+      ;;
+    *)
+      printf 'BLOCKING  %s (symlink outside dotfiles)\n' "$target"
+      return 1
+      ;;
+    esac
+  fi
+
+  if [ -e "$target" ]; then
+    resolved_existing=$(resolve_existing_path "$target" || printf '%s' '')
+    case "$resolved_existing" in
+    "$DOTFILES_PATH"/*)
+      printf 'SAFE      %s\n' "$target"
+      return 0
+      ;;
+    esac
+
+    printf 'BLOCKING  %s (exists and is not a dotfiles symlink)\n' "$target"
+    return 1
+  fi
+
+  printf 'CLEAN     %s\n' "$target"
+  return 0
+}
+
+BLOCKING=0
+
+echo '[dotfiles-conflicts] Checking stow target conflicts (plasma + wireplumber)'
+
+for target in \
+  "$HOME/.config/kwinrulesrc" \
+  "$HOME/.local/share/kwin/scripts" \
+  "$HOME/.local/share/kservices5" \
+  "$HOME/.config/wireplumber" \
+  "$HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf"
+do
+  if ! status_line "$target"; then
+    BLOCKING=1
+  fi
+done
+
+if [ "$BLOCKING" -eq 1 ]; then
+  echo '[dotfiles-conflicts] Blocking conflicts found.'
+  echo '[dotfiles-conflicts] Recommended: backup/remove conflicting targets, then run stow again.'
+  if [ "$STRICT" -eq 1 ]; then
+    exit 1
+  fi
+fi
+
+exit 0

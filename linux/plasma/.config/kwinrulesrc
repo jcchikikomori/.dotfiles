@@ -1,0 +1,4 @@
+[$Version]
+update_info=kwinrules.upd:replace-placement-string-with-enum,kwinrules.upd:use-apply-to-enum
+
+# Add per-window rules below. This file format is shared by Plasma 5 and Plasma 6.
