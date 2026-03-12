@@ -44,6 +44,11 @@ if [ -n "$PREFIX" ] && [ -d "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"
   echo "You are using Termux (Android)"
   export DETECTED_DISTRO="termux"
   echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
+# Check macOS (Darwin) before Linux-specific detection.
+elif [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+  echo "You are using macOS"
+  export DETECTED_DISTRO="darwin"
+  echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
 # begin detection
 elif [ -f /etc/os-release ]; then
   . /etc/os-release
@@ -112,6 +117,11 @@ if [ -n "$DETECTED_DISTRO" ]; then
     sh termux/setup.sh
     sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install
+    ;;
+  darwin)
+    echo "Executing macOS-related workarounds..."
+    sh darwin/setup.sh
+    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
     ;;
   debian)
     echo "Executing Debian-related workarounds..."

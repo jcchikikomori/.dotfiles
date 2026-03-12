@@ -19,6 +19,11 @@ detect_distro() {
     return 0
   fi
 
+  if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+    printf '%s\n' "darwin"
+    return 0
+  fi
+
   if [ -f /etc/os-release ]; then
     # shellcheck disable=SC1091
     . /etc/os-release
@@ -93,6 +98,11 @@ resolve_dotstow() {
 
   if [ -x "/usr/local/bin/dotstow" ]; then
     printf '%s\n' "/usr/local/bin/dotstow"
+    return 0
+  fi
+
+  if [ -x "/opt/homebrew/bin/dotstow" ]; then
+    printf '%s\n' "/opt/homebrew/bin/dotstow"
     return 0
   fi
 
