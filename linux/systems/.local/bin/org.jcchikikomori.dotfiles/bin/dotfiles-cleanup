@@ -9,6 +9,9 @@ fi
 if [ -z "$DOTSTOW_BIN" ] && [ -x "/usr/local/bin/dotstow" ]; then
   DOTSTOW_BIN="/usr/local/bin/dotstow"
 fi
+if [ -z "$DOTSTOW_BIN" ] && [ -x "/opt/homebrew/bin/dotstow" ]; then
+  DOTSTOW_BIN="/opt/homebrew/bin/dotstow"
+fi
 
 # Check if dotstow is available and executable
 if [ -z "$DOTSTOW_BIN" ]; then
@@ -17,8 +20,12 @@ if [ -z "$DOTSTOW_BIN" ]; then
 fi
 
 echo 'Unstowing...'
-"$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode dxvk bash
-"$DOTSTOW_BIN" unstow flatpak systems wireplumber
+if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+  "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode systems
+else
+  "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode dxvk bash
+  "$DOTSTOW_BIN" unstow flatpak systems wireplumber
+fi
 
 echo 'Backing up...'
 rm -rf "$HOME/.backups"
