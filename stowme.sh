@@ -80,6 +80,25 @@ log_error() {
   printf '%s%s%s\n' "$COLOR_NEGATIVE" "$1" "$COLOR_RESET" >&2
 }
 
+resolve_dotstow() {
+  if command -v dotstow >/dev/null 2>&1; then
+    command -v dotstow
+    return 0
+  fi
+
+  if [ -x "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotstow" ]; then
+    printf '%s\n' "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotstow"
+    return 0
+  fi
+
+  if [ -x "/usr/local/bin/dotstow" ]; then
+    printf '%s\n' "/usr/local/bin/dotstow"
+    return 0
+  fi
+
+  return 1
+}
+
 if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
   log_error "Error: dotfiles-cleanup failed."
   exit 1
@@ -115,8 +134,22 @@ if [ "$DETECTED_DISTRO" = "rhel" ]; then
   export LD_PRELOAD="/usr/lib64/libgcrypt.so.20"
 fi
 
+if ! DOTSTOW_BIN=$(resolve_dotstow); then
+  log_error "Error: dotstow command not found in PATH or known install locations."
+  if [ "$DETECTED_DISTRO" = "rhel" ]; then
+    export LD_PRELOAD=
+  fi
+  if [ "$IS_WSL" = "1" ] && [ -n "$AWS_LINK_TARGET" ]; then
+    ln -s "$AWS_LINK_TARGET" "$HOME/.aws"
+  fi
+  if [ "$IS_WSL" = "1" ] && [ -n "$AZURE_LINK_TARGET" ]; then
+    ln -s "$AZURE_LINK_TARGET" "$HOME/.azure"
+  fi
+  exit 1
+fi
+
 log_positive "Stowing dotfiles for distro: $DETECTED_DISTRO"
-if ! dotstow stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship; then
+if ! "$DOTSTOW_BIN" stow bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship; then
   log_error "Error: dotstow stow failed."
   if [ "$DETECTED_DISTRO" = "rhel" ]; then
     export LD_PRELOAD=

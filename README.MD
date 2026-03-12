@@ -95,6 +95,16 @@ Then follow any additional prompts during the setup process.
 Execute `stowme.sh` to finally symlink the files properly.
 Then reboot your machine, and let the magic happen!
 
+### Docker Compose Smoke Test
+
+You can run a reusable Debian smoke test target that follows the CI stowing path:
+
+```bash
+docker compose run --rm dotfiles-ci-debian
+```
+
+This target installs minimal dependencies, installs `dotstow`, and runs `debian/stowme.sh` inside a clean `debian:bookworm-slim` container.
+
 ## Post-Setup
 
 After running the setup, the dotfiles-post-setup script will handle additional configurations, including:

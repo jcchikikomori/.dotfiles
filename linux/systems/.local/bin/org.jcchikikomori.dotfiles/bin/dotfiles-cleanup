@@ -2,15 +2,23 @@
 
 # Issues occurring with the script: vim, zsh & systems (.profile file)
 
+DOTSTOW_BIN=$(command -v dotstow 2>/dev/null)
+if [ -z "$DOTSTOW_BIN" ] && [ -x "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotstow" ]; then
+  DOTSTOW_BIN="$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotstow"
+fi
+if [ -z "$DOTSTOW_BIN" ] && [ -x "/usr/local/bin/dotstow" ]; then
+  DOTSTOW_BIN="/usr/local/bin/dotstow"
+fi
+
 # Check if dotstow is available and executable
-if ! command -v dotstow >/dev/null 2>&1; then
-  echo "Error: dotstow command not found in PATH. Aborting." >&2
+if [ -z "$DOTSTOW_BIN" ]; then
+  echo "Error: dotstow command not found in PATH or known install locations. Aborting." >&2
   exit 1
 fi
 
 echo 'Unstowing...'
-dotstow unstow git antigen tmux tmuxp vscode dxvk bash
-dotstow unstow flatpak systems wireplumber
+"$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode dxvk bash
+"$DOTSTOW_BIN" unstow flatpak systems wireplumber
 
 echo 'Backing up...'
 rm -rf "$HOME/.backups"

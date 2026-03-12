@@ -1,0 +1,8 @@
+services:
+  dotfiles-ci-debian:
+    image: debian:bookworm-slim
+    container_name: dotfiles-ci-debian
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    command: ["sh", "/workspace/scripts/docker/ci-smoke-debian.sh"]

@@ -44,7 +44,11 @@ check_command git
 git clone https://github.com/jcchikikomori/dotstow "$WORKDIR/.dotstow"
 cd "$WORKDIR/.dotstow"
 # Tentative implementation, will be merged into the main branch soon.
-git checkout termux
+if git ls-remote --exit-code --heads origin termux >/dev/null 2>&1; then
+    git checkout termux
+else
+    echo "termux branch not found in dotstow repository, using default branch."
+fi
 
 if [ "$IS_TERMUX" -eq 1 ]; then
     echo "Installing dotstow for Termux..."
@@ -54,7 +58,14 @@ elif [ "$IS_STEAMOS" -eq 1 ]; then
     make install PREFIX="$DOTSTOW_PREFIX"
 else
     echo "Installing dotstow for standard Linux..."
-    sudo make install PREFIX="$DOTSTOW_PREFIX"
+    if [ "$(id -u)" -eq 0 ]; then
+        make install PREFIX="$DOTSTOW_PREFIX"
+    elif command -v sudo >/dev/null 2>&1; then
+        sudo make install PREFIX="$DOTSTOW_PREFIX"
+    else
+        echo "ERROR: sudo is required to install dotstow into $DOTSTOW_PREFIX as non-root user." >&2
+        exit 1
+    fi
 fi
 
 # Return back to original/previous directory
