@@ -3,6 +3,10 @@
 A collection of configuration files and scripts to streamline setting up your favorite terminal shell across various systems.
 Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forked then put optimizations & adjustments to sustain my needs, and lessen the friction on configuring, every time i'm doing the setup on my fresh installed Linux hardware.
 
+## Quick Links
+
+- [Git Cheatsheet](docs/GitCheatsheet.md)
+
 ## Features
 
 - Personalized features.
