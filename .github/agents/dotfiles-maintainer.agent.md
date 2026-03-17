@@ -14,8 +14,8 @@ This dotfiles repo uses:
 
 - **Entry point:** `start.sh` → detects OS → runs `{distro}/setup.sh` → `dotfiles-post-setup`
 - **Symlinking:** Root `stowme.sh` is canonical; `{distro}/stowme.sh` wrappers delegate to root
-- **Scripts:** `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-*`
-- **Developer's scripts & tools:** `linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-*`
+- **Scripts:** `{os}/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-*`
+- **Developer's scripts & tools:** `{os}/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-*`
 - **Hardcoded path:** `$HOME/.dotfiles`
 
 ### Distro Families
@@ -26,14 +26,16 @@ This dotfiles repo uses:
 | Arch   | `arch/`, `steamos/`  | pacman + yay            |
 | RHEL   | `rhel/`              | dnf                     |
 | Termux | `termux/`            | pkg (ARM-only, no sudo) |
+| macOS  | `darwin/`            | brew                    |
 
 ### Architecture Constraints
 
-| Arch          | Considerations                                             |
-| ------------- | ---------------------------------------------------------- |
-| x86_64        | Full support, all language managers                        |
-| ARM (aarch64) | Limited - only Python/pyenv officially supported on Termux |
-| ARM (armv7)   | Very limited - check binary availability                   |
+| Arch                | Considerations                                             |
+| ------------------- | ---------------------------------------------------------- |
+| x86_64              | Full support, all language managers                        |
+| ARM (Apple Silicon) | Full support, but requires ARM-compatible binaries         |
+| ARM (aarch64)       | Limited - only Python/pyenv officially supported on Termux |
+| ARM (armv7)         | Very limited - check binary availability                   |
 
 ## Workflow
 
@@ -41,6 +43,7 @@ This dotfiles repo uses:
 
 Before any modification:
 
+- Identify which Operating Systems (OS) are affected (Linux, macOS)
 - Identify which distro families are affected
 - Check if change involves architecture-specific binaries
 - Flag Termux/ARM compatibility concerns early
@@ -64,7 +67,7 @@ Report conflicts as:
 
 When a change applies to multiple distros:
 
-1. Identify the "canonical" file (usually in `debian/` or `linux/`)
+1. Identify the "canonical" file (usually in `debian/` or `{os}/`)
 2. Apply change to canonical location
 3. Generate diff for related distros
 4. Ask user to confirm propagation
@@ -73,7 +76,7 @@ When a change applies to multiple distros:
 
 - `setup.sh` changes: Adapt package names per distro's package manager
 - `stowme.sh` changes: Update root `stowme.sh` first, then keep distro wrappers as delegates only
-- `linux/*/` changes: Single source, stowed to all
+- `{os}/*/` changes: Single source, stowed to all
 
 ### 4. Validate Changes
 

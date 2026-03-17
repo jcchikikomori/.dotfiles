@@ -57,11 +57,49 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dotfiles-logs-ubuntu
+          path: /tmp/org.jcchikikomori.dotfiles
+          retention-days: 30
+          compression-level: 9
+          include-hidden-files: true
+  darwin:
+    runs-on: macos-latest
+    env:
+      SKIP_SETTING_USER: true
+      SKIP_INSTALL_PROGLANG: false
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup some directories
+        run: |
+          mkdir -p $HOME/.dotfiles
+          mkdir -p $HOME/.local/state/dotstow
+          mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
+          mkdir -p $HOME/logs
+          cp -r $PWD/* $HOME/.dotfiles/
+      - name: Getting Started
+        run: |
+          ./start.sh
+      - name: Simulate Stowing
+        if: always()
+        run: |
+          sh darwin/stowme.sh
+      - name: Generate list from $HOME dir
+        if: always()
+        run: |
+          mkdir -p /tmp/org.jcchikikomori.dotfiles/
+          ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
+          find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotfiles-logs-darwin
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
@@ -118,6 +156,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -179,6 +218,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -245,6 +285,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
