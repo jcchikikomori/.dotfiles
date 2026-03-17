@@ -1,0 +1,77 @@
+#!/bin/sh
+
+set -eu
+
+MODE=${1:-apply}
+FORCE=0
+
+if [ "$MODE" = "--force" ]; then
+  MODE=apply
+  FORCE=1
+fi
+
+if [ "${2-}" = "--force" ]; then
+  FORCE=1
+fi
+
+if [ "$MODE" != "apply" ]; then
+  echo "Usage: dotfiles-plasma-baseline [apply] [--force]" >&2
+  echo "  apply: Copy Plasma baseline templates to \$HOME" >&2
+  echo "  --force: Overwrite existing files" >&2
+  exit 1
+fi
+
+DOTFILES_PATH=${DOTFILES_PATH:-"$HOME/.dotfiles"}
+if [ ! -d "$DOTFILES_PATH/plasma" ]; then
+  SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+  SEARCH_DIR="$SCRIPT_DIR"
+
+  while [ "$SEARCH_DIR" != "/" ]; do
+    if [ -f "$SEARCH_DIR/stowme.sh" ] && [ -d "$SEARCH_DIR/plasma" ]; then
+      DOTFILES_PATH="$SEARCH_DIR"
+      break
+    fi
+    SEARCH_DIR=$(dirname -- "$SEARCH_DIR")
+  done
+fi
+
+SOURCE_ROOT="$DOTFILES_PATH/plasma"
+if [ ! -d "$SOURCE_ROOT" ]; then
+  echo "[dotfiles-plasma-baseline] Error: plasma templates not found at $SOURCE_ROOT" >&2
+  exit 1
+fi
+
+copy_file() {
+  src="$1"
+  dst="$2"
+
+  if [ ! -f "$src" ]; then
+    return 0
+  fi
+
+  mkdir -p "$(dirname -- "$dst")"
+
+  if [ -e "$dst" ] && [ "$FORCE" -ne 1 ]; then
+    echo "[dotfiles-plasma-baseline] Skipping existing file: $dst"
+    return 0
+  fi
+
+  cp -f "$src" "$dst"
+  echo "[dotfiles-plasma-baseline] Copied: $dst"
+}
+
+ensure_dir() {
+  dir_path="$1"
+  mkdir -p "$dir_path"
+  echo "[dotfiles-plasma-baseline] Ensured dir: $dir_path"
+}
+
+copy_file "$SOURCE_ROOT/.config/kdeglobals" "$HOME/.config/kdeglobals"
+copy_file "$SOURCE_ROOT/.config/kwinrulesrc" "$HOME/.config/kwinrulesrc"
+copy_file "$SOURCE_ROOT/.config/plasmarc" "$HOME/.config/plasmarc"
+copy_file "$SOURCE_ROOT/.config/plasmashellrc" "$HOME/.config/plasmashellrc"
+
+ensure_dir "$HOME/.local/share/kwin/scripts"
+ensure_dir "$HOME/.local/share/kservices5"
+
+echo "[dotfiles-plasma-baseline] Done."

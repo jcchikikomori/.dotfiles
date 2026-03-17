@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Pre-stow conflict helper for plasma + wireplumber targets.
+# Pre-stow conflict helper for wireplumber targets.
 # Reports SAFE/BLOCKING/CLEAN statuses. It is non-fatal by default.
 
 set -u
@@ -94,12 +94,9 @@ status_line() {
 
 BLOCKING=0
 
-echo '[dotfiles-conflicts] Checking stow target conflicts (plasma + wireplumber)'
+echo '[dotfiles-conflicts] Checking stow target conflicts (wireplumber)'
 
 for target in \
-  "$HOME/.config/kwinrulesrc" \
-  "$HOME/.local/share/kwin/scripts" \
-  "$HOME/.local/share/kservices5" \
   "$HOME/.config/wireplumber" \
   "$HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf"
 do

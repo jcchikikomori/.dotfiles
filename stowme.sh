@@ -181,12 +181,12 @@ if ! DOTSTOW_BIN=$(resolve_dotstow); then
 fi
 
 log_positive "Stowing dotfiles for distro: $DETECTED_DISTRO"
-# darwin excludes Linux-only packages (dxvk, flatpak, wireplumber, lindbergh, plasma)
+# darwin excludes Linux-only packages (dxvk, flatpak, wireplumber, lindbergh)
 # bash package also excluded: macOS default shell is zsh and bash configs reference Linux-specific paths
 if [ "$DETECTED_DISTRO" = "darwin" ]; then
   STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship"
 else
-  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty plasma wireplumber flags lindbergh supermodel starship"
+  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship"
 fi
 if ! "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
   log_error "Error: dotstow stow failed."

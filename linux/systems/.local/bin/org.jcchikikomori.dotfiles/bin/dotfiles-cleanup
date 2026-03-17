@@ -24,7 +24,7 @@ if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
   "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode systems
 else
   "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode dxvk bash
-  "$DOTSTOW_BIN" unstow flatpak systems plasma wireplumber
+  "$DOTSTOW_BIN" unstow flatpak systems wireplumber
 fi
 
 echo 'Backing up...'
