@@ -73,10 +73,16 @@ linux/zsh/.config/systemd/user/sdgyrodsu.service
 # Other systemd user services
 linux/zsh/.config/systemd/user/*
 
+# Startup apps
+linux/flatpak/.config/autostart/*.desktop
+
 # Other binaries
 linux/zsh/bin/pyNPU.py
 linux/zsh/bin/t7z
 linux/zsh/bin/nps_*.sh
+
+# Other binaries (under local)
+linux/systems/.local/bin/*
 
 # tmux
 tmux-client-*.log
