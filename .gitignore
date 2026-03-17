@@ -83,6 +83,9 @@ linux/zsh/bin/nps_*.sh
 
 # Other binaries (under local)
 linux/systems/.local/bin/*
+!linux/systems/.local/bin/org.jcchikikomori.dotfiles/
+!linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/
+!linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty
 
 # tmux
 tmux-client-*.log

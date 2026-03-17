@@ -1,0 +1,21 @@
+[Unit]
+Description=Copyparty File Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=COPYPARTY_PORT=3923
+Environment=COPYPARTY_DEBUG=0
+Environment=COPYPARTY_EXTRA_ARGS=
+EnvironmentFile=-%h/.config/copyparty/copyparty.env
+ExecStart=/bin/sh -lc 'if [ "${COPYPARTY_DEBUG:-0}" = "1" ]; then set -x; fi; exec %h/.local/bin/copyparty -p "${COPYPARTY_PORT}" ${COPYPARTY_EXTRA_ARGS} -v %h/Downloads:/downloads:r -v %h/Pictures:/pictures:r -v %h/Videos:/videos:r'
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=copyparty
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

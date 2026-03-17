@@ -11,6 +11,7 @@ Here's some items below:
 |dotfiles-python|Python version Manager using `pyenv`||
 |dotfiles-nodejs|NodeJS version Manager using `nvm`||
 |dotfiles-java-sdkman|Java version Manager using `SDKMAN`||
+|dotfiles-copyparty|Copyparty file server via `pipx`|Default shared paths: `$HOME/Downloads`, `$HOME/Pictures`, `$HOME/Videos`|
 |dotfiles-distro|Generates the current Linux distribution|Used internally for installing stuff|
 |lindbergh-id5|Play "Initial D Arcade Stage 5" ([Gameplay](https://youtu.be/kjkMN6xHoPw))|Uses Lindbergh Loader for running SEGA Lindbergh Yellow which is based on Debian|
 |lindbergh-outrun2|Play "Outrun 2 SP SDX" ([Gameplay](https://youtu.be/XSg0Ehoj0Mk))|Uses Lindbergh Loader for running SEGA Lindbergh Yellow which is based on Debian|

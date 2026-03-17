@@ -1,0 +1,323 @@
+#!/bin/sh
+
+set -eu
+
+SERVICE_NAME="copyparty.service"
+SERVICE_DIR="$HOME/.config/systemd/user"
+SERVICE_FILE="$SERVICE_DIR/$SERVICE_NAME"
+REPO_SERVICE_TEMPLATE="$HOME/.dotfiles/linux/systems/.config/systemd/user/$SERVICE_NAME"
+CONFIG_DIR="$HOME/.config/copyparty"
+ENV_FILE="$CONFIG_DIR/copyparty.env"
+
+log_info() {
+  echo "[dotfiles-copyparty] $1"
+}
+
+log_error() {
+  echo "[dotfiles-copyparty] ERROR: $1" >&2
+}
+
+check_required_tools() {
+  if ! command -v systemctl >/dev/null 2>&1; then
+    log_error "systemctl is required but not found"
+    return 1
+  fi
+
+  if ! command -v python3 >/dev/null 2>&1; then
+    log_error "python3 is required but not found"
+    return 1
+  fi
+}
+
+ensure_pipx() {
+  if command -v pipx >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log_info "pipx not found. Installing pipx for current user..."
+  python3 -m pip install --user --upgrade pipx
+
+  if [ ! -x "$HOME/.local/bin/pipx" ]; then
+    log_error "pipx installation failed or ~/.local/bin/pipx is not executable"
+    return 1
+  fi
+
+  "$HOME/.local/bin/pipx" ensurepath >/dev/null 2>&1 || true
+}
+
+install_copyparty() {
+  PIPX_BIN=$(command -v pipx || true)
+  if [ -z "$PIPX_BIN" ] && [ -x "$HOME/.local/bin/pipx" ]; then
+    PIPX_BIN="$HOME/.local/bin/pipx"
+  fi
+
+  if [ -z "$PIPX_BIN" ]; then
+    log_error "Unable to locate pipx"
+    return 1
+  fi
+
+  log_info "Installing copyparty using pipx..."
+  "$PIPX_BIN" install --force copyparty
+}
+
+ensure_default_share_dirs() {
+  mkdir -p "$HOME/Downloads" "$HOME/Pictures" "$HOME/Videos"
+}
+
+ensure_default_env() {
+  mkdir -p "$CONFIG_DIR"
+  if [ ! -f "$ENV_FILE" ]; then
+    write_env_file "3923" "0" ""
+  fi
+}
+
+strip_wrapping_quotes() {
+  val="$1"
+  case "$val" in
+    \"*\")
+      val=${val#\"}
+      val=${val%\"}
+      ;;
+  esac
+  printf '%s' "$val"
+}
+
+get_env_value() {
+  key="$1"
+  default_value="$2"
+
+  if [ ! -f "$ENV_FILE" ]; then
+    printf '%s' "$default_value"
+    return
+  fi
+
+  raw_value=$(grep "^${key}=" "$ENV_FILE" | tail -n 1 | cut -d '=' -f 2- || true)
+  if [ -z "$raw_value" ]; then
+    printf '%s' "$default_value"
+    return
+  fi
+
+  strip_wrapping_quotes "$raw_value"
+}
+
+escape_env_value() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+write_env_file() {
+  env_port="$1"
+  env_debug="$2"
+  env_extra_args="$3"
+  escaped_extra_args=$(escape_env_value "$env_extra_args")
+
+  mkdir -p "$CONFIG_DIR"
+  cat >"$ENV_FILE" <<EOF
+COPYPARTY_PORT=3923
+COPYPARTY_DEBUG=0
+COPYPARTY_EXTRA_ARGS=""
+EOF
+
+  sed -i "s/^COPYPARTY_PORT=.*/COPYPARTY_PORT=${env_port}/" "$ENV_FILE"
+  sed -i "s/^COPYPARTY_DEBUG=.*/COPYPARTY_DEBUG=${env_debug}/" "$ENV_FILE"
+  sed -i "s/^COPYPARTY_EXTRA_ARGS=.*/COPYPARTY_EXTRA_ARGS=\"${escaped_extra_args}\"/" "$ENV_FILE"
+}
+
+install_user_service() {
+  mkdir -p "$SERVICE_DIR"
+
+  if [ ! -f "$REPO_SERVICE_TEMPLATE" ]; then
+    log_error "Service template not found at $REPO_SERVICE_TEMPLATE"
+    return 1
+  fi
+
+  cp "$REPO_SERVICE_TEMPLATE" "$SERVICE_FILE"
+  systemctl --user daemon-reload
+}
+
+install() {
+  check_required_tools
+  ensure_pipx
+  install_copyparty
+  ensure_default_share_dirs
+  ensure_default_env
+  install_user_service
+
+  log_info "Copyparty installed."
+  log_info "Default shared paths: $HOME/Downloads, $HOME/Pictures, $HOME/Videos"
+  log_info "Default port: 3923"
+  log_info "Set custom port: dotfiles-copyparty set-port <port>"
+  log_info "Enable debug mode: dotfiles-copyparty set-debug on"
+  log_info "Set extra copyparty args: dotfiles-copyparty set-args '<args>'"
+  log_info "Run 'dotfiles-copyparty start' to start once."
+  log_info "Run 'dotfiles-copyparty startup' to enable on login."
+}
+
+set_port() {
+  if [ $# -lt 1 ]; then
+    log_error "Missing port. Usage: dotfiles-copyparty set-port <port>"
+    return 1
+  fi
+
+  port="$1"
+  if ! echo "$port" | grep -Eq '^[0-9]+$'; then
+    log_error "Port must be a number"
+    return 1
+  fi
+
+  if [ "$port" -lt 1024 ] || [ "$port" -gt 65535 ]; then
+    log_error "Port must be between 1024 and 65535"
+    return 1
+  fi
+
+  ensure_default_env
+  debug=$(get_env_value "COPYPARTY_DEBUG" "0")
+  extra_args=$(get_env_value "COPYPARTY_EXTRA_ARGS" "")
+  write_env_file "$port" "$debug" "$extra_args"
+
+  systemctl --user daemon-reload
+  if systemctl --user is-active --quiet "$SERVICE_NAME"; then
+    systemctl --user restart "$SERVICE_NAME"
+    log_info "Updated port to $port and restarted $SERVICE_NAME"
+  else
+    log_info "Updated port to $port"
+    log_info "Run 'dotfiles-copyparty start' to apply"
+  fi
+}
+
+set_debug() {
+  if [ $# -lt 1 ]; then
+    log_error "Missing value. Usage: dotfiles-copyparty set-debug <on|off>"
+    return 1
+  fi
+
+  case "$1" in
+    on)
+      debug="1"
+      ;;
+    off)
+      debug="0"
+      ;;
+    *)
+      log_error "Invalid value '$1'. Use on or off"
+      return 1
+      ;;
+  esac
+
+  ensure_default_env
+  port=$(get_env_value "COPYPARTY_PORT" "3923")
+  extra_args=$(get_env_value "COPYPARTY_EXTRA_ARGS" "")
+  write_env_file "$port" "$debug" "$extra_args"
+
+  systemctl --user daemon-reload
+  if systemctl --user is-active --quiet "$SERVICE_NAME"; then
+    systemctl --user restart "$SERVICE_NAME"
+    log_info "Debug mode updated to $1 and restarted $SERVICE_NAME"
+  else
+    log_info "Debug mode updated to $1"
+    log_info "Run 'dotfiles-copyparty start' to apply"
+  fi
+}
+
+set_args() {
+  if [ $# -lt 1 ]; then
+    log_error "Missing args. Usage: dotfiles-copyparty set-args '<args>'"
+    return 1
+  fi
+
+  extra_args="$*"
+  ensure_default_env
+  port=$(get_env_value "COPYPARTY_PORT" "3923")
+  debug=$(get_env_value "COPYPARTY_DEBUG" "0")
+  write_env_file "$port" "$debug" "$extra_args"
+
+  systemctl --user daemon-reload
+  if systemctl --user is-active --quiet "$SERVICE_NAME"; then
+    systemctl --user restart "$SERVICE_NAME"
+    log_info "Updated extra args and restarted $SERVICE_NAME"
+  else
+    log_info "Updated extra args"
+    log_info "Run 'dotfiles-copyparty start' to apply"
+  fi
+}
+
+start() {
+  systemctl --user start "$SERVICE_NAME"
+  log_info "Service started: $SERVICE_NAME"
+}
+
+startup() {
+  systemctl --user enable --now "$SERVICE_NAME"
+  log_info "Service enabled and started: $SERVICE_NAME"
+}
+
+stop() {
+  systemctl --user disable --now "$SERVICE_NAME"
+  log_info "Service disabled and stopped: $SERVICE_NAME"
+}
+
+status() {
+  systemctl --user status "$SERVICE_NAME"
+}
+
+logs() {
+  journalctl --user -u "$SERVICE_NAME" -n 100 --no-pager
+}
+
+usage() {
+  echo "Usage: $0 {install|start|startup|stop|status|logs|set-port|set-debug|set-args}"
+  echo "  install: Install copyparty via pipx and install user service"
+  echo "  start: Start copyparty service"
+  echo "  startup: Enable and start copyparty on user login"
+  echo "  stop: Disable and stop copyparty service"
+  echo "  status: Show service status"
+  echo "  logs: Show recent service logs"
+  echo "  set-port: Set custom service port (1024-65535)"
+  echo "  set-debug: Toggle debug shell tracing (on|off)"
+  echo "  set-args: Set extra copyparty command-line args"
+}
+
+main() {
+  if [ $# -eq 0 ]; then
+    usage
+    exit 1
+  fi
+
+  case "$1" in
+    install)
+      install
+      ;;
+    start)
+      start
+      ;;
+    startup)
+      startup
+      ;;
+    stop)
+      stop
+      ;;
+    status)
+      status
+      ;;
+    logs)
+      logs
+      ;;
+    set-port)
+      shift
+      set_port "$@"
+      ;;
+    set-debug)
+      shift
+      set_debug "$@"
+      ;;
+    set-args)
+      shift
+      set_args "$@"
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
