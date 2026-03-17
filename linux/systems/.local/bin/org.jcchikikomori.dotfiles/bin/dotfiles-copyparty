@@ -67,7 +67,7 @@ ensure_default_share_dirs() {
 ensure_default_env() {
   mkdir -p "$CONFIG_DIR"
   if [ ! -f "$ENV_FILE" ]; then
-    write_env_file "3923" "0" ""
+    write_env_file "3923" "0" "" "0" "" ""
   fi
 }
 
@@ -108,18 +108,111 @@ write_env_file() {
   env_port="$1"
   env_debug="$2"
   env_extra_args="$3"
+  env_auth_enabled="$4"
+  env_username="$5"
+  env_password="$6"
   escaped_extra_args=$(escape_env_value "$env_extra_args")
+  escaped_username=$(escape_env_value "$env_username")
+  escaped_password=$(escape_env_value "$env_password")
 
   mkdir -p "$CONFIG_DIR"
   cat >"$ENV_FILE" <<EOF
 COPYPARTY_PORT=3923
 COPYPARTY_DEBUG=0
 COPYPARTY_EXTRA_ARGS=""
+COPYPARTY_AUTH_ENABLED=0
+COPYPARTY_USERNAME=""
+COPYPARTY_PASSWORD=""
 EOF
 
   sed -i "s/^COPYPARTY_PORT=.*/COPYPARTY_PORT=${env_port}/" "$ENV_FILE"
   sed -i "s/^COPYPARTY_DEBUG=.*/COPYPARTY_DEBUG=${env_debug}/" "$ENV_FILE"
   sed -i "s/^COPYPARTY_EXTRA_ARGS=.*/COPYPARTY_EXTRA_ARGS=\"${escaped_extra_args}\"/" "$ENV_FILE"
+  sed -i "s/^COPYPARTY_AUTH_ENABLED=.*/COPYPARTY_AUTH_ENABLED=${env_auth_enabled}/" "$ENV_FILE"
+  sed -i "s/^COPYPARTY_USERNAME=.*/COPYPARTY_USERNAME=\"${escaped_username}\"/" "$ENV_FILE"
+  sed -i "s/^COPYPARTY_PASSWORD=.*/COPYPARTY_PASSWORD=\"${escaped_password}\"/" "$ENV_FILE"
+  chmod 600 "$ENV_FILE"
+}
+
+restart_if_active() {
+  systemctl --user daemon-reload
+  if systemctl --user is-active --quiet "$SERVICE_NAME"; then
+    systemctl --user restart "$SERVICE_NAME"
+    return 0
+  fi
+  return 1
+}
+
+read_secret() {
+  prompt="$1"
+  printf '%s' "$prompt" >&2
+  stty -echo
+  IFS= read -r secret
+  stty echo
+  printf '\n' >&2
+  printf '%s' "$secret"
+}
+
+setup_auth_wizard() {
+  ensure_default_env
+
+  default_username=$(id -un 2>/dev/null || echo "user")
+  current_username=$(get_env_value "COPYPARTY_USERNAME" "$default_username")
+  if [ -n "$current_username" ]; then
+    printf 'Copyparty username [%s]: ' "$current_username" >&2
+  else
+    printf 'Copyparty username: ' >&2
+  fi
+  IFS= read -r input_username
+  if [ -n "$input_username" ]; then
+    username="$input_username"
+  else
+    username="$current_username"
+  fi
+
+  if [ -z "$username" ]; then
+    log_error "Username cannot be empty"
+    return 1
+  fi
+
+  password=$(read_secret "Copyparty password: ")
+  if [ -z "$password" ]; then
+    log_error "Password cannot be empty"
+    return 1
+  fi
+
+  password_confirm=$(read_secret "Confirm password: ")
+  if [ "$password" != "$password_confirm" ]; then
+    log_error "Password confirmation does not match"
+    return 1
+  fi
+
+  port=$(get_env_value "COPYPARTY_PORT" "3923")
+  debug=$(get_env_value "COPYPARTY_DEBUG" "0")
+  extra_args=$(get_env_value "COPYPARTY_EXTRA_ARGS" "")
+  write_env_file "$port" "$debug" "$extra_args" "1" "$username" "$password"
+
+  if restart_if_active; then
+    log_info "Authentication enabled for user '$username' and $SERVICE_NAME restarted"
+  else
+    log_info "Authentication enabled for user '$username'"
+    log_info "Run 'dotfiles-copyparty start' to apply"
+  fi
+}
+
+disable_auth() {
+  ensure_default_env
+  port=$(get_env_value "COPYPARTY_PORT" "3923")
+  debug=$(get_env_value "COPYPARTY_DEBUG" "0")
+  extra_args=$(get_env_value "COPYPARTY_EXTRA_ARGS" "")
+  write_env_file "$port" "$debug" "$extra_args" "0" "" ""
+
+  if restart_if_active; then
+    log_info "Authentication disabled and $SERVICE_NAME restarted"
+  else
+    log_info "Authentication disabled"
+    log_info "Run 'dotfiles-copyparty start' to apply"
+  fi
 }
 
 install_user_service() {
@@ -148,8 +241,22 @@ install() {
   log_info "Set custom port: dotfiles-copyparty set-port <port>"
   log_info "Enable debug mode: dotfiles-copyparty set-debug on"
   log_info "Set extra copyparty args: dotfiles-copyparty set-args '<args>'"
+  log_info "Configure authentication: dotfiles-copyparty setup-auth"
   log_info "Run 'dotfiles-copyparty start' to start once."
   log_info "Run 'dotfiles-copyparty startup' to enable on login."
+
+  if [ -t 0 ]; then
+    printf 'Enable copyparty authentication for full $HOME management? (y/n): ' >&2
+    IFS= read -r enable_auth
+    if [ "$enable_auth" = "y" ] || [ "$enable_auth" = "Y" ]; then
+      setup_auth_wizard
+    else
+      log_info "Authentication wizard skipped"
+    fi
+  else
+    log_info "No interactive terminal detected; skipping auth wizard"
+    log_info "Run 'dotfiles-copyparty setup-auth' later"
+  fi
 }
 
 set_port() {
@@ -172,11 +279,12 @@ set_port() {
   ensure_default_env
   debug=$(get_env_value "COPYPARTY_DEBUG" "0")
   extra_args=$(get_env_value "COPYPARTY_EXTRA_ARGS" "")
-  write_env_file "$port" "$debug" "$extra_args"
+  auth_enabled=$(get_env_value "COPYPARTY_AUTH_ENABLED" "0")
+  username=$(get_env_value "COPYPARTY_USERNAME" "")
+  password=$(get_env_value "COPYPARTY_PASSWORD" "")
+  write_env_file "$port" "$debug" "$extra_args" "$auth_enabled" "$username" "$password"
 
-  systemctl --user daemon-reload
-  if systemctl --user is-active --quiet "$SERVICE_NAME"; then
-    systemctl --user restart "$SERVICE_NAME"
+  if restart_if_active; then
     log_info "Updated port to $port and restarted $SERVICE_NAME"
   else
     log_info "Updated port to $port"
@@ -206,11 +314,12 @@ set_debug() {
   ensure_default_env
   port=$(get_env_value "COPYPARTY_PORT" "3923")
   extra_args=$(get_env_value "COPYPARTY_EXTRA_ARGS" "")
-  write_env_file "$port" "$debug" "$extra_args"
+  auth_enabled=$(get_env_value "COPYPARTY_AUTH_ENABLED" "0")
+  username=$(get_env_value "COPYPARTY_USERNAME" "")
+  password=$(get_env_value "COPYPARTY_PASSWORD" "")
+  write_env_file "$port" "$debug" "$extra_args" "$auth_enabled" "$username" "$password"
 
-  systemctl --user daemon-reload
-  if systemctl --user is-active --quiet "$SERVICE_NAME"; then
-    systemctl --user restart "$SERVICE_NAME"
+  if restart_if_active; then
     log_info "Debug mode updated to $1 and restarted $SERVICE_NAME"
   else
     log_info "Debug mode updated to $1"
@@ -228,11 +337,12 @@ set_args() {
   ensure_default_env
   port=$(get_env_value "COPYPARTY_PORT" "3923")
   debug=$(get_env_value "COPYPARTY_DEBUG" "0")
-  write_env_file "$port" "$debug" "$extra_args"
+  auth_enabled=$(get_env_value "COPYPARTY_AUTH_ENABLED" "0")
+  username=$(get_env_value "COPYPARTY_USERNAME" "")
+  password=$(get_env_value "COPYPARTY_PASSWORD" "")
+  write_env_file "$port" "$debug" "$extra_args" "$auth_enabled" "$username" "$password"
 
-  systemctl --user daemon-reload
-  if systemctl --user is-active --quiet "$SERVICE_NAME"; then
-    systemctl --user restart "$SERVICE_NAME"
+  if restart_if_active; then
     log_info "Updated extra args and restarted $SERVICE_NAME"
   else
     log_info "Updated extra args"
@@ -264,7 +374,7 @@ logs() {
 }
 
 usage() {
-  echo "Usage: $0 {install|start|startup|stop|status|logs|set-port|set-debug|set-args}"
+  echo "Usage: $0 {install|start|startup|stop|status|logs|set-port|set-debug|set-args|setup-auth|disable-auth}"
   echo "  install: Install copyparty via pipx and install user service"
   echo "  start: Start copyparty service"
   echo "  startup: Enable and start copyparty on user login"
@@ -274,6 +384,8 @@ usage() {
   echo "  set-port: Set custom service port (1024-65535)"
   echo "  set-debug: Toggle debug shell tracing (on|off)"
   echo "  set-args: Set extra copyparty command-line args"
+  echo "  setup-auth: Interactive wizard for username/password auth"
+  echo "  disable-auth: Disable auth and clear stored credentials"
 }
 
 main() {
@@ -312,6 +424,14 @@ main() {
     set-args)
       shift
       set_args "$@"
+      ;;
+    setup-auth)
+      shift
+      setup_auth_wizard "$@"
+      ;;
+    disable-auth)
+      shift
+      disable_auth "$@"
       ;;
     *)
       usage

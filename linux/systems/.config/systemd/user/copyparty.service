@@ -9,8 +9,11 @@ Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
 Environment=COPYPARTY_PORT=3923
 Environment=COPYPARTY_DEBUG=0
 Environment=COPYPARTY_EXTRA_ARGS=
+Environment=COPYPARTY_AUTH_ENABLED=0
+Environment=COPYPARTY_USERNAME=
+Environment=COPYPARTY_PASSWORD=
 EnvironmentFile=-%h/.config/copyparty/copyparty.env
-ExecStart=/bin/sh -lc 'if [ "${COPYPARTY_DEBUG:-0}" = "1" ]; then set -x; fi; exec %h/.local/bin/copyparty -p "${COPYPARTY_PORT}" ${COPYPARTY_EXTRA_ARGS} -v %h/Downloads:/downloads:r -v %h/Pictures:/pictures:r -v %h/Videos:/videos:r'
+ExecStart=/bin/sh -lc 'if [ "${COPYPARTY_DEBUG:-0}" = "1" ]; then set -x; fi; if [ "${COPYPARTY_AUTH_ENABLED:-0}" = "1" ]; then exec %h/.local/bin/copyparty -p "${COPYPARTY_PORT}" ${COPYPARTY_EXTRA_ARGS} -a "${COPYPARTY_USERNAME}:${COPYPARTY_PASSWORD}" -v %h:/:rwmd,"${COPYPARTY_USERNAME}"; else exec %h/.local/bin/copyparty -p "${COPYPARTY_PORT}" ${COPYPARTY_EXTRA_ARGS} -v %h/Downloads:/downloads:r -v %h/Pictures:/pictures:r -v %h/Videos:/videos:r; fi'
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=copyparty
