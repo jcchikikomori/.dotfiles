@@ -57,6 +57,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -93,6 +94,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -154,6 +156,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -215,6 +218,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -281,6 +285,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
