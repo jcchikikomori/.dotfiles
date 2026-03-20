@@ -9,6 +9,7 @@ if [ "$1" = "install" ]; then
     pkg install -y python2
     echo "Installing pipx via pip..."
     pip install --user pipx
+    export PATH="$HOME/.local/bin:$PATH"
     pipx ensurepath
   else
     echo "Installing pyenv..."
@@ -38,6 +39,7 @@ if [ "$1" = "install" ]; then
     fi
     echo "Installing pipx..."
     pip install --user pipx
+    export PATH="$HOME/.local/bin:$PATH"
     pipx ensurepath
   fi
 elif [ "$1" = "update" ]; then
