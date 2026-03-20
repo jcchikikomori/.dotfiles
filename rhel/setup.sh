@@ -8,6 +8,9 @@ sudo dnf install -y perl
 sudo dnf install -y php composer
 sudo dnf install -y zenity
 
+# Installing rclone
+sudo dnf install -y rclone
+
 # Python
 sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel tk-devel tc-devel
 sudo dnf install -y python3-tmuxp python3-packaging python3-pip python3-virtualenv

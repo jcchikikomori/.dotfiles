@@ -28,7 +28,7 @@ export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_NO_ENV_HINTS=1
 
 brew update
-brew install stow git zsh tmux wget coreutils
+brew install stow git zsh tmux wget coreutils rclone
 
 if ! xcode-select -p >/dev/null 2>&1; then
   if [ -n "$CI" ]; then

@@ -79,6 +79,9 @@ else
   echo "chaotic-aur repository is already registered. Skipping..."
 fi
 
+# Installing rclone
+pacman_install "-S --noconfirm --noprogressbar" rclone
+
 # Compilation Cache
 pacman_install "-S --noconfirm --noprogressbar" ccache
 

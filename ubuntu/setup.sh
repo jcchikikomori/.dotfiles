@@ -17,6 +17,9 @@ sudo apt-get install -y python3 zip vi openssh xclip xsel ncdu wget vim-gtk3
 # Installing additional packages (for building others such as pyenv)
 sudo apt-get install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 
+# Installing rclone
+sudo apt-get install -y rclone
+
 # Setting default locale (skip loadkeys on WSL as it doesn't support console keymaps)
 if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
   echo "WSL detected: Skipping loadkeys (not supported in WSL)."

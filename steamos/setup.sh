@@ -50,6 +50,9 @@ pacman_install "-Syy --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms 
 # Workarounds & Misc software
 pacman_install "-S --noconfirm --noprogressbar" xsel ncdu
 
+# Installing rclone
+pacman_install "-S --noconfirm --noprogressbar" rclone
+
 # Locking SteamOS rootfs...
 sudo steamos-readonly enable
 

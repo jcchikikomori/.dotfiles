@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# Ensure rclone is installed
+if ! command -v rclone >/dev/null 2>&1; then
+    echo "ERROR: rclone is not installed. Please install it first." >&2
+    exit 1
+fi
+
+# Ensure MEGA remote exists
+if ! rclone listremotes | grep -q '^mega:'; then
+    echo "ERROR: MEGA configuration 'mega' not found in rclone. Please configure it first." >&2
+    echo "Run 'rclone config' to set up a MEGA remote named 'mega'." >&2
+    exit 1
+fi
+
+# Default path for Emulation folder
+DEFAULT_EMULATION_DIR="$HOME/Emulation"
+
+# Check if the default path exists
+if [ -d "$DEFAULT_EMULATION_DIR" ]; then
+    EMULATION_DIR="$DEFAULT_EMULATION_DIR"
+else
+    # Prompt the user for the correct path
+    echo "Default Emulation directory not found at $DEFAULT_EMULATION_DIR."
+    echo "If you have EmuDeck installed in a custom or external location, please provide its full path."
+    read -r -p "Enter the path to your Emulation folder: " CUSTOM_PATH
+
+    # Verify the user-provided path exists
+    if [ -d "$CUSTOM_PATH" ]; then
+        EMULATION_DIR="$CUSTOM_PATH"
+    else
+        echo "ERROR: Invalid path. Emulation directory not found at $CUSTOM_PATH" >&2
+        exit 1
+    fi
+fi
+
+echo "Validation passed: rclone and MEGA are properly configured."
+echo "Using Emulation directory: $EMULATION_DIR"

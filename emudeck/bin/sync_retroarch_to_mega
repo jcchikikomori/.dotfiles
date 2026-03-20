@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# Sync RetroArch saves, states, and configuration overrides to MEGA S4 bucket
+# Includes: save files, save states, core-specific configs, shaders, and remaps
+
+# Default path for Emulation folder
+DEFAULT_EMULATION_DIR="$HOME/Emulation"
+
+# Check if the default path exists
+if [ -d "$DEFAULT_EMULATION_DIR" ]; then
+    EMULATION_DIR="$DEFAULT_EMULATION_DIR"
+else
+    # Prompt the user for the correct path
+    echo "Default Emulation directory not found at $DEFAULT_EMULATION_DIR."
+    echo "If you have EmuDeck installed in a custom or external location, please provide its full path."
+    read -r -p "Enter the path to your Emulation folder: " CUSTOM_PATH
+
+    # Verify the user-provided path exists
+    if [ -d "$CUSTOM_PATH" ]; then
+        EMULATION_DIR="$CUSTOM_PATH"
+    else
+        echo "ERROR: Invalid path. Emulation directory not found at $CUSTOM_PATH" >&2
+        exit 1
+    fi
+fi
+
+# Define RetroArch paths
+RETROARCH_DIR="$EMULATION_DIR/saves/retroarch"
+
+# Verify RetroArch directory exists
+if [ ! -d "$RETROARCH_DIR" ]; then
+    echo "ERROR: RetroArch directory not found at $RETROARCH_DIR" >&2
+    exit 1
+fi
+
+# Sync RetroArch data to MEGA
+echo "Syncing RetroArch data from $RETROARCH_DIR to mega:emudeck-data/retroarch..."
+echo ""
+echo "Items being synced:"
+echo "  - Save files (saves/)"
+echo "  - Save states (states/)"
+echo "  - Configuration overrides (config/)"
+echo "    • Core-specific configs (.cfg files)"
+echo "    • Shader presets (.slangp, .glslp files)"
+echo "    • Controller remaps (.rmp files)"
+echo ""
+
+# Sync save files (follows symlinks)
+if [ -d "$RETROARCH_DIR/saves" ]; then
+    echo "Syncing save files..."
+    rclone sync "$RETROARCH_DIR/saves/" "mega:emudeck-data/retroarch/saves" --verbose --copy-links
+fi
+
+# Sync save states (follows symlinks)
+if [ -d "$RETROARCH_DIR/states" ]; then
+    echo "Syncing save states..."
+    rclone sync "$RETROARCH_DIR/states/" "mega:emudeck-data/retroarch/states" --verbose --copy-links
+fi
+
+# Sync configuration overrides (core configs, shaders, remaps - follows symlinks)
+if [ -d "$RETROARCH_DIR/config" ]; then
+    echo "Syncing configuration overrides..."
+    rclone sync "$RETROARCH_DIR/config/" "mega:emudeck-data/retroarch/config" --verbose --copy-links
+fi
+
+echo ""
+echo "RetroArch data synced successfully to mega:emudeck-data/retroarch/"

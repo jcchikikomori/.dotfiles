@@ -12,7 +12,7 @@ pkg update
 
 pkg install -y apt ca-certificates curl
 pkg install -y stow vim nano htop git zsh build-essential which
-pkg install -y python zip openssh ncdu wget tmux unzip
+pkg install -y python zip openssh ncdu wget tmux unzip rclone
 
 # Setting default locale
 # Termux does not use loadkeys or localectl, locale settings are managed differently
