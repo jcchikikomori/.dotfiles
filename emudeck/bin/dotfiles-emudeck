@@ -149,15 +149,12 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=@@SCRIPT_DIR@@/sync_retroarch_to_mega
-ExecStart=@@SCRIPT_DIR@@/sync_pcsx2_to_mega
-ExecStart=@@SCRIPT_DIR@@/sync_flycast_to_mega
+ExecStart=%h/.dotfiles/emudeck/bin/sync_retroarch_to_mega
+ExecStart=%h/.dotfiles/emudeck/bin/sync_pcsx2_to_mega
+ExecStart=%h/.dotfiles/emudeck/bin/sync_flycast_to_mega
 StandardOutput=journal
 StandardError=journal
 EOF
-    
-    # Replace placeholder with actual script directory
-    sed -i "s|@@SCRIPT_DIR@@|$SCRIPT_DIR|g" "$service_file"
     
     # Create timer file
     print_info "Creating systemd timer..."
