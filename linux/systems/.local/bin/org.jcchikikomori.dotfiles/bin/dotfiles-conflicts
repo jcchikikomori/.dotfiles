@@ -1,7 +1,27 @@
 #!/bin/sh
 
-# Pre-stow conflict helper for wireplumber targets.
-# Reports SAFE/BLOCKING/CLEAN statuses. It is non-fatal by default.
+# Pre-stow conflict helper for known dotfiles targets.
+# Reports SAFE/BLOCKING/CLEAN statuses before stowing packages.
+# This prevents stow from failing when target files already exist.
+#
+# Statuses:
+#   SAFE    - File exists as symlink to dotfiles or path inside dotfiles dir
+#   BLOCKING - File exists but is NOT a dotfiles symlink (needs cleanup)
+#   CLEAN   - File does not exist (ready to stow)
+#
+# Exit codes:
+#   0       - All checked targets are SAFE or CLEAN
+#   1 (--strict mode) - Any BLOCKING conflicts found
+#   0 (default mode)  - Non-fatal; reports conflicts but exits 0
+#
+# Usage:
+#   dotfiles-conflicts              # Report conflicts, non-fatal
+#   dotfiles-conflicts --strict     # Report conflicts, exit 1 on blocking
+#
+# References:
+#   - GitHub #91: emudeck-sync systemd files caused stow conflicts
+#   - When adding new config files to dotfiles, this script helps detect
+#     pre-existing files that would block stow symlink creation.
 
 set -u
 
@@ -112,6 +132,20 @@ for target in \
   "$HOME/.config/opencode/opencode.jsonc" \
   "$HOME/.config/opencode/AGENTS.md" \
   "$HOME/.config/opencode/.env.example"
+do
+  if ! status_line "$target"; then
+    BLOCKING=1
+  fi
+done
+
+echo '[dotfiles-conflicts] Checking stow target conflicts (emudeck systemd)'
+
+# GitHub #91: Prevent conflicts with emudeck-sync systemd services.
+# If user created these files manually during testing, stow will refuse to link.
+# Solution: Back up and remove the real files, keeping only dotfiles symlinks.
+for target in \
+  "$HOME/.config/systemd/user/emudeck-sync.service" \
+  "$HOME/.config/systemd/user/emudeck-sync.timer"
 do
   if ! status_line "$target"; then
     BLOCKING=1

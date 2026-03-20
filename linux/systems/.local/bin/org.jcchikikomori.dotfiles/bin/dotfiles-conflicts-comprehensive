@@ -1,0 +1,164 @@
+#!/bin/sh
+
+# Comprehensive pre-stow conflict scanner for all dotfiles packages.
+# Unlike dotfiles-conflicts (which checks known problematic files),
+# this script scans the entire dotfiles tree and reports conflicts.
+#
+# GitHub #91: This tool helps prevent stow conflicts when adding new configs.
+# 
+# Workflow for adding new config files to dotfiles:
+#   1. Add new files to {distro}/systems/{subdir}/filename
+#   2. Run: dotfiles-conflicts-comprehensive
+#   3. If conflicts found:
+#      a. Backup existing files: cp -r ~/.config/mydir ~/backup-mydir-YYYYMMDD
+#      b. Remove the files: rm -f ~/.config/mydir/filename
+#      c. Re-run this script to verify CLEAN status
+#   4. Run: stowme.sh to link the new files
+#   5. Test: systemctl --user daemon-reload && systemctl --user status myservice
+#
+# Exit codes:
+#   0       - All potential stow targets are SAFE or CLEAN
+#   1       - BLOCKING conflicts found (requires manual cleanup)
+
+set -u
+
+DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.dotfiles}"
+STRICT=0
+
+if [ "${1-}" = "--strict" ]; then
+  STRICT=1
+fi
+
+if [ ! -d "$DOTFILES_PATH" ]; then
+  printf 'ERROR: DOTFILES_PATH not found: %s\n' "$DOTFILES_PATH" >&2
+  exit 1
+fi
+
+resolve_symlink_target() {
+  link_path="$1"
+  link_target=$(readlink "$link_path" 2>/dev/null || printf '%s' '')
+
+  if [ -z "$link_target" ]; then
+    return 1
+  fi
+
+  case "$link_target" in
+  /*)
+    combined="$link_target"
+    ;;
+  *)
+    combined=$(dirname -- "$link_path")/$link_target
+    ;;
+  esac
+
+  combined_dir=$(dirname -- "$combined")
+  combined_base=$(basename -- "$combined")
+
+  if ! resolved_dir=$(CDPATH= cd -P -- "$combined_dir" 2>/dev/null && pwd); then
+    return 1
+  fi
+
+  printf '%s/%s\n' "$resolved_dir" "$combined_base"
+  return 0
+}
+
+resolve_existing_path() {
+  path="$1"
+  path_dir=$(dirname -- "$path")
+  path_base=$(basename -- "$path")
+
+  if ! resolved_dir=$(CDPATH= cd -P -- "$path_dir" 2>/dev/null && pwd); then
+    return 1
+  fi
+
+  printf '%s/%s\n' "$resolved_dir" "$path_base"
+  return 0
+}
+
+status_line() {
+  target="$1"
+
+  if [ -L "$target" ]; then
+    resolved=$(resolve_symlink_target "$target" || printf '%s' '')
+    case "$resolved" in
+    "$DOTFILES_PATH"/*)
+      printf 'SAFE      %s\n' "$target"
+      return 0
+      ;;
+    *)
+      printf 'BLOCKING  %s (symlink outside dotfiles)\n' "$target"
+      return 1
+      ;;
+    esac
+  fi
+
+  if [ -e "$target" ]; then
+    resolved_existing=$(resolve_existing_path "$target" || printf '%s' '')
+    case "$resolved_existing" in
+    "$DOTFILES_PATH"/*)
+      printf 'SAFE      %s\n' "$target"
+      return 0
+      ;;
+    esac
+
+    printf 'BLOCKING  %s (exists and is not a dotfiles symlink)\n' "$target"
+    return 1
+  fi
+
+  printf 'CLEAN     %s\n' "$target"
+  return 0
+}
+
+BLOCKING=0
+
+echo "[dotfiles-conflicts-comprehensive] Scanning all packages for conflicts..."
+echo ""
+
+# Scan all distro-specific systems packages
+for distro in linux darwin debian ubuntu arch steamos rhel termux; do
+  package_dir="$DOTFILES_PATH/$distro/systems"
+  if [ ! -d "$package_dir" ]; then
+    continue
+  fi
+
+  printf '[dotfiles-conflicts-comprehensive] Package: %s/systems\n' "$distro"
+  
+  # Find all files (not directories) that would be stowed
+  find "$package_dir" -type f 2>/dev/null | sort | while read -r file; do
+    # Convert dotfiles path to home path
+    rel_path="${file#$package_dir/}"
+    home_target="$HOME/$rel_path"
+    
+    # Check if target exists
+    if [ -f "$home_target" ] || [ -L "$home_target" ]; then
+      if ! status_line "$home_target" >/dev/null 2>&1; then
+        BLOCKING=1
+        status_line "$home_target"
+      fi
+    fi
+  done
+done
+
+echo ""
+
+if [ "$BLOCKING" -eq 1 ]; then
+  echo "[dotfiles-conflicts-comprehensive] BLOCKING conflicts found!"
+  echo ""
+  echo "Recommended cleanup workflow:"
+  echo "  1. Backup the conflicting files:"
+  echo "     cp -r ~/.config/<dir> ~/backup-<dir>-\$(date +%Y%m%d)"
+  echo "  2. Remove the conflicting files:"
+  echo "     rm -f ~/.config/<file>"
+  echo "  3. Re-run this script to verify CLEAN status:"
+  echo "     dotfiles-conflicts-comprehensive"
+  echo "  4. Re-run stow:"
+  echo "     stowme.sh"
+  echo ""
+  if [ "$STRICT" -eq 1 ]; then
+    exit 1
+  fi
+else
+  echo "[dotfiles-conflicts-comprehensive] All targets are SAFE or CLEAN!"
+fi
+
+exit 0

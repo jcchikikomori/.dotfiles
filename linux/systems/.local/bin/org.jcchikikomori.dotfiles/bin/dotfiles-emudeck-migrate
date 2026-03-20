@@ -1,0 +1,196 @@
+#!/bin/sh
+
+# Migrate existing emudeck systemd files from user home to dotfiles.
+# GitHub #91: This helper automates the conflict resolution workflow for emudeck.
+#
+# Problem: If you manually created ~/.config/systemd/user/emudeck-sync.* files
+# during testing, stow will refuse to create symlinks when adding these files
+# to the dotfiles package.
+#
+# Solution: This script backs up, removes, and verifies the migration.
+#
+# Usage:
+#   dotfiles-emudeck-migrate              # Interactive, asks for confirmation
+#   dotfiles-emudeck-migrate --force      # Non-interactive, no confirmation
+#   dotfiles-emudeck-migrate --check-only # Check status without modifying
+
+set -u
+
+FORCE=0
+CHECK_ONLY=0
+
+if [ "${1-}" = "--force" ]; then
+  FORCE=1
+fi
+
+if [ "${1-}" = "--check-only" ]; then
+  CHECK_ONLY=1
+fi
+
+DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.dotfiles}"
+
+echo "[dotfiles-emudeck-migrate] EmuDeck systemd file migration helper"
+echo ""
+
+# Check if emudeck files exist in home
+SERVICE_FILE="$HOME/.config/systemd/user/emudeck-sync.service"
+TIMER_FILE="$HOME/.config/systemd/user/emudeck-sync.timer"
+
+SERVICE_EXISTS=0
+TIMER_EXISTS=0
+SERVICE_IS_LINK=0
+TIMER_IS_LINK=0
+
+if [ -e "$SERVICE_FILE" ] || [ -L "$SERVICE_FILE" ]; then
+  SERVICE_EXISTS=1
+  if [ -L "$SERVICE_FILE" ]; then
+    SERVICE_IS_LINK=1
+  fi
+fi
+
+if [ -e "$TIMER_FILE" ] || [ -L "$TIMER_FILE" ]; then
+  TIMER_EXISTS=1
+  if [ -L "$TIMER_FILE" ]; then
+    TIMER_IS_LINK=1
+  fi
+fi
+
+echo "Status Check:"
+echo ""
+
+if [ "$SERVICE_EXISTS" -eq 1 ]; then
+  if [ "$SERVICE_IS_LINK" -eq 1 ]; then
+    TARGET=$(readlink "$SERVICE_FILE" 2>/dev/null || echo "unknown")
+    echo "  emudeck-sync.service: SYMLINK → $TARGET"
+  else
+    echo "  emudeck-sync.service: REAL FILE (requires migration)"
+  fi
+else
+  echo "  emudeck-sync.service: NOT FOUND (clean)"
+fi
+
+if [ "$TIMER_EXISTS" -eq 1 ]; then
+  if [ "$TIMER_IS_LINK" -eq 1 ]; then
+    TARGET=$(readlink "$TIMER_FILE" 2>/dev/null || echo "unknown")
+    echo "  emudeck-sync.timer: SYMLINK → $TARGET"
+  else
+    echo "  emudeck-sync.timer: REAL FILE (requires migration)"
+  fi
+else
+  echo "  emudeck-sync.timer: NOT FOUND (clean)"
+fi
+
+echo ""
+
+if [ "$CHECK_ONLY" -eq 1 ]; then
+  exit 0
+fi
+
+# If everything is already symlinks or doesn't exist, nothing to do
+if [ "$SERVICE_EXISTS" -eq 0 ] && [ "$TIMER_EXISTS" -eq 0 ]; then
+  echo "✓ No migration needed - no files found in home"
+  exit 0
+fi
+
+if [ "$SERVICE_IS_LINK" -eq 1 ] && [ "$TIMER_IS_LINK" -eq 1 ]; then
+  echo "✓ No migration needed - files are already symlinks to dotfiles"
+  exit 0
+fi
+
+# Migration needed
+echo "Migration Required:"
+echo ""
+
+BACKUP_DIR="$HOME/backup-emudeck-systemd-$(date +%Y%m%d-%H%M%S)"
+
+if [ "$FORCE" -eq 0 ]; then
+  echo "This will:"
+  echo "  1. Backup existing files to: $BACKUP_DIR"
+  echo "  2. Remove real files from home"
+  echo "  3. Re-link with dotfiles symlinks"
+  echo ""
+  printf "Continue? (yes/no): "
+  read -r response
+  if [ "$response" != "yes" ]; then
+    echo "Migration cancelled."
+    exit 0
+  fi
+fi
+
+echo ""
+echo "Backing up existing files to: $BACKUP_DIR"
+mkdir -p "$BACKUP_DIR"
+
+if [ "$SERVICE_EXISTS" -eq 1 ] && [ "$SERVICE_IS_LINK" -eq 0 ]; then
+  cp "$SERVICE_FILE" "$BACKUP_DIR/emudeck-sync.service"
+  echo "  ✓ Backed up emudeck-sync.service"
+fi
+
+if [ "$TIMER_EXISTS" -eq 1 ] && [ "$TIMER_IS_LINK" -eq 0 ]; then
+  cp "$TIMER_FILE" "$BACKUP_DIR/emudeck-sync.timer"
+  echo "  ✓ Backed up emudeck-sync.timer"
+fi
+
+echo ""
+echo "Removing real files from home..."
+
+if [ "$SERVICE_EXISTS" -eq 1 ] && [ "$SERVICE_IS_LINK" -eq 0 ]; then
+  rm -f "$SERVICE_FILE"
+  echo "  ✓ Removed $SERVICE_FILE"
+fi
+
+if [ "$TIMER_EXISTS" -eq 1 ] && [ "$TIMER_IS_LINK" -eq 0 ]; then
+  rm -f "$TIMER_FILE"
+  echo "  ✓ Removed $TIMER_FILE"
+fi
+
+echo ""
+echo "Re-stowing emudeck systemd files..."
+cd "$HOME" || exit 1
+
+if ! dotstow stow systems >/dev/null 2>&1; then
+  echo "  ✗ Stow failed - restoring backup"
+  
+  if [ -f "$BACKUP_DIR/emudeck-sync.service" ]; then
+    cp "$BACKUP_DIR/emudeck-sync.service" "$SERVICE_FILE"
+  fi
+  if [ -f "$BACKUP_DIR/emudeck-sync.timer" ]; then
+    cp "$BACKUP_DIR/emudeck-sync.timer" "$TIMER_FILE"
+  fi
+  
+  exit 1
+fi
+
+echo "  ✓ Stow succeeded"
+
+echo ""
+echo "Final Status:"
+if [ -L "$SERVICE_FILE" ]; then
+  TARGET=$(readlink "$SERVICE_FILE" 2>/dev/null || echo "unknown")
+  echo "  ✓ emudeck-sync.service: SYMLINK → $TARGET"
+else
+  echo "  ✗ emudeck-sync.service: NOT a symlink!"
+  exit 1
+fi
+
+if [ -L "$TIMER_FILE" ]; then
+  TARGET=$(readlink "$TIMER_FILE" 2>/dev/null || echo "unknown")
+  echo "  ✓ emudeck-sync.timer: SYMLINK → $TARGET"
+else
+  echo "  ✗ emudeck-sync.timer: NOT a symlink!"
+  exit 1
+fi
+
+echo ""
+echo "✓ Migration complete! Backup saved to: $BACKUP_DIR"
+echo ""
+echo "Next steps:"
+echo "  1. Test emudeck services:"
+echo "     systemctl --user daemon-reload"
+echo "     systemctl --user status emudeck-sync.service"
+echo "     systemctl --user status emudeck-sync.timer"
+echo ""
+echo "  2. If everything works, you can remove the backup:"
+echo "     rm -r $BACKUP_DIR"
+
+exit 0
