@@ -28,8 +28,8 @@ fi
 RETROARCH_SAVES="$EMULATION_DIR/saves/retroarch/saves"
 RETROARCH_STATES="$EMULATION_DIR/saves/retroarch/states"
 RETROARCH_CONFIG="$EMULATION_DIR/saves/retroarch/config"
-RETROARCH_SYSTEM="$HOME/.config/retroarch/system"
-RETROARCH_CHEATS="$HOME/.config/retroarch/cheats"
+RETROARCH_SYSTEM="$EMULATION_DIR/storage/retroarch/system"
+RETROARCH_CHEATS="$EMULATION_DIR/storage/retroarch/cheats"
 
 echo "Syncing RetroArch data to mega:emudeck-data/retroarch..."
 echo ""
