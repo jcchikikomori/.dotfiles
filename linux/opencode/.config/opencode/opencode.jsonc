@@ -9,13 +9,12 @@
       "*": "allow"
     },
     "bash": {
-      "*": "allow",
-      "git *": "allow",
       "git commit *": "deny",
       "git push *": "deny",
-      "grep *": "allow",
+      "git commit": "deny",
+      "git push": "deny",
       "rm -rf *": "ask",
-      "jq *": "allow"
+      "*": "allow"
     },
     "read": {
       "~/.dotfiles/linux/vscode/.config/Code/User/prompts/**": "allow"
