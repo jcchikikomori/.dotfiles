@@ -1,0 +1,84 @@
+#!/bin/sh
+
+# Sync ES-DE (EmulationStation) settings and metadata to MEGA S4 bucket
+# ES-DE stores game metadata, collections, and user preferences
+# Does NOT sync themes (4.5GB regenerable) or logs (transient)
+
+# Default path for ES-DE configuration
+ESDE_DIR="${HOME}/ES-DE"
+
+# Check if ES-DE is installed
+if [ ! -d "$ESDE_DIR" ]; then
+    echo "ERROR: ES-DE not found at $ESDE_DIR" >&2
+    exit 1
+fi
+
+echo "Syncing ES-DE configuration to mega:emudeck-data/es-de..."
+echo ""
+echo "Items being synced:"
+echo "  - Settings (es_settings.xml)"
+echo "  - Game metadata (gamelists/)"
+echo "  - Custom systems (custom_systems/)"
+echo "  - Collections (collections/)"
+echo "  - Controller mappings (controllers/)"
+echo "  - Custom scripts (scripts/)"
+echo ""
+echo "Skipping (regenerable/transient):"
+echo "  - Themes (4.5GB - can be re-downloaded)"
+echo "  - Logs (transient cache)"
+echo "  - Scrapers (regenerable cache)"
+echo ""
+
+# Sync ES-DE settings (user preferences, screen options, etc.)
+if [ -d "$ESDE_DIR/settings" ]; then
+    echo "Syncing ES-DE settings..."
+    rclone sync "$ESDE_DIR/settings/" "mega:emudeck-data/es-de/settings" --verbose
+else
+    echo "⚠ ES-DE settings directory not found at $ESDE_DIR/settings (skipping)"
+fi
+
+# Sync gamelists (game metadata, user edits, scraped info)
+if [ -d "$ESDE_DIR/gamelists" ]; then
+    echo "Syncing game metadata (gamelists)..."
+    rclone sync "$ESDE_DIR/gamelists/" "mega:emudeck-data/es-de/gamelists" --verbose
+else
+    echo "⚠ ES-DE gamelists directory not found at $ESDE_DIR/gamelists (skipping)"
+fi
+
+# Sync custom systems configuration (custom es_systems.xml additions)
+if [ -d "$ESDE_DIR/custom_systems" ]; then
+    echo "Syncing custom systems configuration..."
+    rclone sync "$ESDE_DIR/custom_systems/" "mega:emudeck-data/es-de/custom_systems" --verbose
+else
+    echo "⚠ ES-DE custom_systems directory not found at $ESDE_DIR/custom_systems (skipping)"
+fi
+
+# Sync user collections (custom game groupings)
+if [ -d "$ESDE_DIR/collections" ]; then
+    echo "Syncing user collections..."
+    rclone sync "$ESDE_DIR/collections/" "mega:emudeck-data/es-de/collections" --verbose
+else
+    echo "⚠ ES-DE collections directory not found at $ESDE_DIR/collections (skipping)"
+fi
+
+# Sync controller configurations
+if [ -d "$ESDE_DIR/controllers" ]; then
+    echo "Syncing controller configurations..."
+    rclone sync "$ESDE_DIR/controllers/" "mega:emudeck-data/es-de/controllers" --verbose
+else
+    echo "⚠ ES-DE controllers directory not found at $ESDE_DIR/controllers (skipping)"
+fi
+
+# Sync custom scripts
+if [ -d "$ESDE_DIR/scripts" ]; then
+    echo "Syncing custom scripts..."
+    rclone sync "$ESDE_DIR/scripts/" "mega:emudeck-data/es-de/scripts" --verbose
+else
+    echo "⚠ ES-DE scripts directory not found at $ESDE_DIR/scripts (skipping)"
+fi
+
+echo ""
+echo "✓ ES-DE configuration synced successfully to mega:emudeck-data/es-de/"
+echo ""
+echo "Note: Themes, logs, and scrapers are intentionally skipped."
+echo "Themes can be re-downloaded from ES-DE's theme downloader."

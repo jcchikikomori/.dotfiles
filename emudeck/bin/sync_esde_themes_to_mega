@@ -1,0 +1,109 @@
+#!/bin/sh
+
+# Sync ES-DE (EmulationStation) themes to MEGA S4 bucket
+# WARNING: Themes are typically 4.5GB and can be re-downloaded
+# This script is OPTIONAL - not included in auto-sync by default
+
+# Default path for ES-DE configuration
+ESDE_DIR="${HOME}/ES-DE"
+
+# Check if ES-DE is installed
+if [ ! -d "$ESDE_DIR" ]; then
+    echo "ERROR: ES-DE not found at $ESDE_DIR" >&2
+    exit 1
+fi
+
+# Check if themes directory exists
+if [ ! -d "$ESDE_DIR/themes" ]; then
+    echo "ERROR: ES-DE themes directory not found at $ESDE_DIR/themes" >&2
+    echo "Tip: Download themes using ES-DE's built-in theme downloader" >&2
+    exit 1
+fi
+
+# Check theme size
+THEMES_SIZE=$(du -sh "$ESDE_DIR/themes" 2>/dev/null | cut -f1)
+THEMES_COUNT=$(find "$ESDE_DIR/themes" -maxdepth 1 -type d 2>/dev/null | wc -l)
+THEMES_COUNT=$((THEMES_COUNT - 1))  # Subtract 1 for the themes/ directory itself
+
+echo "════════════════════════════════════════════════════════════"
+echo "  ⚠️  ES-DE THEMES SYNC WARNING"
+echo "════════════════════════════════════════════════════════════"
+echo ""
+echo "Themes Directory: $ESDE_DIR/themes"
+echo "Size: $THEMES_SIZE"
+echo "Number of themes: $THEMES_COUNT"
+echo ""
+echo "⚠️  WARNING: This will upload approximately $THEMES_SIZE of data!"
+echo ""
+echo "Reasons to sync themes:"
+echo "  • Preserve custom theme modifications"
+echo "  • Backup theme-specific assets"
+echo ""
+echo "Reasons to skip themes:"
+echo "  • Can be re-downloaded from ES-DE theme downloader"
+echo "  • Large size (4.5GB) consumes bandwidth and storage"
+echo "  • Auto-sync timer would run for a long time"
+echo ""
+echo "════════════════════════════════════════════════════════════"
+
+# Check if non-interactive mode (systemd timer or forced mode)
+if [ "${ESDE_SYNC_FORCE:-0}" = "1" ]; then
+    echo "FORCE mode enabled - proceeding with themes sync..."
+    echo ""
+    FORCE_SYNC=1
+elif [ -t 0 ]; then
+    # Interactive mode - ask user
+    printf "Do you want to sync ES-DE themes? [y/N]: "
+    read -r answer
+    case "$answer" in
+        [yY]|[yY][eE][sS])
+            echo ""
+            echo "Proceeding with themes sync..."
+            FORCE_SYNC=1
+            ;;
+        *)
+            echo ""
+            echo "Themes sync cancelled. Run with ESDE_SYNC_FORCE=1 to skip this prompt."
+            exit 0
+            ;;
+    esac
+else
+    # Non-interactive mode - skip with warning
+    echo "Non-interactive mode detected."
+    echo "Themes sync requires user confirmation."
+    echo "Set ESDE_SYNC_FORCE=1 to bypass this prompt."
+    echo ""
+    echo "Skipping themes sync..."
+    exit 0
+fi
+
+echo "Syncing ES-DE themes to mega:emudeck-data/es-de/themes..."
+echo ""
+
+# Sync ES-DE themes
+if [ -d "$ESDE_DIR/themes" ]; then
+    echo "Uploading themes (this may take a while)..."
+    echo "Progress: Use 'rclone rc core/stats' in another terminal to monitor"
+    echo ""
+    rclone sync "$ESDE_DIR/themes/" "mega:emudeck-data/es-de/themes" --verbose --transfers 8
+    RESULT=$?
+    
+    if [ $RESULT -eq 0 ]; then
+        echo ""
+        echo "✓ ES-DE themes synced successfully to mega:emudeck-data/es-de/themes/"
+        echo ""
+        echo "Note: You can restore themes with:"
+        echo "  rclone sync mega:emudeck-data/es-de/themes ~/.ES-DE/themes/"
+    else
+        echo ""
+        echo "✗ Failed to sync ES-DE themes (exit code: $RESULT)" >&2
+        echo "Check your network connection and try again." >&2
+        exit $RESULT
+    fi
+else
+    echo "⚠ ES-DE themes directory not found at $ESDE_DIR/themes (skipping)"
+    exit 1
+fi
+
+echo ""
+echo "Theme sync completed at: $(date)"

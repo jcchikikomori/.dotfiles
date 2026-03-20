@@ -49,12 +49,14 @@ show_menu() {
     echo "  3. Sync RetroArch only"
     echo "  4. Sync PCSX2 only"
     echo "  5. Sync Flycast only"
-    echo "  6. Setup automatic syncing with systemd timer (15-minute intervals)"
-    echo "  7. Check systemd timer status"
-    echo "  8. Disable automatic syncing"
-    echo "  9. Exit"
+    echo "  6. Sync ES-DE (EmulationStation) only"
+    echo "  7. Sync ES-DE Themes only (⚠️ 4.5GB - asks confirmation)"
+    echo "  8. Setup automatic syncing with systemd timer (15-minute intervals)"
+    echo "  9. Check systemd timer status"
+    echo " 10. Disable automatic syncing"
+    echo " 11. Exit"
     echo ""
-    read -r -p "Enter your choice [1-9]: " choice
+    read -r -p "Enter your choice [1-11]: " choice
 }
 
 # Validate rclone setup
@@ -104,6 +106,14 @@ sync_all() {
         echo ""
     fi
     
+    # Sync ES-DE (EmulationStation)
+    if [ -f "$SCRIPT_DIR/sync_emulationstation_to_mega" ]; then
+        print_info "Syncing ES-DE (EmulationStation)..."
+        "$SCRIPT_DIR/sync_emulationstation_to_mega"
+        print_success "ES-DE synced"
+        echo ""
+    fi
+    
     print_success "All emulator data synced to MEGA!"
 }
 
@@ -124,6 +134,20 @@ sync_emulator() {
     "$script"
     
     print_success "$emulator synced!"
+}
+
+# Sync ES-DE themes only
+sync_esde_themes() {
+    print_header
+    print_warning "This will sync ES-DE themes (~4.5GB)"
+    echo ""
+    
+    if [ ! -f "$SCRIPT_DIR/sync_esde_themes_to_mega" ]; then
+        print_error "ES-DE themes sync script not found"
+        return 1
+    fi
+    
+    "$SCRIPT_DIR/sync_esde_themes_to_mega"
 }
 
 # Setup systemd timer for automatic syncing
@@ -152,6 +176,7 @@ Type=oneshot
 ExecStart=%h/.dotfiles/emudeck/bin/sync_retroarch_to_mega
 ExecStart=%h/.dotfiles/emudeck/bin/sync_pcsx2_to_mega
 ExecStart=%h/.dotfiles/emudeck/bin/sync_flycast_to_mega
+ExecStart=%h/.dotfiles/emudeck/bin/sync_emulationstation_to_mega
 StandardOutput=journal
 StandardError=journal
 EOF
@@ -228,11 +253,13 @@ main() {
             3) sync_emulator retroarch ;;
             4) sync_emulator pcsx2 ;;
             5) sync_emulator flycast ;;
-            6) setup_timer ;;
-            7) check_timer ;;
-            8) disable_timer ;;
-            9) print_info "Exiting..."; exit 0 ;;
-            *) print_error "Invalid choice. Please enter 1-9." ;;
+            6) sync_emulator emulationstation ;;
+            7) sync_esde_themes ;;
+            8) setup_timer ;;
+            9) check_timer ;;
+            10) disable_timer ;;
+            11) print_info "Exiting..."; exit 0 ;;
+            *) print_error "Invalid choice. Please enter 1-11." ;;
         esac
         
         read -r -p "Press Enter to continue..."

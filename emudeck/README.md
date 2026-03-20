@@ -11,6 +11,7 @@ This suite provides automated cloud backup and restoration of game data for mult
 - **RetroArch** — Saves, states, core configs, NVRAM, and cheats
 - **PCSX2** — PlayStation 2 memory cards and save states
 - **Flycast** — Dreamcast/NAOMI/Atomiswave saves and configuration
+- **ES-DE (EmulationStation)** — Game metadata, collections, settings, and configurations
 
 ### What Gets Synced?
 
@@ -30,6 +31,18 @@ This suite provides automated cloud backup and restoration of game data for mult
 - **Save States**: Emulator save states
 - **Configuration**: emu.cfg, controller mappings
 - **Data**: Custom textures and additional data
+
+#### ES-DE (EmulationStation)
+- **Settings**: User preferences, screen options, and system configurations
+- **Gamelists**: Game metadata, descriptions, and scraped information
+- **Custom Systems**: Custom system definitions and es_systems.xml additions
+- **Collections**: User-created game collections and groupings
+- **Controllers**: Controller mappings and profiles
+- **Scripts**: Custom ES-DE scripts
+
+> **Note**: Themes are intentionally NOT synced in auto-sync (4.5GB regenerable).
+> Use menu option 7 to manually sync themes with confirmation prompt.
+> Logs and scrapers are NOT synced (transient/regenerable).
 
 ## Prerequisites
 
@@ -97,36 +110,54 @@ The `dotfiles-emudeck` orchestrator provides an interactive menu for all operati
 ./dotfiles-emudeck
 ```
 
-This menu-driven tool allows you to:
-1. Validate rclone and MEGA configuration
-2. Sync all emulator data to MEGA
-3. Sync individual emulators (RetroArch, PCSX2, Flycast)
-4. Setup automatic syncing with systemd timer
-5. Check timer status
-6. Disable automatic syncing
+ This menu-driven tool allows you to:
+ 1. Validate rclone and MEGA configuration
+ 2. Sync all emulator data to MEGA
+ 3. Sync individual emulators (RetroArch, PCSX2, Flycast, ES-DE)
+ 4. Sync ES-DE themes (⚠️ requires confirmation)
+ 5. Setup automatic syncing with systemd timer
+ 6. Check timer status
+ 7. Disable automatic syncing
 
-### Manual Syncing
+ ### Manual Syncing
 
-#### Sync all emulators
+ #### Sync all emulators
 
-```bash
-./sync_retroarch_to_mega
-./sync_pcsx2_to_mega
-./sync_flycast_to_mega
-```
+ ```bash
+ ./sync_retroarch_to_mega
+ ./sync_pcsx2_to_mega
+ ./sync_flycast_to_mega
+ ./sync_emulationstation_to_mega
+ ```
 
-#### Sync individual emulators
+ #### Sync individual emulators
 
-```bash
-# RetroArch only
-./sync_retroarch_to_mega
+ ```bash
+ # RetroArch only
+ ./sync_retroarch_to_mega
 
-# PCSX2 only
-./sync_pcsx2_to_mega
+ # PCSX2 only
+ ./sync_pcsx2_to_mega
 
-# Flycast only
-./sync_flycast_to_mega
-```
+ # Flycast only
+ ./sync_flycast_to_mega
+
+ # ES-DE (EmulationStation) only
+ ./sync_emulationstation_to_mega
+
+ # ES-DE Themes only (⚠️ WARNING: ~4.5GB)
+ # This will prompt for confirmation before syncing
+ ./sync_esde_themes_to_mega
+
+ # Force themes sync without prompt (for scripting)
+ ESDE_SYNC_FORCE=1 ./sync_esde_themes_to_mega
+ ```
+
+> **⚠️ ES-DE Themes Sync Warning**
+> - Size: ~4.5GB (can take 30-60 minutes depending on bandwidth)
+> - NOT included in auto-sync by default (requires manual trigger)
+> - Can be re-downloaded from ES-DE's built-in theme downloader
+> - Requires user confirmation before syncing (except with ESDE_SYNC_FORCE=1)
 
 ### Automatic Syncing with Systemd Timer
 
@@ -134,7 +165,7 @@ Setup automatic syncing every 15 minutes:
 
 ```bash
 ./dotfiles-emudeck
-# Select option 6: Setup automatic syncing with systemd timer
+# Select option 8: Setup automatic syncing with systemd timer
 ```
 
 This creates:
@@ -150,7 +181,7 @@ The timer will:
 
 ```bash
 ./dotfiles-emudeck
-# Select option 7: Check systemd timer status
+# Select option 8: Check systemd timer status
 ```
 
 Or manually:
@@ -163,7 +194,7 @@ systemctl --user list-timers emudeck-sync.timer
 
 ```bash
 ./dotfiles-emudeck
-# Select option 8: Disable automatic syncing
+# Select option 10: Disable automatic syncing
 ```
 
 Or manually:
@@ -201,6 +232,15 @@ systemctl --user disable --now emudeck-sync.timer
 │   └── flycast/             (config files)
 └── data/
     └── flycast/             (saves, custom textures)
+
+~/ES-DE/                     (ES-DE native AppImage)
+├── settings/                 (user preferences) ✅ SYNCED
+├── gamelists/               (game metadata) ✅ SYNCED
+├── custom_systems/          (custom systems) ✅ SYNCED
+├── collections/             (user collections) ✅ SYNCED
+├── controllers/             (controller configs) ✅ SYNCED
+├── scripts/                 (custom scripts) ✅ SYNCED
+└── themes/                  (UI themes) ⚠️ MANUAL SYNC (4.5GB)
 ```
 
 ### Cloud (MEGA S4)
@@ -221,7 +261,14 @@ mega:emudeck-data/
 │   ├── states/
 │   ├── config/
 │   └── data/
-└── ...
+└── es-de/                    (EmulationStation)
+    ├── settings/             ✅ SYNCED
+    ├── gamelists/            ✅ SYNCED
+    ├── custom_systems/       ✅ SYNCED
+    ├── collections/         ✅ SYNCED
+    ├── controllers/          ✅ SYNCED
+    ├── scripts/             ✅ SYNCED
+    └── themes/              ⚠️ OPTIONAL (manual sync)
 ```
 
 ## Troubleshooting

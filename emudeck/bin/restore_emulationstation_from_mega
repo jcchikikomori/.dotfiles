@@ -1,0 +1,102 @@
+#!/bin/sh
+
+# Restore ES-DE configuration from MEGA S4 bucket
+# Restores game metadata, collections, and user preferences
+
+# Default path for ES-DE configuration
+ESDE_DIR="${HOME}/ES-DE"
+
+# Check if ES-DE is installed
+if [ ! -d "$ESDE_DIR" ]; then
+    echo "ERROR: ES-DE not found at $ESDE_DIR" >&2
+    exit 1
+fi
+
+echo "Restoring ES-DE configuration from mega:emudeck-data/es-de..."
+echo ""
+echo "WARNING: This will overwrite existing ES-DE settings and metadata!"
+echo ""
+
+# Confirm restoration
+echo "Items to restore:"
+echo "  - Settings (es_settings.xml)"
+echo "  - Game metadata (gamelists/)"
+echo "  - Custom systems (custom_systems/)"
+echo "  - Collections (collections/)"
+echo "  - Controller mappings (controllers/)"
+echo "  - Custom scripts (scripts/)"
+echo ""
+
+# Ask for confirmation
+if [ -t 0 ]; then
+    # Interactive mode
+    printf 'Do you want to continue? [y/N]: '
+    read -r answer
+    case "$answer" in
+        [yY]|[yY][eE][sS])
+            echo "Proceeding with restoration..."
+            ;;
+        *)
+            echo "Restoration cancelled."
+            exit 0
+            ;;
+    esac
+else
+    # Non-interactive mode (systemd timer) - auto-confirm
+    echo "Non-interactive mode detected. Proceeding with restoration..."
+fi
+
+echo ""
+
+# Restore ES-DE settings (user preferences, screen options, etc.)
+if rclone lsd "mega:emudeck-data/es-de/settings" >/dev/null 2>&1; then
+    echo "Restoring ES-DE settings..."
+    rclone sync "mega:emudeck-data/es-de/settings" "$ESDE_DIR/settings/" --verbose
+else
+    echo "⚠ ES-DE settings not found in cloud (skipping)"
+fi
+
+# Restore gamelists (game metadata, user edits, scraped info)
+if rclone lsd "mega:emudeck-data/es-de/gamelists" >/dev/null 2>&1; then
+    echo "Restoring game metadata (gamelists)..."
+    rclone sync "mega:emudeck-data/es-de/gamelists" "$ESDE_DIR/gamelists/" --verbose
+else
+    echo "⚠ ES-DE gamelists not found in cloud (skipping)"
+fi
+
+# Restore custom systems configuration (custom es_systems.xml additions)
+if rclone lsd "mega:emudeck-data/es-de/custom_systems" >/dev/null 2>&1; then
+    echo "Restoring custom systems configuration..."
+    rclone sync "mega:emudeck-data/es-de/custom_systems" "$ESDE_DIR/custom_systems/" --verbose
+else
+    echo "⚠ ES-DE custom_systems not found in cloud (skipping)"
+fi
+
+# Restore user collections (custom game groupings)
+if rclone lsd "mega:emudeck-data/es-de/collections" >/dev/null 2>&1; then
+    echo "Restoring user collections..."
+    rclone sync "mega:emudeck-data/es-de/collections" "$ESDE_DIR/collections/" --verbose
+else
+    echo "⚠ ES-DE collections not found in cloud (skipping)"
+fi
+
+# Restore controller configurations
+if rclone lsd "mega:emudeck-data/es-de/controllers" >/dev/null 2>&1; then
+    echo "Restoring controller configurations..."
+    rclone sync "mega:emudeck-data/es-de/controllers" "$ESDE_DIR/controllers/" --verbose
+else
+    echo "⚠ ES-DE controllers not found in cloud (skipping)"
+fi
+
+# Restore custom scripts
+if rclone lsd "mega:emudeck-data/es-de/scripts" >/dev/null 2>&1; then
+    echo "Restoring custom scripts..."
+    rclone sync "mega:emudeck-data/es-de/scripts" "$ESDE_DIR/scripts/" --verbose
+else
+    echo "⚠ ES-DE scripts not found in cloud (skipping)"
+fi
+
+echo ""
+echo "✓ ES-DE configuration restored successfully from mega:emudeck-data/es-de/"
+echo ""
+echo "Please restart ES-DE to apply the restored settings."

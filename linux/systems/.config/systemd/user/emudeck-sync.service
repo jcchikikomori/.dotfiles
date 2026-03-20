@@ -8,5 +8,6 @@ Type=oneshot
 ExecStart=%h/.dotfiles/emudeck/bin/sync_retroarch_to_mega
 ExecStart=%h/.dotfiles/emudeck/bin/sync_pcsx2_to_mega
 ExecStart=%h/.dotfiles/emudeck/bin/sync_flycast_to_mega
+ExecStart=%h/.dotfiles/emudeck/bin/sync_emulationstation_to_mega
 StandardOutput=journal
 StandardError=journal
