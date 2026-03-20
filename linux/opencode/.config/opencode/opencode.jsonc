@@ -5,6 +5,9 @@
     "AGENTS.md"
   ],
   "permission": {
+    "skill": {
+      "*": "allow"
+    },
     "bash": {
       "*": "allow",
       "git *": "allow",
