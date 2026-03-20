@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Sync PCSX2 saves and save states to MEGA S4 bucket
+# Follows EmuDeck's standardized directory structure
+
+# Default path for Emulation folder
+DEFAULT_EMULATION_DIR="$HOME/Emulation"
+
+# Check if the default path exists
+if [ -d "$DEFAULT_EMULATION_DIR" ]; then
+    EMULATION_DIR="$DEFAULT_EMULATION_DIR"
+else
+    # Prompt the user for the correct path
+    echo "Default Emulation directory not found at $DEFAULT_EMULATION_DIR."
+    echo "If you have EmuDeck installed in a custom or external location, please provide its full path."
+    read -r -p "Enter the path to your Emulation folder: " CUSTOM_PATH
+
+    # Verify the user-provided path exists
+    if [ -d "$CUSTOM_PATH" ]; then
+        EMULATION_DIR="$CUSTOM_PATH"
+    else
+        echo "ERROR: Invalid path. Emulation directory not found at $CUSTOM_PATH" >&2
+        exit 1
+    fi
+fi
+
+# Define PCSX2 paths (EmuDeck standard)
+PCSX2_SAVES="$EMULATION_DIR/saves/pcsx2/saves"
+PCSX2_STATES="$EMULATION_DIR/saves/pcsx2/states"
+
+echo "Syncing PCSX2 data to mega:emudeck-data/pcsx2..."
+echo ""
+echo "Items being synced:"
+echo "  - Memory card files (saves/)"
+echo "  - Save states (states/)"
+echo ""
+
+# Sync save files (memory cards)
+if [ -d "$PCSX2_SAVES" ]; then
+    echo "Syncing memory card files..."
+    rclone sync "$PCSX2_SAVES/" "mega:emudeck-data/pcsx2/saves" --verbose --copy-links
+else
+    echo "⚠ Memory card directory not found at $PCSX2_SAVES (skipping)"
+fi
+
+# Sync save states
+if [ -d "$PCSX2_STATES" ]; then
+    echo "Syncing save states..."
+    rclone sync "$PCSX2_STATES/" "mega:emudeck-data/pcsx2/states" --verbose --copy-links
+else
+    echo "⚠ Save states directory not found at $PCSX2_STATES (skipping)"
+fi
+
+echo ""
+echo "✓ PCSX2 data synced successfully to mega:emudeck-data/pcsx2/"

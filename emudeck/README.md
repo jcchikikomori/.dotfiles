@@ -1,19 +1,35 @@
 # EmuDeck MEGA S4 Cloud Sync
 
-Cloud sync support for EmuDeck using **rclone** and **MEGA S4** (S3-compatible storage). This enables seamless backup and restore of game saves, save states, and RetroArch configurations across devices.
+Cloud sync support for EmuDeck using **rclone** and **MEGA S4** (S3-compatible storage). This enables seamless backup and restore of game saves, save states, and configurations across devices for multiple emulators.
 
 ## Overview
 
-This suite provides two primary workflows:
+This suite provides automated cloud backup and restoration of game data for multiple EmuDeck emulators using MEGA S4 storage.
 
-1. **Backup to Cloud** — Sync local RetroArch data to MEGA S4 bucket
-2. **Restore from Cloud** — Pull RetroArch data back from MEGA S4 bucket
+### Supported Emulators
+
+- **RetroArch** — Saves, states, core configs, NVRAM, and cheats
+- **PCSX2** — PlayStation 2 memory cards and save states
+- **Flycast** — Dreamcast/NAOMI/Atomiswave saves and configuration
 
 ### What Gets Synced?
 
-- **Save Files**: Game saves stored in `saves/` directory
-- **Save States**: Emulator save states in `states/` directory
-- **Core Configurations**: RetroArch core-specific overrides, shaders, and remaps in `config/` directory
+#### RetroArch
+- **Saves**: Game save files
+- **Save States**: Emulator save states
+- **Config Overrides**: Core-specific configs, shader presets, controller remaps
+- **NVRAM**: Service menu configurations
+- **Cheats**: Cheat files
+
+#### PCSX2
+- **Memory Cards**: PS2 game saves
+- **Save States**: Emulator save states
+
+#### Flycast
+- **Saves**: VMU save files and game data
+- **Save States**: Emulator save states
+- **Configuration**: emu.cfg, controller mappings
+- **Data**: Custom textures and additional data
 
 ## Prerequisites
 
@@ -73,147 +89,139 @@ Using Emulation directory: /home/deck/Emulation
 
 ## Usage
 
-### Sync to MEGA (Backup)
+### Quick Start: dotfiles-emudeck
+
+The `dotfiles-emudeck` orchestrator provides an interactive menu for all operations:
+
+```bash
+./dotfiles-emudeck
+```
+
+This menu-driven tool allows you to:
+1. Validate rclone and MEGA configuration
+2. Sync all emulator data to MEGA
+3. Sync individual emulators (RetroArch, PCSX2, Flycast)
+4. Setup automatic syncing with systemd timer
+5. Check timer status
+6. Disable automatic syncing
+
+### Manual Syncing
+
+#### Sync all emulators
 
 ```bash
 ./sync_retroarch_to_mega
+./sync_pcsx2_to_mega
+./sync_flycast_to_mega
 ```
 
-This will:
-1. Detect your Emulation directory (or prompt if custom location)
-2. Sync save files to `mega:emudeck-data/retroarch/saves`
-3. Sync save states to `mega:emudeck-data/retroarch/states`
-4. Sync core configs to `mega:emudeck-data/retroarch/config`
-
-**Example Output:**
-```
-Syncing RetroArch data from /home/deck/Emulation/saves/retroarch to mega:emudeck-data/retroarch...
-
-Items being synced:
-  - Save files (saves/)
-  - Save states (states/)
-  - Configuration overrides (config/)
-    • Core-specific configs (.cfg files)
-    • Shader presets (.slangp, .glslp files)
-    • Controller remaps (.rmp files)
-
-Syncing save files...
-2024/03/20 15:30:45 INFO  : Creating directory structure
-2024/03/20 15:30:46 INFO  : zelda_link_to_the_past.srm: Copied
-...
-RetroArch data synced successfully to mega:emudeck-data/retroarch/
-```
-
-### Restore from MEGA
+#### Sync individual emulators
 
 ```bash
-./restore_retroarch_from_mega
+# RetroArch only
+./sync_retroarch_to_mega
+
+# PCSX2 only
+./sync_pcsx2_to_mega
+
+# Flycast only
+./sync_flycast_to_mega
 ```
 
-This will:
-1. Prompt for confirmation (to prevent accidental overwrites)
-2. Check for data on MEGA
-3. Pull saves, states, and configs back to local Emulation directory
+### Automatic Syncing with Systemd Timer
 
-**Example Output:**
+Setup automatic syncing every 15 minutes:
+
+```bash
+./dotfiles-emudeck
+# Select option 6: Setup automatic syncing with systemd timer
 ```
-WARNING: This will restore RetroArch data from MEGA to your local system.
-Items to be restored:
-  - Save files (saves/)
-  - Save states (states/)
-  - Configuration overrides (config/)
-    • Core-specific configs (.cfg files)
-    • Shader presets (.slangp, .glslp files)
-    • Controller remaps (.rmp files)
 
-Continue with restore? (yes/no): yes
-Restoring save files from mega:emudeck-data/retroarch/saves...
-2024/03/20 15:35:12 INFO  : zelda_link_to_the_past.srm: Copied
-...
-RetroArch data restored successfully from mega:emudeck-data/retroarch/
+This creates:
+- `/home/deck/.config/systemd/user/emudeck-sync.service` — Service definition
+- `/home/deck/.config/systemd/user/emudeck-sync.timer` — Timer definition (15-minute intervals)
+
+The timer will:
+- Start syncing 5 minutes after boot
+- Sync all emulator data every 15 minutes
+- Run silently in the background with journal logging
+
+#### Check Timer Status
+
+```bash
+./dotfiles-emudeck
+# Select option 7: Check systemd timer status
+```
+
+Or manually:
+```bash
+systemctl --user status emudeck-sync.timer
+systemctl --user list-timers emudeck-sync.timer
+```
+
+#### Disable Timer
+
+```bash
+./dotfiles-emudeck
+# Select option 8: Disable automatic syncing
+```
+
+Or manually:
+```bash
+systemctl --user disable --now emudeck-sync.timer
 ```
 
 ## Directory Structure
 
-### Local (Source)
+### Local (Source) - EmuDeck Standard
 
 ```
-~/Emulation/saves/retroarch/
-├── saves/                  # Game save files
-│   ├── game1.srm
-│   ├── game2.srm
+~/Emulation/
+├── saves/
+│   ├── retroarch/
+│   │   ├── saves/           (symlink to Flatpak RetroArch saves)
+│   │   ├── states/          (symlink to Flatpak RetroArch states)
+│   │   └── config/          (symlink to core overrides)
+│   ├── pcsx2/
+│   │   ├── saves/           (PS2 memory cards)
+│   │   └── states/          (PS2 save states)
+│   ├── flycast/
+│   │   ├── saves/           (symlink to Flycast VMU saves)
+│   │   └── states/          (symlink to Flycast states)
 │   └── ...
-├── states/                 # Emulator save states
-│   ├── game1.state
-│   ├── game1.state.auto
-│   └── ...
-└── config/                 # Core overrides & configurations
-    ├── FinalBurn Neo.cfg
-    ├── Nestopia.cfg
-    ├── shader_presets/
-    │   └── my_shader.slangp
-    └── remaps/
-        └── NES.rmp
+
+~/.config/retroarch/
+├── system/                  (RetroArch NVRAM files)
+├── cheats/                  (RetroArch cheat files)
+└── ...
+
+~/.var/app/org.flycast.Flycast/     (Flycast Flatpak)
+├── config/
+│   ├── data/flycast/        (save states)
+│   └── flycast/             (config files)
+└── data/
+    └── flycast/             (saves, custom textures)
 ```
 
 ### Cloud (MEGA S4)
 
 ```
-mega:emudeck-data/retroarch/
-├── saves/                  # Mirrored from local
-├── states/                 # Mirrored from local
-└── config/                 # Mirrored from local
-```
-
-## Scheduling Automatic Syncs (Optional)
-
-You can automate syncs using cron or systemd timers.
-
-### Cron Job (Sync every 2 hours)
-
-Add to your crontab (`crontab -e`):
-
-```bash
-0 */2 * * * /path/to/emudeck/bin/sync_retroarch_to_mega >> ~/.logs/retroarch_sync.log 2>&1
-```
-
-### Systemd Timer (Sync every 2 hours)
-
-Create `/etc/systemd/user/retroarch-sync.service`:
-
-```ini
-[Unit]
-Description=RetroArch MEGA S4 Sync
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/home/deck/Projects/dotfiles/emudeck/bin/sync_retroarch_to_mega
-StandardOutput=journal
-StandardError=journal
-```
-
-Create `/etc/systemd/user/retroarch-sync.timer`:
-
-```ini
-[Unit]
-Description=RetroArch MEGA S4 Sync Timer
-Requires=retroarch-sync.service
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=2h
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-```
-
-Enable and start:
-
-```bash
-systemctl --user enable --now retroarch-sync.timer
+mega:emudeck-data/
+├── retroarch/
+│   ├── saves/
+│   ├── states/
+│   ├── config/
+│   ├── nvram/
+│   └── cheats/
+├── pcsx2/
+│   ├── saves/
+│   └── states/
+├── flycast/
+│   ├── saves/
+│   ├── states/
+│   ├── config/
+│   └── data/
+└── ...
 ```
 
 ## Troubleshooting
@@ -230,30 +238,31 @@ Run `rclone config` and create a remote named `mega`. Verify with:
 rclone listremotes
 ```
 
-### "ERROR: RetroArch directory not found"
+### "ERROR: Emulation directory not found"
 
-The script looks for `~/Emulation/saves/retroarch/`. If EmuDeck is installed elsewhere:
+The script looks for `~/Emulation/` by default. If EmuDeck is installed elsewhere:
 - Custom path (SD card): The script will prompt you to enter the correct path
 - Example: `/media/deck/sd/Emulation`
 
 ### Sync is slow or timing out
 
 For large file collections, consider:
-- Using `--max-transfer` flag in rclone (see rclone docs)
+- Using `--max-transfer` flag in rclone
 - Running syncs during off-peak hours
-- Breaking into smaller manual syncs: `rclone sync saves/` then `rclone sync states/` then `rclone sync config/`
+- Breaking into smaller manual syncs
 
-### Permission denied errors
+### Flatpak Permission Issues
 
-Ensure rclone has read/write access to:
-- Local RetroArch directories: `~/Emulation/saves/retroarch/`
-- MEGA S4 bucket: Check your rclone credentials
+If you see permission denied errors for Flatpak apps (RetroArch, Flycast):
+1. Verify the app is installed: `flatpak list --app`
+2. Ensure Flatpak directory exists: `ls -la ~/.var/app/`
+3. Check file permissions: `ls -la ~/.var/app/org.libretro.RetroArch/`
 
-### Symlink issues (Flatpak RetroArch)
+### Symlink Issues
 
-The `--copy-links` flag follows Flatpak symlinks to their actual locations. If you see "permission denied":
-1. Verify RetroArch Flatpak is installed: `flatpak list --app | grep RetroArch`
-2. Check Flatpak data directory: `~/.var/app/org.libretro.RetroArch/config/retroarch/`
+The scripts use `--copy-links` flag to follow Flatpak symlinks to their actual locations. If symlinks aren't working:
+1. Verify EmuDeck setup created symlinks: `ls -la ~/Emulation/saves/retroarch/`
+2. Check target paths exist: `ls -la ~/.var/app/org.libretro.RetroArch/`
 
 ## Advanced Usage
 
@@ -269,22 +278,36 @@ rclone sync --dry-run ~/Emulation/saves/retroarch/ mega:emudeck-data/retroarch/
 rclone sync --bwlimit 10M ~/Emulation/saves/retroarch/ mega:emudeck-data/retroarch/
 ```
 
-### Exclude certain file types
-
-Modify the sync scripts to add `--exclude` flags:
+### List cloud contents
 
 ```bash
-rclone sync \
-  --exclude '*.bak' \
-  --exclude '*.tmp' \
-  "$RETROARCH_DIR/saves/" \
-  "mega:emudeck-data/retroarch/saves" \
-  --verbose --copy-links
+rclone ls mega:emudeck-data/
+rclone ls mega:emudeck-data/retroarch/saves/
 ```
+
+### Delete old cloud backups
+
+```bash
+rclone purge mega:emudeck-data/retroarch/saves/old_game/
+```
+
+## File Locations Reference
+
+| Item | Path |
+|---|---|
+| Scripts directory | `./emudeck/bin/` |
+| Main orchestrator | `./emudeck/bin/dotfiles-emudeck` |
+| RetroArch sync | `./emudeck/bin/sync_retroarch_to_mega` |
+| PCSX2 sync | `./emudeck/bin/sync_pcsx2_to_mega` |
+| Flycast sync | `./emudeck/bin/sync_flycast_to_mega` |
+| Restore script | `./emudeck/bin/restore_retroarch_from_mega` |
+| Validation script | `./emudeck/bin/validate_rclone` |
+| Systemd service | `~/.config/systemd/user/emudeck-sync.service` |
+| Systemd timer | `~/.config/systemd/user/emudeck-sync.timer` |
 
 ## Contributing
 
-Issues, feature requests, and pull requests welcome! This is part of the [dotfiles](https://github.com/jcchikikomori/dotfiles) repository.
+Issues, feature requests, and pull requests welcome! This is part of the [dotfiles](https://github.com/jcchikikomori/.dotfiles) repository.
 
 ## License
 

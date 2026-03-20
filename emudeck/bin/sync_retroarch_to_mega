@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Sync RetroArch saves, states, and configuration overrides to MEGA S4 bucket
-# Includes: save files, save states, core-specific configs, shaders, and remaps
+# Sync RetroArch saves, states, configuration overrides, NVRAM, and cheats to MEGA S4 bucket
+# Follows EmuDeck's standardized directory structure
 
 # Default path for Emulation folder
 DEFAULT_EMULATION_DIR="$HOME/Emulation"
@@ -24,17 +24,14 @@ else
     fi
 fi
 
-# Define RetroArch paths
-RETROARCH_DIR="$EMULATION_DIR/saves/retroarch"
+# Define RetroArch paths (EmuDeck standard)
+RETROARCH_SAVES="$EMULATION_DIR/saves/retroarch/saves"
+RETROARCH_STATES="$EMULATION_DIR/saves/retroarch/states"
+RETROARCH_CONFIG="$EMULATION_DIR/saves/retroarch/config"
+RETROARCH_SYSTEM="$HOME/.config/retroarch/system"
+RETROARCH_CHEATS="$HOME/.config/retroarch/cheats"
 
-# Verify RetroArch directory exists
-if [ ! -d "$RETROARCH_DIR" ]; then
-    echo "ERROR: RetroArch directory not found at $RETROARCH_DIR" >&2
-    exit 1
-fi
-
-# Sync RetroArch data to MEGA
-echo "Syncing RetroArch data from $RETROARCH_DIR to mega:emudeck-data/retroarch..."
+echo "Syncing RetroArch data to mega:emudeck-data/retroarch..."
 echo ""
 echo "Items being synced:"
 echo "  - Save files (saves/)"
@@ -43,25 +40,49 @@ echo "  - Configuration overrides (config/)"
 echo "    • Core-specific configs (.cfg files)"
 echo "    • Shader presets (.slangp, .glslp files)"
 echo "    • Controller remaps (.rmp files)"
+echo "  - NVRAM files (system/ - service menu configs)"
+echo "  - Cheat files (cheats/)"
 echo ""
 
-# Sync save files (follows symlinks)
-if [ -d "$RETROARCH_DIR/saves" ]; then
+# Sync save files
+if [ -d "$RETROARCH_SAVES" ]; then
     echo "Syncing save files..."
-    rclone sync "$RETROARCH_DIR/saves/" "mega:emudeck-data/retroarch/saves" --verbose --copy-links
+    rclone sync "$RETROARCH_SAVES/" "mega:emudeck-data/retroarch/saves" --verbose --copy-links
+else
+    echo "⚠ Save files directory not found at $RETROARCH_SAVES (skipping)"
 fi
 
-# Sync save states (follows symlinks)
-if [ -d "$RETROARCH_DIR/states" ]; then
+# Sync save states
+if [ -d "$RETROARCH_STATES" ]; then
     echo "Syncing save states..."
-    rclone sync "$RETROARCH_DIR/states/" "mega:emudeck-data/retroarch/states" --verbose --copy-links
+    rclone sync "$RETROARCH_STATES/" "mega:emudeck-data/retroarch/states" --verbose --copy-links
+else
+    echo "⚠ Save states directory not found at $RETROARCH_STATES (skipping)"
 fi
 
-# Sync configuration overrides (core configs, shaders, remaps - follows symlinks)
-if [ -d "$RETROARCH_DIR/config" ]; then
+# Sync configuration overrides
+if [ -d "$RETROARCH_CONFIG" ]; then
     echo "Syncing configuration overrides..."
-    rclone sync "$RETROARCH_DIR/config/" "mega:emudeck-data/retroarch/config" --verbose --copy-links
+    rclone sync "$RETROARCH_CONFIG/" "mega:emudeck-data/retroarch/config" --verbose --copy-links
+else
+    echo "⚠ Configuration directory not found at $RETROARCH_CONFIG (skipping)"
+fi
+
+# Sync NVRAM files (service menu configurations, edited configurations)
+if [ -d "$RETROARCH_SYSTEM" ]; then
+    echo "Syncing NVRAM files..."
+    rclone sync "$RETROARCH_SYSTEM/" "mega:emudeck-data/retroarch/nvram" --verbose --copy-links --include="*.nvram" --include="*.bin"
+else
+    echo "⚠ NVRAM directory not found at $RETROARCH_SYSTEM (skipping)"
+fi
+
+# Sync cheat files
+if [ -d "$RETROARCH_CHEATS" ]; then
+    echo "Syncing cheat files..."
+    rclone sync "$RETROARCH_CHEATS/" "mega:emudeck-data/retroarch/cheats" --verbose --copy-links
+else
+    echo "⚠ Cheat files directory not found at $RETROARCH_CHEATS (skipping)"
 fi
 
 echo ""
-echo "RetroArch data synced successfully to mega:emudeck-data/retroarch/"
+echo "✓ RetroArch data synced successfully to mega:emudeck-data/retroarch/"
