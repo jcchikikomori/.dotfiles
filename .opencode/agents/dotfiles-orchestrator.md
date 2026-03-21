@@ -55,6 +55,8 @@ You are the primary interface for this GNU Stow-based dotfiles repository. You u
 | Linux configs | `linux/{package}/` — stowed to `$HOME` for all Linux distros |
 | Scripts | `{os}/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-*` |
 | Dev tools | `{os}/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-*` |
+| EmuDeck sync | `{os}/systems/.local/bin/org.jcchikikomori.emudecktools/bin/*` |
+| Stow packages | `docs/STOW_PACKAGES.md` — complete list of all packages |
 | Hardcoded path | `$HOME/.dotfiles` |
 | Shell standard | POSIX `#!/bin/sh` only — no bash-specific syntax |
 
@@ -130,3 +132,17 @@ You can answer without the maintainer for questions like:
 - Never use bash-specific syntax — all scripts are POSIX `#!/bin/sh`
 - Never modify `stowme.sh` package lists without updating ALL distro wrappers
 - Always confirm before any `git commit`, `git push`, or destructive operation
+
+## Documentation Update Protocol
+
+When making changes to this repository, **update documentation accordingly**:
+
+| Change Type | Update Required |
+|---|---|
+| New/removed/modified stow packages | Update `docs/STOW_PACKAGES.md` |
+| New scripts added | Update relevant docs or create new doc |
+| EmuDeck sync changes | Update sync scripts + PR checklist comments |
+| README changes | Keep concise; move details to `docs/` |
+| Agent behavior changes | Update `.opencode/agents/*.md` |
+
+**Rule:** If a change affects user-facing behavior, the corresponding documentation must be updated in the same commit/PR.

@@ -153,6 +153,16 @@ Orchestrator → Maintainer:
    Report any errors or warnings."
 ```
 
+### Documentation Update Check
+
+```
+You: "I added a new stow package called 'supermodel'"
+Orchestrator → Maintainer:
+  "Update docs/STOW_PACKAGES.md with the new 'supermodel' package entry.
+   Include: name, description, platforms.
+   Also update README.MD if the Features section needs updating."
+```
+
 ## Distro Families Reference
 
 | Family | Directories | Package Manager | Special Notes |
@@ -182,6 +192,7 @@ The maintainer operates under these constraints:
 - ❌ Never modify `stowme.sh` package lists without updating ALL distro wrappers
 - ✅ Always confirm before `git commit`, `git push`, or destructive operations
 - ✅ Always check `SKIP_INSTALL_PROGLANG` for unattended mode
+- ✅ **Always update docs/ when making changes that affect user behavior**
 
 ## Git Safety Protocol
 

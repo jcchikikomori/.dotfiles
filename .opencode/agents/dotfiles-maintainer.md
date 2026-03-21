@@ -41,7 +41,21 @@ This dotfiles repo uses:
 - **Symlinking:** Root `stowme.sh` is canonical; `{distro}/stowme.sh` wrappers delegate to root
 - **Scripts:** `{os}/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-*`
 - **Developer's scripts & tools:** `{os}/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-*`
+- **EmuDeck sync tools:** `{os}/systems/.local/bin/org.jcchikikomori.emudecktools/bin/sync_*_to_mega`, `restore_*_from_mega`, `dotfiles-emudeck`
+- **Stow packages:** See `docs/STOW_PACKAGES.md` for complete list
 - **Hardcoded path:** `$HOME/.dotfiles`
+
+### EmuDeck Sync Tools
+
+| Script | Purpose |
+|---|---|
+| `dotfiles-emudeck` | Interactive setup for EmuDeck sync (systemd timer setup) |
+| `sync_retroarch_to_mega` | Sync RetroArch saves, states, NVRAM, cheats |
+| `restore_retroarch_from_mega` | Restore RetroArch data from MEGA |
+| `sync_pcsx2_to_mega` | Sync PCSX2 saves and states |
+| `sync_flycast_to_mega` | Sync Flycast (Dreamcast/NAOMI) saves |
+| `sync_esde_themes_to_mega` | Sync ES-DE themes |
+| `validate_rclone` | Validate rclone configuration |
 
 ### Distro Families
 
@@ -155,6 +169,21 @@ cd ~/.dotfiles && stow -n -v -t $HOME linux/zsh
 - DO NOT modify `stowme.sh` package lists without updating ALL distros
 - ALWAYS check `SKIP_INSTALL_PROGLANG` for unattended mode compatibility
 - ALWAYS preserve interactive prompt logic in post-setup scripts
+
+## Documentation Update Requirements
+
+When making changes, **update documentation in the same PR**:
+
+| Change Type | Documentation Action |
+|---|---|
+| Package list changes (add/remove/modify) | Update `docs/STOW_PACKAGES.md` |
+| New EmuDeck sync scripts | Document in PR checklist + relevant docs |
+| README modifications | Keep concise; move expanded info to `docs/` |
+| Agent behavior changes | Update `.opencode/agents/*.md` |
+| Shell script changes | Update relevant man pages or doc comments |
+| EmuDeck paths change | Update sync scripts + PR checklist |
+
+**PR Checklist reminder:** Check the PR checklist in the issue/PR body for documentation requirements.
 
 ## Git Safety
 
