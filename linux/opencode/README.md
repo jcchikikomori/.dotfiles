@@ -14,11 +14,13 @@ This directory contains [opencode](https://opencode.ai) configuration files that
 ## Setup
 
 1. Copy the example env file:
+
    ```sh
    cp ~/.config/opencode/.env.example ~/.config/opencode/.env
    ```
 
 2. Edit `~/.config/opencode/.env` and fill in your tokens:
+
    ```sh
    GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxxxxxxxxxxx
    STACK_EXCHANGE_API_KEY=your_key_here
@@ -57,7 +59,7 @@ This makes the tokens available as environment variables, which opencode reads v
 
 You can override the global config for a specific project by placing an `opencode.jsonc` in the project root or inside a `.opencode/` directory:
 
-```
+```text
 your-project/
 ├── opencode.jsonc          # project-level config (option A)
 └── .opencode/
@@ -92,7 +94,7 @@ Opencode merges configs in this order (last wins):
 
 Add this to your project's `.gitignore`:
 
-```
+```bash
 .opencode/.env
 ```
 
