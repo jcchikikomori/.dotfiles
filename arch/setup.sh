@@ -48,7 +48,7 @@ sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
 pacman_install "-Syyu --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
-pacman_install "-S --noconfirm --noprogressbar" base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget less
+pacman_install "-S --noconfirm --noprogressbar" base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr less
 # Ensure temp directory exists
 mkdir -p temp && cd temp/
 # Install yay
