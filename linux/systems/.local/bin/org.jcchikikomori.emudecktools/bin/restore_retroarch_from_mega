@@ -1,10 +1,13 @@
 #!/bin/sh
 
-# Restore RetroArch saves, states, and configuration overrides from MEGA S4 bucket
-# Restores: save files, save states, core-specific configs, shaders, and remaps
+# Restore RetroArch saves, states, configuration overrides, and NVRAM from MEGA S4 bucket
+# Restores: save files, save states, core-specific configs, shaders, remaps, and NVRAM
 
 # Default path for Emulation folder
 DEFAULT_EMULATION_DIR="$HOME/Emulation"
+
+# Default Flatpak RetroArch config path (where actual saves/nvram are stored)
+DEFAULT_RETROARCH_FLATPAK="$HOME/.var/app/org.libretro.RetroArch/config/retroarch/saves"
 
 # Check if the default path exists
 if [ -d "$DEFAULT_EMULATION_DIR" ]; then
@@ -24,6 +27,9 @@ else
     fi
 fi
 
+# RetroArch flatpak saves directory
+RETROARCH_FLATPAK="$DEFAULT_RETROARCH_FLATPAK"
+
 # Define RetroArch paths
 RETROARCH_DIR="$EMULATION_DIR/saves/retroarch"
 
@@ -42,6 +48,7 @@ echo "  - Configuration overrides (config/)"
 echo "    • Core-specific configs (.cfg files)"
 echo "    • Shader presets (.slangp, .glslp files)"
 echo "    • Controller remaps (.rmp files)"
+echo "  - NVRAM files (service menu configurations)"
 echo ""
 read -r -p "Continue with restore? (yes/no): " confirm
 
@@ -72,6 +79,19 @@ if rclone ls "mega:emudeck-data/retroarch/config" >/dev/null 2>&1; then
     rclone sync "mega:emudeck-data/retroarch/config" "$RETROARCH_DIR/config/" --verbose --copy-links
 else
     echo "No configuration overrides found on MEGA. Skipping..."
+fi
+
+# Restore NVRAM files to Flatpak RetroArch saves directory
+if rclone ls "mega:emudeck-data/retroarch/nvram" >/dev/null 2>&1; then
+    echo "Restoring NVRAM files from mega:emudeck-data/retroarch/nvram..."
+    if [ -d "$RETROARCH_FLATPAK" ]; then
+        rclone sync "mega:emudeck-data/retroarch/nvram/" "$RETROARCH_FLATPAK/" --verbose --copy-links
+    else
+        echo "ERROR: RetroArch saves directory not found at $RETROARCH_FLATPAK" >&2
+        echo "Please ensure RetroArch is installed before restoring NVRAM." >&2
+    fi
+else
+    echo "No NVRAM files found on MEGA. Skipping..."
 fi
 
 echo ""
