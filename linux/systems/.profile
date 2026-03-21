@@ -47,6 +47,9 @@ fi
 # Core environment variables
 export EDITOR=vim
 export PATH="${HOME}/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.devtools/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.emudecktools/bin:${PATH}"
 
 # Development environments
 export PYENV_ROOT="$HOME/.pyenv"

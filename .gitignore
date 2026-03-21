@@ -86,6 +86,10 @@ linux/systems/.local/bin/*
 !linux/systems/.local/bin/org.jcchikikomori.dotfiles/
 !linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/
 !linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty
+!linux/systems/.local/bin/org.jcchikikomori.devtools/
+!linux/systems/.local/bin/org.jcchikikomori.devtools/bin/
+!linux/systems/.local/bin/org.jcchikikomori.emudecktools/
+!linux/systems/.local/bin/org.jcchikikomori.emudecktools/bin/
 
 # tmux
 tmux-client-*.log
