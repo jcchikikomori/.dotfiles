@@ -204,4 +204,13 @@ fi
 # Restore symlinks that were temporarily removed for stow compatibility.
 restore_external_symlinks
 
+# Remind user to reload systemd if packages with user units were stowed.
+# The systems package includes systemd user units (emudeck-sync, copyparty, etc.)
+if [ "$DETECTED_DISTRO" != "darwin" ] && [ "$DETECTED_DISTRO" != "termux" ]; then
+  printf '\n'
+  printf 'Note: If you stowed packages with systemd user units,\n'
+  printf 'run the following to reload systemd:\n'
+  printf '  systemctl --user daemon-reload\n'
+fi
+
 exit 0
