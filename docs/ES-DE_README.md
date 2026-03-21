@@ -1,7 +1,7 @@
 # ES-DE Configuration Sync Documentation Index
 
-**Created:** March 21, 2025 | **Total Size:** 36 KB | **Format:** Markdown  
-**Based on:** Official EmuDeck & ES-DE documentation  
+**Created:** March 21, 2025 | **Total Size:** 36 KB | **Format:** Markdown
+**Based on:** Official EmuDeck & ES-DE documentation
 **Status:** Research Complete ✓
 
 ---
@@ -11,9 +11,11 @@
 This documentation provides everything needed to integrate ES-DE configuration into your EmuDeck dotfiles system.
 
 ### 1. **ES-DE_sync_structure.md** (16 KB)
-**Comprehensive technical reference**
+
+#### Comprehensive technical reference
 
 **Contents:**
+
 - Complete directory structure with size estimates
 - File-by-file sync decision matrix
 - Three sync scenarios (casual → power user → massive)
@@ -25,6 +27,7 @@ This documentation provides everything needed to integrate ES-DE configuration i
 - Migration checklist
 
 **Use when:**
+
 - Planning sync strategy
 - Understanding what data exists in ES-DE
 - Comparing storage/time tradeoffs
@@ -36,9 +39,11 @@ This documentation provides everything needed to integrate ES-DE configuration i
 ---
 
 ### 2. **ES-DE_dotfiles_implementation.md** (12 KB)
-**Step-by-step integration guide**
+
+#### Step-by-step integration guide
 
 **Contents:**
+
 - Package structure options (single vs. split)
 - 6-step implementation process
   1. Prepare ES-DE config on source device
@@ -55,6 +60,7 @@ This documentation provides everything needed to integrate ES-DE configuration i
 - Rollback procedures
 
 **Use when:**
+
 - Actually implementing ES-DE sync in dotfiles
 - Need step-by-step commands
 - Troubleshooting symlink issues
@@ -66,9 +72,11 @@ This documentation provides everything needed to integrate ES-DE configuration i
 ---
 
 ### 3. **ES-DE_quick_reference.md** (8 KB)
-**One-page quick reference card**
+
+#### One-page quick reference card
 
 **Contents:**
+
 - Directory map with sync decisions
 - Sync size predictions table
 - One-liner commands (backup, copy, stow, verify)
@@ -82,6 +90,7 @@ This documentation provides everything needed to integrate ES-DE configuration i
 - Post-migration validation script
 
 **Use when:**
+
 - Quick lookup during implementation
 - Copy-paste commands
 - Troubleshooting issues
@@ -95,22 +104,26 @@ This documentation provides everything needed to integrate ES-DE configuration i
 ## 🎯 How to Use This Documentation
 
 ### Scenario 1: "I want to understand ES-DE sync"
+
 1. Start: **ES-DE_sync_structure.md** (5-10 min read)
 2. Understand: Directory structure, what data exists, size implications
 3. Decide: Which sync strategy fits your use case
 
 ### Scenario 2: "I'm ready to implement"
+
 1. Prepare: **ES-DE_dotfiles_implementation.md** (read full guide)
 2. Execute: Follow 6-step process
 3. Test: **ES-DE_quick_reference.md** checklist
 4. Debug: Refer to troubleshooting matrix if issues arise
 
 ### Scenario 3: "I need to troubleshoot"
+
 1. Quick lookup: **ES-DE_quick_reference.md** troubleshooting matrix
 2. Find issue, apply solution
 3. Reference: Full guides if more context needed
 
 ### Scenario 4: "I'm just implementing now"
+
 1. Copy: One-liners from **ES-DE_quick_reference.md**
 2. Checklist: Verify each step
 3. Validate: Post-migration validation script
@@ -120,6 +133,7 @@ This documentation provides everything needed to integrate ES-DE configuration i
 ## 📊 Key Facts At A Glance
 
 ### Application
+
 - **Type:** Native AppImage (not Flatpak)
 - **Location:** `/home/deck/Applications/ES-DE.AppImage`
 - **Config dir:** `$HOME/ES-DE` (v3.0+)
@@ -134,11 +148,13 @@ This documentation provides everything needed to integrate ES-DE configuration i
 | **Skip** | downloaded_media/ | 100 MB - 20 GB | **NO** | Regenerable via scraper |
 
 ### Sync Sizes
+
 - **Metadata only:** 50-500 KB (fast, portable)
 - **Metadata + themes:** 50-250 MB (moderate)
 - **Full with media:** 2-20 GB (large, regenerable)
 
 ### Time Estimates
+
 - **Setup:** 15 minutes
 - **Re-scrape media:** 2-8 hours (optional)
 - **Total with re-scrape:** 2.25-8.25 hours
@@ -188,7 +204,7 @@ ls -la ~/.config/ES-DE/
 
 ## 🔄 Document Workflow
 
-```
+```text
 Start
   ↓
 [1] Read ES-DE_sync_structure.md
@@ -215,24 +231,29 @@ Done
 ## 🎓 Key Concepts
 
 ### What is ES-DE?
+
 EmulationStation Desktop Edition (ES-DE) is a frontend to manage and launch emulated games. It:
+
 - Displays game libraries organized by system (NES, SNES, PS2, etc.)
 - Stores game metadata (description, rating, artwork)
 - Can scrape missing artwork from online databases
 - Runs as a native AppImage on Steam Deck
 
 ### Why Sync It?
+
 - **Settings:** Theme, language, UI preferences
 - **Metadata:** Game descriptions, ratings (hours of user curation)
 - **Playlists:** Custom collections (user-defined)
 - **Portability:** Recreate same setup on new device
 
 ### What NOT to Sync?
+
 - **Media cache:** 5-20 GB of artwork (regenerable via scraper)
 - **Logs:** Transient diagnostic info
 - **App binary:** Already installed via EmuDeck
 
 ### How Dotfiles Helps?
+
 - **Centralized:** All config in git repository
 - **Portable:** Symlink config to home directory via Stow
 - **Reproducible:** Same settings across devices
@@ -243,21 +264,25 @@ EmulationStation Desktop Edition (ES-DE) is a frontend to manage and launch emul
 ## 🚨 Important Warnings
 
 ### ES-DE 2.x → 3.0 Migration
+
 - **Old:** `~/.emulationstation/` (hidden folder)
 - **New:** `~/ES-DE` (regular folder)
 - **Action:** EmuDeck handles automatically; our dotfiles use v3.0+ path
 
 ### Large Gamelist.xml Files
+
 - **Problem:** Git becomes slow if > 1 MB per system
 - **Solution:** Use `.gitignore` for media, commit only metadata
 - **Alternative:** Use git-lfs for large XML files
 
 ### Media Cache Not Portable
+
 - **Reason:** 5-20 GB is too large for dotfiles repo
 - **Solution:** Re-scrape on target device (2-8 hours)
 - **Alternative:** Use external backup (Restic, rclone, etc.)
 
 ### Symlink vs. Copy
+
 - **Symlinks:** Better for dotfiles (changes reflect immediately)
 - **Copies:** Safer but manual sync required
 - **Recommendation:** Use symlinks via Stow
@@ -279,19 +304,22 @@ EmulationStation Desktop Edition (ES-DE) is a frontend to manage and launch emul
 ## 📖 Further Reading
 
 ### Official References
-- **ES-DE User Guide:** https://gitlab.com/es-de/emulationstation-de/-/blob/master/USERGUIDE.md
-- **ES-DE FAQ:** https://gitlab.com/es-de/emulationstation-de/-/blob/master/FAQ.md
-- **EmuDeck Wiki (ES-DE):** https://emudeck.github.io/tools/steamos/es-de/
-- **EmuDeck Save Management:** https://emudeck.github.io/save-management/steamos/save-management/
+
+- **ES-DE User Guide:** <https://gitlab.com/es-de/emulationstation-de/-/blob/master/USERGUIDE.md>
+- **ES-DE FAQ:** <https://gitlab.com/es-de/emulationstation-de/-/blob/master/FAQ.md>
+- **EmuDeck Wiki (ES-DE):** <https://emudeck.github.io/tools/steamos/es-de/>
+- **EmuDeck Save Management:** <https://emudeck.github.io/save-management/steamos/save-management/>
 
 ### Scraper Sources
-- **TheGamesDB:** https://thegamesdb.net/ (free, built-in)
-- **ScreenScraper:** https://www.screenscraper.fr/ (free with account)
+
+- **TheGamesDB:** <https://thegamesdb.net/> (free, built-in)
+- **ScreenScraper:** <https://www.screenscraper.fr/> (free with account)
 
 ### Related Tools
-- **GNU Stow:** https://www.gnu.org/software/stow/
-- **Restic:** https://restic.readthedocs.io/ (for media backup)
-- **rclone:** https://rclone.org/ (for cloud sync)
+
+- **GNU Stow:** <https://www.gnu.org/software/stow/>
+- **Restic:** <https://restic.readthedocs.io/> (for media backup)
+- **rclone:** <https://rclone.org/> (for cloud sync)
 
 ---
 
@@ -304,6 +332,7 @@ EmulationStation Desktop Edition (ES-DE) is a frontend to manage and launch emul
 | ES-DE_quick_reference.md | 2025-03-21 | 1.0 | Quick lookup reference |
 
 **Compatibility:**
+
 - ✓ ES-DE 2.0+
 - ✓ ES-DE 3.0+
 - ✓ EmuDeck 2024+
@@ -327,28 +356,28 @@ EmulationStation Desktop Edition (ES-DE) is a frontend to manage and launch emul
 
 ## ❓ FAQ
 
-**Q: Will syncing ES-DE break EmuDeck?**  
+**Q: Will syncing ES-DE break EmuDeck?**
 A: No. ES-DE is independent; syncing config doesn't affect other EmuDeck tools.
 
-**Q: Can I sync media cache?**  
+**Q: Can I sync media cache?**
 A: Yes, but not recommended (5-20 GB). Better to re-scrape on target.
 
-**Q: What if my gamelists are > 1 MB?**  
+**Q: What if my gamelists are > 1 MB?**
 A: Use .gitignore to exclude, or use git-lfs for large files.
 
-**Q: Do I need to sync es_input.cfg?**  
+**Q: Do I need to sync es_input.cfg?**
 A: No, it's regenerable. But syncing saves one-time setup.
 
-**Q: Can I roll back if something breaks?**  
+**Q: Can I roll back if something breaks?**
 A: Yes, see Rollback Procedures in implementation guide.
 
-**Q: How long does re-scraping take?**  
+**Q: How long does re-scraping take?**
 A: 2-8 hours depending on collection size (hundreds to thousands of games).
 
-**Q: Will themes download automatically?**  
+**Q: Will themes download automatically?**
 A: No, themes need manual download or use ES-DE's Theme Downloader.
 
-**Q: Is ES-DE a Flatpak?**  
+**Q: Is ES-DE a Flatpak?**
 A: No, it's a native AppImage. No special permission handling needed.
 
 ---
@@ -358,6 +387,7 @@ A: No, it's a native AppImage. No special permission handling needed.
 This documentation provides a **complete, production-ready guide** to syncing ES-DE configuration via your EmuDeck dotfiles system using GNU Stow.
 
 **Key takeaways:**
+
 1. Sync metadata (XML) - preserve user effort, portable, small
 2. Skip media cache - regenerable, saves 95% of storage
 3. Use Stow symlinks - integrates with dotfiles workflow
@@ -370,12 +400,12 @@ This documentation provides a **complete, production-ready guide** to syncing ES
 
 ---
 
-**Questions?** Refer to the detailed documents or troubleshooting matrices.  
-**Ready to implement?** Start with ES-DE_dotfiles_implementation.md.  
+**Questions?** Refer to the detailed documents or troubleshooting matrices.
+**Ready to implement?** Start with ES-DE_dotfiles_implementation.md.
 **Need quick commands?** Use ES-DE_quick_reference.md.
 
 ---
 
-*Last updated: March 21, 2025*  
-*Based on official EmuDeck and ES-DE documentation*  
+*Last updated: March 21, 2025*
+*Based on official EmuDeck and ES-DE documentation*
 *For questions, refer to referenced sources or consult community Discord*

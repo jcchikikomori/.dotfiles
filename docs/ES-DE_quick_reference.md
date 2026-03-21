@@ -6,7 +6,7 @@
 
 ## Directory Map
 
-```
+```text
 Essential for Sync          Location                          Size        Sync?
 ─────────────────────────────────────────────────────────────────────────────
 Settings                   $HOME/ES-DE/es_settings.xml       5-20 KB     ✓ MUST
@@ -23,23 +23,25 @@ Logs (transient)            $HOME/ES-DE/es_log.txt            <1 MB       ✗ NO
 
 ## Sync Size Predictions
 
-| Collection Size | Metadata | Themes | Media | Total w/ Media | w/o Media |
-|-----------------|----------|--------|-------|----------------|-----------|
-| 50 games        | 50 KB    | 10 MB  | 100 MB| 110 MB         | 10 MB     |
-| 200 games       | 300 KB   | 50 MB  | 500 MB| 550 MB         | 50 MB     |
-| 1000 games      | 2 MB     | 100 MB | 5 GB  | 5.1 GB         | 102 MB    |
-| 5000 games      | 10 MB    | 200 MB | 20 GB | 20.2 GB        | 210 MB    |
+| Collection Size | Metadata | Themes | Media  | Total w/ Media | w/o Media |
+| --------------- | -------- | ------ | ------ | -------------- | --------- |
+| 50 games        | 50 KB    | 10 MB  | 100 MB | 110 MB         | 10 MB     |
+| 200 games       | 300 KB   | 50 MB  | 500 MB | 550 MB         | 50 MB     |
+| 1000 games      | 2 MB     | 100 MB | 5 GB   | 5.1 GB         | 102 MB    |
+| 5000 games      | 10 MB    | 200 MB | 20 GB  | 20.2 GB        | 210 MB    |
 
 ---
 
 ## One-Liner Commands
 
 ### Backup Current ES-DE
+
 ```bash
 cp -r ~/ES-DE ~/Backups/ES-DE-$(date +%Y%m%d)
 ```
 
 ### Copy to Dotfiles (Metadata Only)
+
 ```bash
 mkdir -p ~/.dotfiles/steamos/systems/.config/ES-DE && \
 cp ~/ES-DE/es_settings.xml ~/.dotfiles/steamos/systems/.config/ES-DE/ && \
@@ -49,26 +51,31 @@ cp -r ~/ES-DE/collections ~/.dotfiles/steamos/systems/.config/ES-DE/
 ```
 
 ### Test Stow Dry-Run
+
 ```bash
 cd ~/.dotfiles && stow -n -v -t $HOME steamos/systems
 ```
 
 ### Apply Stow
+
 ```bash
 cd ~/.dotfiles && stow -t $HOME steamos/systems
 ```
 
 ### Verify Symlinks
+
 ```bash
 ls -la ~/.config/ES-DE/ && file ~/.config/ES-DE/*
 ```
 
 ### Check Media Cache Size
+
 ```bash
 du -sh ~/Emulation/tools/downloaded_media/
 ```
 
 ### Show All ES-DE File Sizes
+
 ```bash
 du -sh ~/ES-DE/* && du -sh ~/ES-DE/.??* 2>/dev/null
 ```
@@ -144,12 +151,12 @@ On target device after stowing:
 
 ## Media Cache Alternatives
 
-| Option | Storage Used | Time to Setup | Pros | Cons |
-|--------|--------------|---------------|------|------|
-| **Skip (Recommended)** | 50-100 MB | 5 min | Dotfiles stays small; media regenerable | Requires re-scrape (2-8 hrs) |
-| **Restic Backup** | 100 MB-20 GB | 30 min | Portable; can restore selectively | Requires backup tool setup |
-| **Rclone Cloud** | 100 MB-20 GB | 1-2 hrs | Accessible anywhere | Depends on cloud speed/quota |
-| **Compress & Store** | 50-200 MB | 1 hour | Portable; can extract if needed | Manual management |
+| Option                 | Storage Used | Time to Setup | Pros                                    | Cons                         |
+| ---------------------- | ------------ | ------------- | --------------------------------------- | ---------------------------- |
+| **Skip (Recommended)** | 50-100 MB    | 5 min         | Dotfiles stays small; media regenerable | Requires re-scrape (2-8 hrs) |
+| **Restic Backup**      | 100 MB-20 GB | 30 min        | Portable; can restore selectively       | Requires backup tool setup   |
+| **Rclone Cloud**       | 100 MB-20 GB | 1-2 hrs       | Accessible anywhere                     | Depends on cloud speed/quota |
+| **Compress & Store**   | 50-200 MB    | 1 hour        | Portable; can extract if needed         | Manual management            |
 
 ---
 
@@ -170,14 +177,14 @@ All preserved by syncing `es_settings.xml`. ✓
 
 ## Troubleshooting
 
-| Problem | Cause | Solution |
-|---------|-------|----------|
-| Stow fails: "target already exists" | Old ES-DE dir not symlinked | `mv ~/.config/ES-DE ~/.config/ES-DE.bak` then retry |
-| ES-DE won't launch after stow | Broken symlink to config | Check symlink: `file ~/.config/ES-DE/` |
-| Settings don't load | Wrong config path | Verify: `cat ~/.config/ES-DE/es_settings.xml \| head` |
-| Gamelists empty | Symlink broken | `ls -la ~/.config/ES-DE/gamelists/` should show folders |
-| Controller doesn't work | Missing es_input.cfg | Copy it: `cp ~/ES-DE/es_input.cfg ~/.dotfiles/.../` |
-| Media artwork missing | Skipped in sync | Run scraper in ES-DE or restore media backup |
+| Problem                             | Cause                       | Solution                                                |
+| ----------------------------------- | --------------------------- | ------------------------------------------------------- |
+| Stow fails: "target already exists" | Old ES-DE dir not symlinked | `mv ~/.config/ES-DE ~/.config/ES-DE.bak` then retry     |
+| ES-DE won't launch after stow       | Broken symlink to config    | Check symlink: `file ~/.config/ES-DE/`                  |
+| Settings don't load                 | Wrong config path           | Verify: `cat ~/.config/ES-DE/es_settings.xml \| head`   |
+| Gamelists empty                     | Symlink broken              | `ls -la ~/.config/ES-DE/gamelists/` should show folders |
+| Controller doesn't work             | Missing es_input.cfg        | Copy it: `cp ~/ES-DE/es_input.cfg ~/.dotfiles/.../`     |
+| Media artwork missing               | Skipped in sync             | Run scraper in ES-DE or restore media backup            |
 
 ---
 
@@ -242,12 +249,12 @@ grep -i "error\|critical\|fatal" ~/ES-DE/es_log.txt || echo "✓ No errors"
 
 - **Full Sync Strategy:** See `ES-DE_sync_structure.md`
 - **Implementation Guide:** See `ES-DE_dotfiles_implementation.md`
-- **Official User Guide:** https://gitlab.com/es-de/emulationstation-de/-/blob/master/USERGUIDE.md
-- **EmuDeck Wiki:** https://emudeck.github.io/tools/steamos/es-de/
+- **Official User Guide:** <https://gitlab.com/es-de/emulationstation-de/-/blob/master/USERGUIDE.md>
+- **EmuDeck Wiki:** <https://emudeck.github.io/tools/steamos/es-de/>
 
 ---
 
 ## Last Updated
 
-March 21, 2025 | Based on EmuDeck official documentation  
+March 21, 2025 | Based on EmuDeck official documentation
 ES-DE version support: 2.0+ through 3.x

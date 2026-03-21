@@ -1,13 +1,14 @@
 # ES-DE/EmulationStation Directory Structure & Sync Strategy
 
-**Last Updated:** March 2025 | **Based on:** Official EmuDeck Documentation  
-**Source:** https://emudeck.github.io/tools/steamos/es-de/
+**Last Updated:** March 2025 | **Based on:** Official EmuDeck Documentation
+**Source:** <https://emudeck.github.io/tools/steamos/es-de/>
 
 ---
 
 ## Overview
 
 ES-DE (EmulationStation Desktop Edition) is a **native AppImage** frontend (not Flatpak) installed by EmuDeck. On Steam Deck, configuration is split between:
+
 - **User settings directory:** `$HOME/ES-DE` (hidden by default, use `$HOME` = `/home/deck`)
 - **Media/artwork cache:** `Emulation/tools/downloaded_media`
 - **Application:** `/home/deck/Applications/ES-DE.AppImage`
@@ -18,7 +19,7 @@ ES-DE (EmulationStation Desktop Edition) is a **native AppImage** frontend (not 
 
 ## Complete Directory Structure
 
-```
+```text
 $HOME/ES-DE/
 ├── es_settings.xml                    [CORE CONFIG - ~5KB]
 ├── es_input.cfg                       [OPTIONAL - controller mapping, ~2KB]
@@ -112,7 +113,8 @@ Emulation/tools/downloaded_media/      [SCRAPED MEDIA - artwork, screenshots]
 ## Sync Recommendations by Use Case
 
 ### **Scenario 1: Casual User (< 50 games)**
-```
+
+```text
 SYNC:
   ✓ es_settings.xml           (~5 KB)
   ✓ gamelists/*/gamelist.xml  (~50 KB)
@@ -127,7 +129,8 @@ RECOVERY TIME: 30 minutes (re-scrape if needed)
 ```
 
 ### **Scenario 2: Power User (100-500 games)**
-```
+
+```text
 SYNC:
   ✓ es_settings.xml           (~10 KB)
   ✓ gamelists/*/gamelist.xml  (~500 KB)
@@ -142,7 +145,8 @@ RECOVERY TIME: 2-4 hours (re-scrape)
 ```
 
 ### **Scenario 3: Massive Collection (1000+ games)**
-```
+
+```text
 SYNC:
   ✓ es_settings.xml           (~20 KB)
   ✓ gamelists/*/gamelist.xml  (~2 MB)
@@ -247,6 +251,7 @@ include_2: [all media]
 ## Implementation Details
 
 ### **ES-DE Application Type**
+
 - **Format:** Native AppImage (NOT Flatpak)
 - **Location:** `/home/deck/Applications/ES-DE.AppImage`
 - **No special sync needed:** Application itself is not user data
@@ -254,11 +259,14 @@ include_2: [all media]
 ### **Important Paths**
 
 On **Steam Deck** specifically:
+
 - `$HOME` = `/home/deck`
 - `Emulation/` = `/home/deck/Emulation/` (if installed to internal) OR `/run/media/mmcblk0p1/Emulation/` (if on SD card)
 
 ### **Configuration File Format**
+
 All config files are **XML-based**:
+
 - `es_settings.xml` – Key/value pairs for settings
 - `gamelists/*.xml` – Game metadata in standardized format
 - `es_systems.xml` – System definitions
@@ -266,12 +274,14 @@ All config files are **XML-based**:
 **No binary files:** Safe to sync via text-based systems, version control, or cloud sync.
 
 ### **Theme Management**
+
 - **Location:** `$HOME/ES-DE/themes/`
 - **Format:** Directories containing theme configuration + media files
 - **Default theme:** `epic-noir-revisited-es-de` (usually ~20-50 MB)
 - **Alternative:** Use ES-DE's built-in **Theme Downloader** on target device (experimental feature in 2.0.1+)
 
 ### **Media/Artwork Cache**
+
 - **Location:** `Emulation/tools/downloaded_media/` (external to main config directory)
 - **Scrapers:** TheGamesDB (free) and ScreenScraper (requires account for high volume)
 - **Regenerable:** Completely optional; can be re-downloaded in bulk via ES-DE's scraper UI
@@ -283,7 +293,7 @@ All config files are **XML-based**:
 
 For a dotfiles-based ES-DE sync, use this structure:
 
-```
+```text
 ~/.dotfiles/steamos/systems/.config/ES-DE/
 ├── es_settings.xml          # Stow this
 ├── es_input.cfg             # Stow this (optional)
@@ -342,12 +352,12 @@ When syncing ES-DE config to a new Steam Deck:
 
 ## References
 
-- **Official ES-DE User Guide:** https://gitlab.com/es-de/emulationstation-de/-/blob/master/USERGUIDE.md
-- **ES-DE FAQ:** https://gitlab.com/es-de/emulationstation-de/-/blob/master/FAQ.md
-- **EmuDeck ES-DE on SteamOS:** https://emudeck.github.io/tools/steamos/es-de/
-- **EmuDeck Save Management:** https://emudeck.github.io/save-management/steamos/save-management/
-- **TheGamesDB (scraper source):** https://thegamesdb.net/
-- **ScreenScraper (scraper source):** https://www.screenscraper.fr/
+- **Official ES-DE User Guide:** <https://gitlab.com/es-de/emulationstation-de/-/blob/master/USERGUIDE.md>
+- **ES-DE FAQ:** <https://gitlab.com/es-de/emulationstation-de/-/blob/master/FAQ.md>
+- **EmuDeck ES-DE on SteamOS:** <https://emudeck.github.io/tools/steamos/es-de/>
+- **EmuDeck Save Management:** <https://emudeck.github.io/save-management/steamos/save-management/>
+- **TheGamesDB (scraper source):** <https://thegamesdb.net/>
+- **ScreenScraper (scraper source):** <https://www.screenscraper.fr/>
 
 ---
 

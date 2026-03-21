@@ -6,13 +6,14 @@
 
 When adding new configuration files to the dotfiles repo, if those files already exist in the user's home directory as **real files** (not symlinks), GNU Stow will refuse to create symlinks and fail with:
 
-```
+```bash
 ERROR: stow failed to create link /home/user/.config/systemd/user/emudeck-sync.service
   In directory /home/user/.config/systemd/user
   "emudeck-sync.service" already exists
 ```
 
 This happened with:
+
 - `~/.config/systemd/user/emudeck-sync.service`
 - `~/.config/systemd/user/emudeck-sync.timer`
 
@@ -59,6 +60,7 @@ dotfiles-conflicts-comprehensive
 ```
 
 This will report:
+
 - `SAFE` — File exists as a dotfiles symlink (already stowed, no action needed)
 - `CLEAN` — File doesn't exist (ready to stow)
 - `BLOCKING` — File exists as a real file or non-dotfiles symlink (cleanup required)
@@ -112,6 +114,7 @@ systemctl --user status emudeck-sync.service
 ### `dotfiles-conflicts`
 
 Checks known problematic files that have caused conflicts before:
+
 - wireplumber config (`~/.config/wireplumber`)
 - opencode config (`~/.config/opencode`)
 - emudeck systemd services (`~/.config/systemd/user/emudeck-sync.*`)
@@ -167,7 +170,7 @@ This tool helps prevent future conflicts when adding new files to dotfiles.
    ```sh
    # After adding new files to dotfiles:
    dotfiles-conflicts-comprehensive
-   
+
    # This catches conflicts before they break stowing
    ```
 
@@ -227,7 +230,7 @@ This tool helps prevent future conflicts when adding new files to dotfiles.
 
 Both scripts follow this logic for each target file:
 
-```
+```text
 if file is a symlink:
   if symlink target is inside DOTFILES_PATH:
     → SAFE (already stowed correctly)
@@ -295,7 +298,7 @@ The comprehensive tool scans all files in all packages automatically. No changes
 - **Root Stow Script:** `./stowme.sh` (lines 149-165)
 - **Conflict Helper:** `./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-conflicts`
 - **Comprehensive Checker:** `./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-conflicts-comprehensive`
-- **GNU Stow Docs:** https://www.gnu.org/software/stow/manual/stow.html#The-Stow-Algorithm
+- **GNU Stow Docs:** <https://www.gnu.org/software/stow/manual/stow.html#The-Stow-Algorithm>
 
 ---
 

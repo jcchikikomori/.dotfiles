@@ -6,14 +6,14 @@ This document lists all stow packages managed by this dotfiles repository.
 
 | Package | Description | Platforms |
 |---------|-------------|-----------|
-| `alacritty` | GPU-accelerated terminal emulator | All |
+| `alacritty` | GPU-accelerated terminal emulator | Linux, macOS (limited) |
 | `antigen` | Zsh plugin manager | All |
 | `bash` | Bash shell configuration | Linux |
-| `dxvk` | D3D9/D3D10/D3D11 to Vulkan translation layer | Linux, macOS |
+| `dxvk` | D3D8/D3D9/D3D10/D3D11 to Vulkan translation layer | Linux (with Wine) |
 | `flags` | CLI flags/arguments configuration | All |
 | `flatpak` | Flatpak configuration | Linux |
 | `git` | Git configuration | All |
-| `lindbergh` | Lindbergh arcade emulator (Sega Model 2) | Linux |
+| `lindbergh` | Sega Lindbergh arcade emulator loader | Linux |
 | `opencode` | OpenCode agent configuration | All |
 | `python` | Python environment setup | All |
 | `starship` | Cross-shell prompt | All |
@@ -30,30 +30,28 @@ This document lists all stow packages managed by this dotfiles repository.
 
 ### Linux (Debian, Ubuntu, Arch, SteamOS, RHEL, etc.)
 
-All packages listed above except `bash`, `dxvk`, `flatpak`, `lindbergh`, `wireplumber`.
+All packages listed above except `bash`.
 
 ### macOS
 
-| Package | Description |
-|---------|-------------|
-| `zsh` | Zsh shell configuration |
-| `git` | Git configuration |
-| `antigen` | Zsh plugin manager |
-| `tmux` | Terminal multiplexer |
-| `tmuxp` | Tmux session manager |
-| `vim` | Vim text editor |
-| `vscode` | VS Code configuration |
-| `dxvk` | D3D9/D3D10/D3D11 to Vulkan translation layer |
-| `systems` | System-specific configs |
-| `python` | Python environment setup |
-| `flatpak` | Flatpak configuration |
-| `alacritty` | GPU-accelerated terminal emulator |
-| `wireplumber` | PipeWire session manager |
-| `flags` | CLI flags/arguments configuration |
-| `lindbergh` | Lindbergh arcade emulator (Sega Model 2) |
-| `supermodel` | Sega Model 3 emulator |
-| `starship` | Cross-shell prompt |
-| `opencode` | OpenCode agent configuration |
+| Package | Description | Notes |
+|---------|-------------|-------|
+| `zsh` | Zsh shell configuration | Default shell on macOS |
+| `git` | Git configuration | Pre-installed via Xcode |
+| `antigen` | Zsh plugin manager | |
+| `tmux` | Terminal multiplexer | |
+| `tmuxp` | Tmux session manager | |
+| `vim` | Vim text editor | |
+| `vscode` | VS Code configuration | |
+| `systems` | System-specific configs | Limited (no systemd) |
+| `python` | Python environment setup | |
+| `alacritty` | GPU-accelerated terminal emulator | Limited/deprecated |
+| `flags` | CLI flags/arguments configuration | |
+| `supermodel` | Sega Model 3 emulator | |
+| `starship` | Cross-shell prompt | |
+| `opencode` | OpenCode agent configuration | |
+
+**Note:** `flatpak`, `wireplumber`, `lindbergh`, and `dxvk` are not available on macOS.
 
 ## Package Details
 
@@ -61,7 +59,7 @@ All packages listed above except `bash`, `dxvk`, `flatpak`, `lindbergh`, `wirepl
 
 - **bash** - Bash shell configuration with aliases and functions
 - **zsh** - Zsh shell configuration with oh-my-zsh and antigen
-- **antigen** - Zsh plugin manager bundle configuration
+- **antigen** - Zsh plugin manager bundle configuration (inspired by Vundle for Vim)
 
 ### Development Tools
 
@@ -73,31 +71,31 @@ All packages listed above except `bash`, `dxvk`, `flatpak`, `lindbergh`, `wirepl
 ### Terminal Tools
 
 - **tmux** - Terminal multiplexer configuration
-- **tmuxp** - Tmux session manager configuration
+- **tmuxp** - Tmux session manager configuration (save/load tmux sessions via YAML/JSON)
 - **alacritty** - GPU-accelerated terminal emulator config
-- **starship** - Cross-shell prompt configuration
+- **starship** - Cross-shell prompt configuration (written in Rust)
 
 ### Gaming/Emulation
 
-- **supermodel** - Sega Model 3 emulator configuration
-- **lindbergh** - Lindbergh arcade emulator (Sega Model 2) configuration
+- **supermodel** - Sega Model 3 emulator (arcade platform 1996-1999)
+- **lindbergh** - Sega Lindbergh arcade emulator loader (NOT Model 2; games like House of the Dead 4, Outrun 2)
 
 ### Wine/DXVK
 
-- **dxvk** - D3D9/D3D10/D3D11 to Vulkan translation layer for macOS gaming
+- **dxvk** - D3D8/D3D9/D3D10/D3D11 to Vulkan translation layer for running Windows games on Linux with Wine
 
 ### System Integration
 
 - **systems** - System-specific configs including:
-  - Systemd user units
+  - Systemd user units (emudeck-sync, copyparty, etc.)
   - EmuDeck sync tools
   - EmulationStation configuration
   - Other system-level configurations
 
 ### Flatpak/Wireplumber
 
-- **flatpak** - Flatpak configuration
-- **wireplumber** - PipeWire session manager configuration
+- **flatpak** - Flatpak package manager configuration
+- **wireplumber** - PipeWire session and policy manager configuration
 
 ### CLI Tools
 

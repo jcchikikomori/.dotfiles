@@ -7,9 +7,11 @@
 ## Current State Assessment
 
 **File location in dotfiles:**
+
 - Will be: `steamos/systems/.config/ES-DE/` → symlinked to `$HOME/ES-DE`
 
 **OR alternative structure:**
+
 - `steamos/systems/.local/share/ES-DE/` (less common but valid)
 
 ---
@@ -47,11 +49,13 @@ steamos/systems/
 ```
 
 **Pros:**
+
 - Single package; easy to maintain
 - All settings together
 - Integrates with existing dotfiles structure
 
 **Cons:**
+
 - If gamelists are large (>1 MB), git commit becomes heavy
 
 ### Option 2: Separate Package (For Large Collections)
@@ -100,6 +104,7 @@ du -sh steamos/systems/.config/ES-DE/
 ### 2. Add to Stow Configuration
 
 **In `steamos/stowme.sh`** (if distro-specific wrapper):
+
 ```bash
 #!/bin/sh
 # Delegate to root stowme.sh
@@ -107,6 +112,7 @@ exec "$HOME/.dotfiles/stowme.sh" "$@"
 ```
 
 **In root `stowme.sh`** (main config):
+
 ```bash
 #!/bin/sh
 
@@ -388,8 +394,8 @@ cat ~/ES-DE/es_log.txt
 | Git commit | `git commit -m "..."` | < 1 min |
 | Git push | `git push origin main` | 1-5 min |
 
-**Estimated sync size:** 50-500 KB (metadata only)  
-**Estimated total time:** 10-15 minutes  
+**Estimated sync size:** 50-500 KB (metadata only)
+**Estimated total time:** 10-15 minutes
 **Migration to new device:** Re-scrape media (2-8 hours) or use separate media backup tool
 
 ---
@@ -397,6 +403,7 @@ cat ~/ES-DE/es_log.txt
 ## Key Takeaway
 
 ES-DE config is **highly portable** because it's pure XML + lightweight. Only sync metadata, not media cache. On target device, either:
+
 1. Re-scrape media (free but time-consuming)
 2. Restore media separately (via Restic/rclone)
 3. Accept minimal UI until user downloads themes/media
