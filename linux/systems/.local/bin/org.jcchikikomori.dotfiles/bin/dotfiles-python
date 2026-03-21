@@ -7,6 +7,10 @@ if [ "$1" = "install" ]; then
     echo "Installing python via Termux package manager..."
     pkg install -y python python-tkinter python-numpy electrum asciinema matplotlib python-cryptography
     pkg install -y python2
+    echo "Installing pipx via pip..."
+    pip install --user pipx
+    export PATH="$HOME/.local/bin:$PATH"
+    pipx ensurepath
   else
     echo "Installing pyenv..."
     echo "Removing any existing pyenv installation..."
@@ -33,6 +37,10 @@ if [ "$1" = "install" ]; then
       pyenv global 3.11.4
       pyenv rehash
     fi
+    echo "Installing pipx..."
+    pip install --user pipx
+    export PATH="$HOME/.local/bin:$PATH"
+    pipx ensurepath
   fi
 elif [ "$1" = "update" ]; then
   # TODO: Bumping the version of python automatically.

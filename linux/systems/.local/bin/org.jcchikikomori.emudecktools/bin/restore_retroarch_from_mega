@@ -1,0 +1,98 @@
+#!/bin/sh
+
+# Restore RetroArch saves, states, configuration overrides, and NVRAM from MEGA S4 bucket
+# Restores: save files, save states, core-specific configs, shaders, remaps, and NVRAM
+
+# Default path for Emulation folder
+DEFAULT_EMULATION_DIR="$HOME/Emulation"
+
+# Default Flatpak RetroArch config path (where actual saves/nvram are stored)
+DEFAULT_RETROARCH_FLATPAK="$HOME/.var/app/org.libretro.RetroArch/config/retroarch/saves"
+
+# Check if the default path exists
+if [ -d "$DEFAULT_EMULATION_DIR" ]; then
+    EMULATION_DIR="$DEFAULT_EMULATION_DIR"
+else
+    # Prompt the user for the correct path
+    echo "Default Emulation directory not found at $DEFAULT_EMULATION_DIR."
+    echo "If you have EmuDeck installed in a custom or external location, please provide its full path."
+    read -r -p "Enter the path to your Emulation folder: " CUSTOM_PATH
+
+    # Verify the user-provided path exists
+    if [ -d "$CUSTOM_PATH" ]; then
+        EMULATION_DIR="$CUSTOM_PATH"
+    else
+        echo "ERROR: Invalid path. Emulation directory not found at $CUSTOM_PATH" >&2
+        exit 1
+    fi
+fi
+
+# RetroArch flatpak saves directory
+RETROARCH_FLATPAK="$DEFAULT_RETROARCH_FLATPAK"
+
+# Define RetroArch paths
+RETROARCH_DIR="$EMULATION_DIR/saves/retroarch"
+
+# Verify RetroArch directory exists
+if [ ! -d "$RETROARCH_DIR" ]; then
+    echo "ERROR: RetroArch directory not found at $RETROARCH_DIR" >&2
+    exit 1
+fi
+
+# Confirm restore action
+echo "WARNING: This will restore RetroArch data from MEGA to your local system."
+echo "Items to be restored:"
+echo "  - Save files (saves/)"
+echo "  - Save states (states/)"
+echo "  - Configuration overrides (config/)"
+echo "    • Core-specific configs (.cfg files)"
+echo "    • Shader presets (.slangp, .glslp files)"
+echo "    • Controller remaps (.rmp files)"
+echo "  - NVRAM files (service menu configurations)"
+echo ""
+read -r -p "Continue with restore? (yes/no): " confirm
+
+if [ "$confirm" != "yes" ]; then
+    echo "Restore cancelled."
+    exit 0
+fi
+
+# Restore save files from MEGA
+if rclone ls "mega:emudeck-data/retroarch/saves" >/dev/null 2>&1; then
+    echo "Restoring save files from mega:emudeck-data/retroarch/saves..."
+    rclone sync "mega:emudeck-data/retroarch/saves" "$RETROARCH_DIR/saves/" --verbose --copy-links
+else
+    echo "No save files found on MEGA. Skipping..."
+fi
+
+# Restore save states from MEGA
+if rclone ls "mega:emudeck-data/retroarch/states" >/dev/null 2>&1; then
+    echo "Restoring save states from mega:emudeck-data/retroarch/states..."
+    rclone sync "mega:emudeck-data/retroarch/states" "$RETROARCH_DIR/states/" --verbose --copy-links
+else
+    echo "No save states found on MEGA. Skipping..."
+fi
+
+# Restore configuration overrides from MEGA
+if rclone ls "mega:emudeck-data/retroarch/config" >/dev/null 2>&1; then
+    echo "Restoring configuration overrides from mega:emudeck-data/retroarch/config..."
+    rclone sync "mega:emudeck-data/retroarch/config" "$RETROARCH_DIR/config/" --verbose --copy-links
+else
+    echo "No configuration overrides found on MEGA. Skipping..."
+fi
+
+# Restore NVRAM files to Flatpak RetroArch saves directory
+if rclone ls "mega:emudeck-data/retroarch/nvram" >/dev/null 2>&1; then
+    echo "Restoring NVRAM files from mega:emudeck-data/retroarch/nvram..."
+    if [ -d "$RETROARCH_FLATPAK" ]; then
+        rclone sync "mega:emudeck-data/retroarch/nvram/" "$RETROARCH_FLATPAK/" --verbose --copy-links
+    else
+        echo "ERROR: RetroArch saves directory not found at $RETROARCH_FLATPAK" >&2
+        echo "Please ensure RetroArch is installed before restoring NVRAM." >&2
+    fi
+else
+    echo "No NVRAM files found on MEGA. Skipping..."
+fi
+
+echo ""
+echo "RetroArch data restored successfully from mega:emudeck-data/retroarch/"

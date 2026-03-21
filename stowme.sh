@@ -184,9 +184,9 @@ log_positive "Stowing dotfiles for distro: $DETECTED_DISTRO"
 # darwin excludes Linux-only packages (dxvk, flatpak, wireplumber, lindbergh)
 # bash package also excluded: macOS default shell is zsh and bash configs reference Linux-specific paths
 if [ "$DETECTED_DISTRO" = "darwin" ]; then
-  STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship"
+  STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode"
 else
-  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship"
+  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode"
 fi
 if ! "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
   log_error "Error: dotstow stow failed."
@@ -203,5 +203,13 @@ fi
 
 # Restore symlinks that were temporarily removed for stow compatibility.
 restore_external_symlinks
+
+# Remind user about EmuDeck sync setup if emudecktools package was stowed.
+if [ "$DETECTED_DISTRO" != "darwin" ] && [ "$DETECTED_DISTRO" != "termux" ]; then
+  printf '\n'
+  printf 'Note: If you stowed the emudecktools package,\n'
+  printf 'run the following to setup automatic syncing with systemd timer:\n'
+  printf '  dotfiles-emudeck\n'
+fi
 
 exit 0

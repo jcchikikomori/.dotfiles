@@ -45,10 +45,13 @@ sudo steamos-readonly disable
 
 # Install essentials
 pacman_install "-Syy --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
-  base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget
+  base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr
 
 # Workarounds & Misc software
 pacman_install "-S --noconfirm --noprogressbar" xsel ncdu
+
+# Installing rclone
+pacman_install "-S --noconfirm --noprogressbar" rclone
 
 # Locking SteamOS rootfs...
 sudo steamos-readonly enable

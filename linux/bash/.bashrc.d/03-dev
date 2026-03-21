@@ -38,6 +38,15 @@ if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
     source "$SDKMAN_DIR/bin/sdkman-init.sh"
 fi
 
+# opencode
+export PATH=$HOME/.opencode/bin:$PATH
+# Opencode MCP environment (local-only, gitignored)
+if [ -f "$HOME/.config/opencode/.env" ]; then
+    set -a  # Auto-export all variables
+    . "$HOME/.config/opencode/.env"
+    set +a
+fi
+
 # Autoload Python venv if .venv exists
 auto_load_venv() {
     if [ -d "$PWD/.venv" ]; then

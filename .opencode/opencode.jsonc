@@ -1,0 +1,24 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [],
+  "provider": {
+    "github-copilot": {}
+  },
+  "mcp": {
+    "github": {
+      "enabled": true
+    },
+    "stackoverflow-mcp": {
+      "enabled": true
+    },
+    "framelink-figma": {
+      "enabled": false
+    },
+    "atlassian-mcp": {
+      "enabled": false
+    },
+    "sonarqube-mcp": {
+      "enabled": false
+    }
+  }
+}

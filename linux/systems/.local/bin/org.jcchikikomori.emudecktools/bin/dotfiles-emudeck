@@ -1,0 +1,269 @@
+#!/bin/sh
+
+# dotfiles-emudeck: EmuDeck cloud sync orchestrator
+# Manages rclone setup, validation, and automated syncing for EmuDeck game saves to MEGA S4
+
+set -e
+
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+EMUDECK_HOME="${EMUDECK_HOME:-.}"
+
+# Color output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+print_header() {
+    echo "${BLUE}════════════════════════════════════════${NC}"
+    echo "${BLUE}  EmuDeck Cloud Sync (MEGA S4)${NC}"
+    echo "${BLUE}════════════════════════════════════════${NC}"
+    echo ""
+}
+
+print_success() {
+    echo "${GREEN}✓ $1${NC}"
+}
+
+print_error() {
+    echo "${RED}✗ $1${NC}"
+}
+
+print_warning() {
+    echo "${YELLOW}⚠ $1${NC}"
+}
+
+print_info() {
+    echo "${BLUE}ℹ $1${NC}"
+}
+
+# Show menu
+show_menu() {
+    echo ""
+    echo "What would you like to do?"
+    echo ""
+    echo "  1. Validate rclone and MEGA configuration"
+    echo "  2. Sync all emulator data to MEGA"
+    echo "  3. Sync RetroArch only"
+    echo "  4. Sync PCSX2 only"
+    echo "  5. Sync Flycast only"
+    echo "  6. Sync ES-DE (EmulationStation) only"
+    echo "  7. Sync ES-DE Themes only (⚠️ 4.5GB - asks confirmation)"
+    echo "  8. Setup automatic syncing with systemd timer (30-minute intervals)"
+    echo "  9. Check systemd timer status"
+    echo " 10. Disable automatic syncing"
+    echo " 11. Exit"
+    echo ""
+    read -r -p "Enter your choice [1-11]: " choice
+}
+
+# Validate rclone setup
+validate_setup() {
+    print_header
+    print_info "Validating rclone and MEGA configuration..."
+    echo ""
+    
+    "$SCRIPT_DIR/validate_rclone"
+    
+    if [ $? -eq 0 ]; then
+        print_success "Validation passed!"
+        return 0
+    else
+        print_error "Validation failed. Please check your rclone configuration."
+        return 1
+    fi
+}
+
+# Sync all emulators
+sync_all() {
+    print_header
+    print_info "Syncing all emulator data to MEGA..."
+    echo ""
+    
+    # Sync RetroArch
+    if [ -f "$SCRIPT_DIR/sync_retroarch_to_mega" ]; then
+        print_info "Syncing RetroArch..."
+        "$SCRIPT_DIR/sync_retroarch_to_mega"
+        print_success "RetroArch synced"
+        echo ""
+    fi
+    
+    # Sync PCSX2
+    if [ -f "$SCRIPT_DIR/sync_pcsx2_to_mega" ]; then
+        print_info "Syncing PCSX2..."
+        "$SCRIPT_DIR/sync_pcsx2_to_mega"
+        print_success "PCSX2 synced"
+        echo ""
+    fi
+    
+    # Sync Flycast
+    if [ -f "$SCRIPT_DIR/sync_flycast_to_mega" ]; then
+        print_info "Syncing Flycast..."
+        "$SCRIPT_DIR/sync_flycast_to_mega"
+        print_success "Flycast synced"
+        echo ""
+    fi
+    
+    # Sync ES-DE (EmulationStation)
+    if [ -f "$SCRIPT_DIR/sync_emulationstation_to_mega" ]; then
+        print_info "Syncing ES-DE (EmulationStation)..."
+        "$SCRIPT_DIR/sync_emulationstation_to_mega"
+        print_success "ES-DE synced"
+        echo ""
+    fi
+    
+    print_success "All emulator data synced to MEGA!"
+}
+
+# Sync individual emulator
+sync_emulator() {
+    local emulator=$1
+    local script="$SCRIPT_DIR/sync_${emulator}_to_mega"
+    
+    if [ ! -f "$script" ]; then
+        print_error "Sync script not found for $emulator"
+        return 1
+    fi
+    
+    print_header
+    print_info "Syncing $emulator..."
+    echo ""
+    
+    "$script"
+    
+    print_success "$emulator synced!"
+}
+
+# Sync ES-DE themes only
+sync_esde_themes() {
+    print_header
+    print_warning "This will sync ES-DE themes (~4.5GB)"
+    echo ""
+    
+    if [ ! -f "$SCRIPT_DIR/sync_esde_themes_to_mega" ]; then
+        print_error "ES-DE themes sync script not found"
+        return 1
+    fi
+    
+    "$SCRIPT_DIR/sync_esde_themes_to_mega"
+}
+
+# Setup systemd timer for automatic syncing
+setup_timer() {
+    print_header
+    print_info "Setting up automatic syncing with systemd timer (30-minute intervals)..."
+    echo ""
+    
+    local user_config_dir="$HOME/.config/systemd/user"
+    local service_file="$user_config_dir/emudeck-sync.service"
+    local timer_file="$user_config_dir/emudeck-sync.timer"
+    
+    # Create directory if it doesn't exist
+    mkdir -p "$user_config_dir"
+    
+    # Create service file
+    print_info "Creating systemd service..."
+    cat > "$service_file" << 'EOF'
+[Unit]
+Description=EmuDeck MEGA S4 Cloud Sync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/org.jcchikikomori.emudecktools/bin/sync_retroarch_to_mega
+ExecStart=%h/.local/bin/org.jcchikikomori.emudecktools/bin/sync_pcsx2_to_mega
+ExecStart=%h/.local/bin/org.jcchikikomori.emudecktools/bin/sync_flycast_to_mega
+ExecStart=%h/.local/bin/org.jcchikikomori.emudecktools/bin/sync_emulationstation_to_mega
+StandardOutput=journal
+StandardError=journal
+EOF
+    
+    # Create timer file
+    print_info "Creating systemd timer..."
+    cat > "$timer_file" << 'EOF'
+[Unit]
+Description=EmuDeck MEGA S4 Cloud Sync Timer
+Requires=emudeck-sync.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    
+    # Reload systemd and enable timer
+    print_info "Enabling and starting timer..."
+    systemctl --user daemon-reload
+    systemctl --user enable --now emudeck-sync.timer
+    
+    if [ $? -eq 0 ]; then
+        print_success "Systemd timer configured successfully!"
+        echo ""
+        print_info "Timer will sync all emulators every 30 minutes"
+        print_info "First sync will run 5 minutes after boot"
+        echo ""
+        systemctl --user status emudeck-sync.timer
+    else
+        print_error "Failed to enable systemd timer"
+        return 1
+    fi
+}
+
+# Check timer status
+check_timer() {
+    print_header
+    print_info "Checking systemd timer status..."
+    echo ""
+    
+    systemctl --user status emudeck-sync.timer
+}
+
+# Disable automatic syncing
+disable_timer() {
+    print_header
+    print_info "Disabling automatic syncing..."
+    echo ""
+    
+    systemctl --user disable --now emudeck-sync.timer
+    
+    if [ $? -eq 0 ]; then
+        print_success "Automatic syncing disabled"
+    else
+        print_error "Failed to disable timer"
+        return 1
+    fi
+}
+
+# Main loop
+main() {
+    print_header
+    
+    while true; do
+        show_menu
+        
+        case "$choice" in
+            1) validate_setup ;;
+            2) sync_all ;;
+            3) sync_emulator retroarch ;;
+            4) sync_emulator pcsx2 ;;
+            5) sync_emulator flycast ;;
+            6) sync_emulator emulationstation ;;
+            7) sync_esde_themes ;;
+            8) setup_timer ;;
+            9) check_timer ;;
+            10) disable_timer ;;
+            11) print_info "Exiting..."; exit 0 ;;
+            *) print_error "Invalid choice. Please enter 1-11." ;;
+        esac
+        
+        read -r -p "Press Enter to continue..."
+    done
+}
+
+main "$@"

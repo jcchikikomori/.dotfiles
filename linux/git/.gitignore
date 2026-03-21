@@ -3,5 +3,8 @@
 *.sw[nop]
 .bundle
 .env
+.env.local
+.env.*.local
+**/.config/**/.env
 .git/
 node_modules/

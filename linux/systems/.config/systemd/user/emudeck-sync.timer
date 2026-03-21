@@ -1,0 +1,11 @@
+[Unit]
+Description=EmuDeck MEGA S4 Cloud Sync Timer
+Requires=emudeck-sync.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

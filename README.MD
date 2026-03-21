@@ -3,10 +3,6 @@
 A collection of configuration files and scripts to streamline setting up your favorite terminal shell across various systems.
 Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forked then put optimizations & adjustments to sustain my needs, and lessen the friction on configuring, every time i'm doing the setup on my fresh installed Linux hardware.
 
-## Quick Links
-
-- [Git Cheatsheet](docs/GitCheatsheet.md)
-
 ## Features
 
 - Personalized features.
@@ -15,17 +11,8 @@ Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forke
 - Designed to minimize the risk of system misconfiguration.
 - Added configurations that i personally use.
 
-### Added packages (post-setup)
-
-|Package    |Description                 |Remarks   |
-|-----------|----------------------------|----------|
-|homebrew   |Linuxbrew                   |Not working with Termux at this moment.|
-|pre-commit |Adds validation/features on git before committing||
-|sdkman     |Java JDK/JRE manager        |          |
-|vim        |Duh?                        |          |
-|pyenv      |Python version manager      |Not working with Termux at this moment.|
-|phpenv     |PHP version manager         |Untested  |
-|rbenv      |Ruby version manager        |Untested  |
+> [!TIP]
+> For a complete list of all stow packages, see [docs/STOW_PACKAGES.md](docs/STOW_PACKAGES.md).
 
 ## Supported Platforms
 
@@ -37,11 +24,7 @@ Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forke
 - Termux (Untested)
 - Fedora/RHEL-based distributions
 
-## Installation
-
-The setup process is now fully automated using the `start.sh` script. This script detects your operating system and applies the appropriate configurations and workarounds.
-
-### Requirements
+## Requirements
 
 > [!NOTE]
 >
@@ -54,7 +37,7 @@ Ensure the following prerequisites are met before running the setup:
 2. The `stow` package installed on your system.
 3. [dotstow](https://github.com/jcchikikomori/dotstow) installed for managing dotfiles.
 
-#### For Steam Deck or any device that runs SteamOS
+### For Steam Deck or any device that runs SteamOS
 
 Since SteamOS runs in an immutable file system, i'd recommend to use `distrobox` which is already available on the system out-of-the-box.
 
@@ -68,9 +51,11 @@ Recommended images to use:
 
 More information regarding [virtualization & managing containers](docs/Virtualization.md) here.
 
-#### For any Immutable distros
+### For any Immutable distros
 
 Same as Steam Deck's SteamOS, you needed to ensure that you have `distrobox` & `podman` installed either out-of-the-box or manually which is acceptable in some by putting layers on top of the base system (best example is Fedora Silverblue & Bazzite).
+
+## Installation
 
 ### Setup Instructions
 
@@ -84,14 +69,13 @@ cd $HOME/.dotfiles
 > [!WARNING]
 > Do not install this on somewhere else! Only in `$HOME/.dotfiles`.
 
-## Setup
-
 Execute `start.sh` to get started.
 
 The script will:
-Detect your operating system (e.g., Debian-based, Arch-based, RHEL-based).
-Apply the appropriate configurations and workarounds.
-Execute platform-specific setup scripts.
+
+- Detect your operating system (e.g., Debian-based, Arch-based, RHEL-based).
+- Apply the appropriate configurations and workarounds.
+- Execute platform-specific setup scripts.
 
 Then follow any additional prompts during the setup process.
 
@@ -100,44 +84,17 @@ Then follow any additional prompts during the setup process.
 Execute `stowme.sh` to finally symlink the files properly.
 Then reboot your machine, and let the magic happen!
 
-### Docker Compose Smoke Test
+## Documentation
 
-You can run a reusable Debian smoke test target that follows the CI stowing path:
+For detailed guides, usage reminders, workarounds, and additional documentation, please refer to the [`docs/`](docs/) directory.
 
-```bash
-docker compose run --rm dotfiles-ci-debian
-```
+### Quick Links
 
-This target installs minimal dependencies, installs `dotstow`, and runs `debian/stowme.sh` inside a clean `debian:bookworm-slim` container.
-
-> [!IMPORTANT]
-> macOS cannot be reliably tested via Docker images on Linux hosts. Use GitHub Actions `macos-latest` runners for macOS validation.
-
-## Post-Setup
-
-After running the setup, the dotfiles-post-setup script will handle additional configurations, including:
-
-Installing essential tools like fzf, fasd, and oh-my-zsh.
-Setting up programming environments (e.g., Python, Ruby, Node.js, PHP).
-Configuring vim with plugins and tmux with TPM.
-Installing the Starship prompt and Antigen for Zsh.
-Refer to the `dotfiles-post-setup script` for more details.
-
-## CI Integration
-
-This repository includes a CI workflow; For example: Ubuntu, located in `.github/ci-ubuntu.yml`. The workflow automates the following tasks
-
-Initializes essential dependencies.
-Executes the `start.sh` script.
-Adds a user and simulates stowing dotfiles.
-
-For macOS, the CI should run directly on GitHub-hosted macOS runners instead of Docker containers.
-
-## Workarounds
-
-### Arch Linux Barebones
-
-For Arch Linux, please follow the [instructions here](arch/README.MD).
+- [Stow Packages List](docs/STOW_PACKAGES.md)
+- [Git Cheatsheet](docs/GitCheatsheet.md)
+- [Stow Conflicts Guide](docs/STOW_CONFLICTS.md)
+- [Virtualization & Containers](docs/Virtualization.md)
+- [OpenCode Agent System](.opencode/README.md)
 
 ## Disclaimer & Legal Notices
 

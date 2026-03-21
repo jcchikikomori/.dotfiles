@@ -84,12 +84,15 @@ yay_install() {
   log_info "Installing yay..."
 
   # Clone yay repository and build it
+  # Workaround for SteamOS 3.7.x: checkout a specific commit that works with the
+  # current pacman/libalpm version. See: https://github.com/Jguer/yay/issues/2098
   tmp_dir=$(mktemp -d)
   trap "rm -rf $tmp_dir" EXIT
 
   cd "$tmp_dir"
   git clone https://aur.archlinux.org/yay-bin.git
   cd yay-bin
+  git checkout 7d1b1a155500987cd7684a4b2afd76a98b6ed922
   makepkg -si --noconfirm
 
   log_info "yay installed successfully"

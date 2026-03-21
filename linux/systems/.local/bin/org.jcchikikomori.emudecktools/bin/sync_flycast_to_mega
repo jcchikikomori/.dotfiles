@@ -1,0 +1,75 @@
+#!/bin/sh
+
+# Sync Flycast (Dreamcast/NAOMI/Atomiswave) saves and configuration to MEGA S4 bucket
+# Flycast is a Flatpak application - syncs from $HOME/.var/app/org.flycast.Flycast
+# Follows EmuDeck's directory structure
+
+# Default path for Emulation folder
+DEFAULT_EMULATION_DIR="$HOME/Emulation"
+
+# Check if the default path exists
+if [ -d "$DEFAULT_EMULATION_DIR" ]; then
+    EMULATION_DIR="$DEFAULT_EMULATION_DIR"
+else
+    # Prompt the user for the correct path
+    echo "Default Emulation directory not found at $DEFAULT_EMULATION_DIR."
+    echo "If you have EmuDeck installed in a custom or external location, please provide its full path."
+    read -r -p "Enter the path to your Emulation folder: " CUSTOM_PATH
+
+    # Verify the user-provided path exists
+    if [ -d "$CUSTOM_PATH" ]; then
+        EMULATION_DIR="$CUSTOM_PATH"
+    else
+        echo "ERROR: Invalid path. Emulation directory not found at $CUSTOM_PATH" >&2
+        exit 1
+    fi
+fi
+
+# Define Flycast paths (Flatpak - EmuDeck standard)
+FLYCAST_DATA="$HOME/.var/app/org.flycast.Flycast/data/flycast"
+FLYCAST_CONFIG="$HOME/.var/app/org.flycast.Flycast/config"
+FLYCAST_SAVES="$EMULATION_DIR/saves/flycast/saves"
+FLYCAST_STATES="$EMULATION_DIR/saves/flycast/states"
+
+echo "Syncing Flycast data to mega:emudeck-data/flycast..."
+echo ""
+echo "Items being synced:"
+echo "  - Saves (VMU data, game data)"
+echo "  - Save states"
+echo "  - Configuration (emu.cfg, controller mappings)"
+echo ""
+
+# Sync Flycast save data (VMU files, game saves)
+if [ -d "$FLYCAST_SAVES" ]; then
+    echo "Syncing Flycast saves (via EmuDeck symlink)..."
+    rclone sync "$FLYCAST_SAVES/" "mega:emudeck-data/flycast/saves" --verbose --copy-links
+else
+    echo "⚠ Flycast saves directory not found at $FLYCAST_SAVES (skipping)"
+fi
+
+# Sync Flycast save states
+if [ -d "$FLYCAST_STATES" ]; then
+    echo "Syncing Flycast save states (via EmuDeck symlink)..."
+    rclone sync "$FLYCAST_STATES/" "mega:emudeck-data/flycast/states" --verbose --copy-links
+else
+    echo "⚠ Flycast save states directory not found at $FLYCAST_STATES (skipping)"
+fi
+
+# Sync Flycast configuration files (emu.cfg, controller mappings)
+if [ -d "$FLYCAST_CONFIG" ]; then
+    echo "Syncing Flycast configuration..."
+    rclone sync "$FLYCAST_CONFIG/" "mega:emudeck-data/flycast/config" --verbose --copy-links
+else
+    echo "⚠ Flycast config directory not found at $FLYCAST_CONFIG (skipping)"
+fi
+
+# Sync Flycast data directory (if not already covered by symlinks)
+if [ -d "$FLYCAST_DATA" ]; then
+    echo "Syncing Flycast data (custom textures, additional data)..."
+    rclone sync "$FLYCAST_DATA/" "mega:emudeck-data/flycast/data" --verbose --copy-links
+else
+    echo "⚠ Flycast data directory not found at $FLYCAST_DATA (skipping)"
+fi
+
+echo ""
+echo "✓ Flycast data synced successfully to mega:emudeck-data/flycast/"

@@ -47,6 +47,9 @@ fi
 # Core environment variables
 export EDITOR=vim
 export PATH="${HOME}/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.devtools/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.emudecktools/bin:${PATH}"
 
 # Development environments
 export PYENV_ROOT="$HOME/.pyenv"
@@ -143,6 +146,15 @@ fi
 
 if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
     source "$SDKMAN_DIR/bin/sdkman-init.sh"
+fi
+
+# opencode
+export PATH=$HOME/.opencode/bin:$PATH
+# Opencode MCP environment (local-only, gitignored)
+if [ -f "$HOME/.config/opencode/.env" ]; then
+    set -a  # Auto-export all variables
+    . "$HOME/.config/opencode/.env"
+    set +a
 fi
 
 # Start TMUX if not already running

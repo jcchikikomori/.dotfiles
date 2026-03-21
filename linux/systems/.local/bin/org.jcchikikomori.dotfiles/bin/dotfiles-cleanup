@@ -21,9 +21,9 @@ fi
 
 echo 'Unstowing...'
 if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
-  "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode systems
+  "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode systems opencode
 else
-  "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode dxvk bash
+  "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode dxvk bash opencode
   "$DOTSTOW_BIN" unstow flatpak systems wireplumber
 fi
 
@@ -115,6 +115,18 @@ fi
 if [ -L "$HOME/.local/share/kservices5" ]; then
   rm -f "$HOME/.local/share/kservices5"
 fi
+
+# Clean up old opencode directory structure (moved to linux/opencode)
+if [ -d "$HOME/.dotfiles/opencode" ] && [ ! -f "$HOME/.dotfiles/opencode/.config/opencode/opencode.jsonc" ]; then
+  echo 'Cleaning up old opencode directory...'
+  rm -rf "$HOME/.dotfiles/opencode"
+fi
+
+# Clean up opencode symlinks before restow
+rm -f "$HOME/.config/opencode/opencode.jsonc"
+rm -f "$HOME/.config/opencode/AGENTS.md"
+rm -f "$HOME/.config/opencode/README.md"
+rm -f "$HOME/.config/opencode/.env.example"
 
 # Backup SSH directory
 echo 'y' || cp -rf "$HOME/.ssh" "$HOME/.ssh-backup"
