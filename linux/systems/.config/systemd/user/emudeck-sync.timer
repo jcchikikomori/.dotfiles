@@ -4,7 +4,7 @@ Requires=emudeck-sync.service
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=15min
+OnUnitActiveSec=30min
 Persistent=true
 
 [Install]

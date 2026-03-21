@@ -51,7 +51,7 @@ show_menu() {
     echo "  5. Sync Flycast only"
     echo "  6. Sync ES-DE (EmulationStation) only"
     echo "  7. Sync ES-DE Themes only (⚠️ 4.5GB - asks confirmation)"
-    echo "  8. Setup automatic syncing with systemd timer (15-minute intervals)"
+    echo "  8. Setup automatic syncing with systemd timer (30-minute intervals)"
     echo "  9. Check systemd timer status"
     echo " 10. Disable automatic syncing"
     echo " 11. Exit"
@@ -153,7 +153,7 @@ sync_esde_themes() {
 # Setup systemd timer for automatic syncing
 setup_timer() {
     print_header
-    print_info "Setting up automatic syncing with systemd timer (15-minute intervals)..."
+    print_info "Setting up automatic syncing with systemd timer (30-minute intervals)..."
     echo ""
     
     local user_config_dir="$HOME/.config/systemd/user"
@@ -190,7 +190,7 @@ Requires=emudeck-sync.service
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=15min
+OnUnitActiveSec=30min
 Persistent=true
 
 [Install]
@@ -205,7 +205,7 @@ EOF
     if [ $? -eq 0 ]; then
         print_success "Systemd timer configured successfully!"
         echo ""
-        print_info "Timer will sync all emulators every 15 minutes"
+        print_info "Timer will sync all emulators every 30 minutes"
         print_info "First sync will run 5 minutes after boot"
         echo ""
         systemctl --user status emudeck-sync.timer
