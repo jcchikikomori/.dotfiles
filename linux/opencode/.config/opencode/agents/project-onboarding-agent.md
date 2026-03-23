@@ -27,7 +27,7 @@ permission:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ PROJECT TYPE DETECTION                                       │
+│ PROJECT TYPE DETECTION                                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │ Check in order:                                             │
@@ -38,22 +38,23 @@ permission:
 │    - Rakefile → Ruby gem                                    │
 │                                                             │
 │ 2. Node.js Projects                                         │
-│    - package.json → Node.js                                  │
-│    - next.config.js → Next.js                              │
-│    - nuxt.config.ts → Nuxt.js                              │
+│    - package.json → Node.js                                 │
+│    - next.config.js → Next.js                               │
+│    - nuxt.config.ts → Nuxt.js                               │
 │    - vite.config.* → Vite                                   │
 │                                                             │
 │ 3. Python Projects                                          │
-│    - requirements.txt → Python (pip)                       │
+│    - requirements.txt → Python (pip)                        │
 │    - pyproject.toml → Python (modern)                       │
 │    - manage.py → Django                                     │
-│    - app.py / main.py → Flask/FastAPI                      │
+│    - app.py / main.py → Flask/FastAPI                       │
 │                                                             │
 │ 4. Other                                                    │
 │    - Cargo.toml → Rust                                      │
 │    - go.mod → Go                                            │
 │    - pom.xml → Java/Maven                                   │
-│    - docker-compose.yml → Docker stack                     │
+│    - docker-compose.yml → Docker stack                      │
+│    - build.gradle → Java or Android                         │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```

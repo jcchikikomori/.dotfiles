@@ -17,6 +17,30 @@ permission:
 ---
 ```
 
+## Skill Loading & Delegation
+
+### Auto-Loaded Skills (by Obama Orchestrator)
+- **Primary**: `owasp` (for security audits)
+- **Secondary**: `reactjs` or `vuejs` (based on framework detected)
+- **Optional**: `nodejs` (for build tool security)
+
+### When to Delegate to Specialized Agents
+| Task | Delegate To | Condition |
+|------|-------------|-----------|
+| Fix compatibility issue | `frontend-developer-agent` | Component update required |
+| Fix security vulnerability | `backend-developer-agent` | Backend API change needed |
+| Full-stack security audit | `fullstack-developer-agent` | Both frontend and backend changes needed |
+| Production security incident | `debug-agent` | Urgent issue needing root cause analysis |
+
+### Decision Logic
+1. **Is this a read-only compatibility report?** → Execute directly
+2. **Does fixing the issue require component changes?** → Provide findings, delegate fix to `frontend-developer-agent`
+3. **Does fixing the issue require backend changes?** → Provide findings, delegate fix to `backend-developer-agent`
+4. **Is it a complex security incident?** → Delegate to `debug-agent` for triage
+5. **Is it a full-stack security issue?** → Delegate to `fullstack-developer-agent`
+
+---
+
 ## Workflow: Compatibility Check
 
 ### Step 1: Detect File Type
@@ -317,3 +341,13 @@ When auditing code:
 | caniuse data | https://caniuse.com/[feature] |
 | MDN docs | `context7` tool |
 | OWASP checklist | Load `owasp` skill |
+
+---
+
+## Reference: Shared Templates & Tools
+
+For comprehensive checklists, learning resources, and patterns, refer to:
+- **SHARED-TEMPLATES.md** → Shared Security Checklist (OWASP Quick Check)
+- **SHARED-TEMPLATES.md** → Shared Accessibility Checklist (WCAG 2.1 Level AA)
+- **SHARED-TEMPLATES.md** → Shared Learning Resources (all categories)
+- **SHARED-TEMPLATES.md** → Shared Tools Reference (for framework-specific commands)

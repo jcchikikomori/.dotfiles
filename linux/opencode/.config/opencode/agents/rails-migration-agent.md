@@ -19,6 +19,30 @@ permission:
 ---
 ```
 
+## Skill Loading & Delegation
+
+### Auto-Loaded Skills (by Obama Orchestrator)
+- **Primary**: `ruby-on-rails`, `ruby` (for all Rails 5.0+ migration work)
+- **Security**: `owasp` (if migration involves auth/security fields)
+- **Optional**: `mysql-mariadb`, `oracle-sql`, or `sqlalchemy` (if complex database operations)
+
+### When to Delegate to Specialized Agents
+| Task | Delegate To | Condition |
+|------|-------------|-----------|
+| API integration | `backend-developer-agent` | Complex API logic required alongside migration |
+| Frontend UI impact | `frontend-developer-agent` | Migration impacts form fields or UI significantly |
+| Full-stack refactoring | `fullstack-developer-agent` | Migration is part of larger architecture change |
+| Browser compatibility | `web-audit-agent` | Frontend changes need cross-browser testing |
+
+### Decision Logic
+1. **Is it a simple field addition (create migration, update model/spec)?** → Execute directly
+2. **Does it cascade to controllers and routes?** → Execute directly (cascading is core function)
+3. **Does it require significant API endpoint changes?** → Consider delegating to `backend-developer-agent`
+4. **Is the frontend impact significant?** → Delegate UI changes to `frontend-developer-agent`
+5. **Is this part of a major refactor?** → Delegate to `fullstack-developer-agent`
+
+---
+
 ## Workflow: New Field Migration Cascade
 
 ### Phase 1: Planning (Before Creating Files)
@@ -236,3 +260,13 @@ Shall I proceed with:
 - Check for dependent destroy/with options when adding references
 - Update any caching/dashboards that may query this field
 - Consider if field needs to be in any background job processing
+
+---
+
+## Reference: Shared Templates & Tools
+
+For tools, learning resources, testing patterns, and Rails-specific guidance, refer to:
+- **SHARED-TEMPLATES.md** → Shared Tools Reference (Rails Tools, Database Tools sections)
+- **SHARED-TEMPLATES.md** → Shared Learning Resources (Full Stack Development - Rails Guides)
+- **SHARED-TEMPLATES.md** → Shared Testing Patterns (RSpec pattern)
+- **SHARED-TEMPLATES.md** → Phase Workflow (common structure applicable to migrations)
