@@ -9,7 +9,7 @@
   "plugin": [
     "opencode-redactor@0.1.1"
   ],
-  "default_agent": "obama", // ~/.config/opencode/agents/obama.md
+  "default_agent": "obama",
   "permission": {
     "skill": {
       "*": "allow"

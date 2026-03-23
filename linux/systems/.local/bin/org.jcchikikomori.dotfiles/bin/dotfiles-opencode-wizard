@@ -22,6 +22,36 @@ _json_tool() {
     fi
 }
 
+# Pre-process JSONC file to remove // comments (both line and inline)
+_json_preprocess() {
+    local file="$1"
+    python3 -c "
+import sys
+content = open('$file').read()
+lines = content.split('\n')
+processed = []
+for line in lines:
+    stripped = line.strip()
+    if not stripped.startswith('//'):
+        # Remove inline // comments
+        result = ''
+        in_string = False
+        i = 0
+        while i < len(line):
+            char = line[i]
+            if char == '\"' and (i == 0 or line[i-1:i] != '\\\\'):
+                in_string = not in_string
+                result += char
+            elif char == '/' and not in_string and i + 1 < len(line) and line[i+1:i+2] == '/':
+                break
+            else:
+                result += char
+            i += 1
+        processed.append(result)
+print('\n'.join(processed))
+"
+}
+
 # Read field from opencode.jsonc (strips single-line // comments before parsing)
 _json_get() {
     local field="$1"
@@ -30,10 +60,10 @@ _json_get() {
     tool=$(_json_tool)
     case "$tool" in
         jq)
-            grep -v '^\s*//' "$file" | jq -r "$field // empty" 2>/dev/null || true
+            _json_preprocess "$file" | jq -r "$field // empty" 2>/dev/null || true
             ;;
         python3)
-            grep -v '^\s*//' "$file" | python3 -c "
+            _json_preprocess "$file" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 import functools, operator
@@ -75,7 +105,7 @@ _mcp_add_jq() {
     local name="$1" type="$2" entry="$3"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
+    _json_preprocess "$OPENCODE_CONFIG" \
         | jq --arg name "$name" --argjson entry "$entry" \
             '.mcp[$name] = $entry' > "$tmp"
     mv "$tmp" "$OPENCODE_CONFIG"
@@ -85,7 +115,7 @@ _mcp_add_python() {
     local name="$1" entry="$2"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 name = '$name'
 entry = $entry
@@ -102,7 +132,7 @@ _mcp_toggle_jq() {
     local name="$1" enabled="$2"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
+    _json_preprocess "$OPENCODE_CONFIG" \
         | jq --arg name "$name" --argjson enabled "$enabled" \
             '.mcp[$name].enabled = $enabled' > "$tmp"
     mv "$tmp" "$OPENCODE_CONFIG"
@@ -112,7 +142,7 @@ _mcp_toggle_python() {
     local name="$1" enabled="$2"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 name = '$name'
 enabled = $enabled
@@ -126,29 +156,40 @@ print(json.dumps(data, indent=2))
 
 _mcp_cleanup_invalid_jq() {
     local tmp before after removed
-    before=$(grep -v '^\s*//' "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
+    before=$(_json_preprocess "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
-        | jq '.mcp = ((.mcp // {}) | with_entries(select((.value | type) == "object" and (.value | has("type")) and (.value | has("command")))))' > "$tmp"
+    # Keep MCPs that are valid: type=local with command, OR type=remote (any remote is valid)
+    # Defensive: check value is object first
+    _json_preprocess "$OPENCODE_CONFIG" \
+        | jq '.mcp = ((.mcp // {}) | with_entries(select(
+            (.value | type == "object") and
+            (.value.type == "local" | not) or 
+            (.value.type == "local" and (.value.command | type == "array")) or
+            (.value.type == "remote")
+        )))' > "$tmp"
     mv "$tmp" "$OPENCODE_CONFIG"
-    after=$(grep -v '^\s*//' "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
+    after=$(_json_preprocess "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
     removed=$((before - after))
     if [ "$removed" -gt 0 ]; then
-        echo "[wizard] Removed $removed invalid MCP(s) (missing type/command)."
+        echo "[wizard] Removed $removed invalid MCP(s) (missing type/command or type/url)."
     fi
 }
 
 _mcp_cleanup_invalid_python() {
     local tmp removed
     tmp=$(mktemp)
-    removed=$(grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    removed=$(_json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 mcp = data.get('mcp') or {}
 clean = {}
 for k, v in mcp.items():
-    if isinstance(v, dict) and 'type' in v and 'command' in v:
-        clean[k] = v
+    # Keep if: is dict AND has type AND ((type=local AND has command) OR type=remote)
+    if isinstance(v, dict) and 'type' in v:
+        if v['type'] == 'local' and 'command' in v:
+            clean[k] = v
+        elif v['type'] == 'remote':
+            clean[k] = v
 data['mcp'] = clean
 print(json.dumps(data, indent=2))
 print(len(mcp) - len(clean), file=sys.stderr)
@@ -171,18 +212,23 @@ _mcp_cleanup_invalid() {
 
 _mcp_is_manageable_jq() {
     local name="$1"
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
-        | jq -e --arg name "$name" '.mcp[$name] | (type == "object" and has("type") and has("command"))' > /dev/null 2>&1
+    _json_preprocess "$OPENCODE_CONFIG" \
+        | jq -e --arg name "$name" '.mcp[$name] | (type == "object" and has("type") and (.type == "local" | not) or (.type == "local" and has("command")))' > /dev/null 2>&1
 }
 
 _mcp_is_manageable_python() {
     local name="$1"
-    grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 name = '$name'
 data = json.load(sys.stdin)
 entry = (data.get('mcp') or {}).get(name)
-ok = isinstance(entry, dict) and 'type' in entry and 'command' in entry
+# Manageable if: is dict with type and either (local with command) or remote
+ok = isinstance(entry, dict) and 'type' in entry
+if ok:
+    if entry['type'] == 'local':
+        ok = 'command' in entry
+    # remote type is always okay (has url)
 raise SystemExit(0 if ok else 1)
 " > /dev/null 2>&1
 }
@@ -303,11 +349,11 @@ action_toggle_mcp() {
     echo "Current MCPs:"
     case "$tool" in
         jq)
-            grep -v '^\s*//' "$OPENCODE_CONFIG" \
+            _json_preprocess "$OPENCODE_CONFIG" \
                 | jq -r '.mcp // {} | to_entries[] | "  \(.key)  enabled=\(.value.enabled // true)"' 2>/dev/null || echo "  (none)"
             ;;
         python3)
-            grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+            _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 for k, v in (data.get('mcp') or {}).items():
