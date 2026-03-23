@@ -7,17 +7,6 @@
     "AGENTS.md"
   ],
   "default_agent": "obama", // ~/.config/opencode/agents/obama.md
-  "plugins": {
-    "sensitive-files": {
-      "enabled": true
-    },
-    "quality": {
-      "enabled": false // Currently WIP
-    },
-    "test": {
-      "enabled": false // Test only
-    }
-  },
   "permission": {
     "skill": {
       "*": "allow"
