@@ -63,6 +63,7 @@ linux/systems/.dotfiles-python-version
 
 # opencode
 linux/opencode/.config/opencode/node_modules
+linux/opencode/.config/opencode/.env
 
 # EmuDeck
 linux/zsh/.config/systemd/user/EmuDeckCloudSync.service
