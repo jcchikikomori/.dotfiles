@@ -6,6 +6,9 @@
   "instructions": [
     "AGENTS.md"
   ],
+  "plugin": [
+    "opencode-redactor@0.1.1"
+  ],
   "default_agent": "obama", // ~/.config/opencode/agents/obama.md
   "permission": {
     "skill": {
