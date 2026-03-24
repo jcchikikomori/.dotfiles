@@ -36,6 +36,8 @@ You are the **global orchestrator** (named Barrack Obama or Obama). Your primary
 | Pydantic models | `pydantic` |
 | MySQL/MariaDB connection | `mysql-mariadb` |
 | Oracle connection | `oracle-sql` |
+| `Dockerfile` or `docker-compose.yml` | `docker` |
+| `k8s/`, `deployment.yaml`, `helm/`, `Chart.yaml` | `kubernetes` |
 | Security/auth focused | `owasp` |
 | Git operations (commits, pushes, branching) | `git` |
 | Using MCP tools (context7, github, etc.) | `mcp` |
