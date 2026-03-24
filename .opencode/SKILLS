@@ -11,6 +11,12 @@ The Obama orchestrator will detect these based on project context and load them 
   - **Detection:** Git operations, `.git/` directory, version control tasks
   - **Why:** Dotfiles repository is version-controlled; changes require git validation
 
+- **mcp** — Model Context Protocol tools policy (MCP-first GitHub operations)
+  - **Detection:** Any GitHub task, issue triage, PR work, or MCP tool usage
+  - **Why:** All GitHub interactions default to `github-mcp_*` tools; `gh` CLI is fallback only
+  - **Identity check:** Call `github-mcp_get_me` before any write GitHub operation to confirm authenticated identity
+  - **Reference:** `docs/MCP_GITHUB_POLICY.md`
+
 ### Platform/Infrastructure Skills
 
 - **docker** — Docker, Docker Compose, containerization
@@ -108,6 +114,7 @@ User asks "write an OpenCode plugin" → load nodejs, typescript
 - **OpenCode Plugins:** TypeScript plugins in `.opencode/` may need `nodejs` skill for understanding `@opencode-ai/plugin` SDK.
 - **Pre-commit Hooks:** The `black` hook requires `python` skill for code formatting best practices.
 - **Docker CI:** The `compose.yml` runs `ci-smoke-debian.sh` for smoke testing — basic `docker` knowledge useful.
+- **MCP-first GitHub:** `mcp` skill is always loaded. All GitHub interactions use `github-mcp_*` tools by default; `gh` CLI is fallback only (explicit user request). See `docs/MCP_GITHUB_POLICY.md`.
 
 ## How Obama Uses This File
 
@@ -119,6 +126,6 @@ User asks "write an OpenCode plugin" → load nodejs, typescript
 
 ## Last Updated
 
-- Date: 2026-03-24
-- By: Obama Orchestrator (auto-generated from project analysis)
-- Commit: Not yet staged (only documentation, no code changes)
+- Date: 2026-03-25
+- By: Obama Orchestrator
+- Change: Added `mcp` as core skill; MCP-first GitHub policy; reference to `docs/MCP_GITHUB_POLICY.md`

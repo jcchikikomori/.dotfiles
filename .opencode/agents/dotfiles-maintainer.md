@@ -217,25 +217,48 @@ When modifying scripts that run on Termux:
 - Check package availability: `pkg search <name>` before adding to `termux/setup.sh`
 - Handle `termux-reload-settings` failures gracefully: `2>/dev/null || true`
 
-## GitHub Issues (via `gh` CLI)
+## GitHub Operations (MCP-First Policy)
 
-Use `gh` to read and triage issues. All `gh` commands are **read-only by default** — only run write actions after user confirmation.
+**All GitHub interactions default to `github-mcp_*` tools.** Use `gh` CLI only when explicitly requested by the user or when the MCP tool is unavailable.
+
+### Identity Sanity Check
+
+**Before any write GitHub operation**, call `github-mcp_get_me` to confirm the authenticated identity. Log the returned `login` to the user so they can verify the correct account is in use.
+
+### MCP Tool Reference
+
+| Action | Default MCP tool | gh CLI fallback |
+|---|---|---|
+| List issues | `github-mcp_list_issues` | `gh issue list` |
+| View issue | `github-mcp_issue_read` (method: `get`) | `gh issue view <n>` |
+| List PRs | `github-mcp_list_pull_requests` | `gh pr list` |
+| View PR | `github-mcp_pull_request_read` (method: `get`) | `gh pr view <n>` |
+| Create issue | `github-mcp_issue_write` (method: `create`) | `gh issue create` |
+| Update issue | `github-mcp_issue_write` (method: `update`) | `gh issue edit` |
+| Search code | `github-mcp_search_code` | `gh search code` |
+| Authenticated user | `github-mcp_get_me` | `gh api user` |
+
+### Permission Model
 
 **Read-only (allowed automatically):**
 
-```sh
-gh issue list                          # List open issues
-gh issue view <number>                 # View issue details + comments
-gh issue list --label bug              # Filter by label
-gh issue list --assignee @me           # Assigned to you
-```
+- `github-mcp_list_issues`, `github-mcp_issue_read` (read methods)
+- `github-mcp_list_pull_requests`, `github-mcp_pull_request_read`
+- `github-mcp_search_code`, `github-mcp_search_repositories`
+- `github-mcp_get_me`
 
 **Write actions (REQUIRE user confirmation):**
 
-- `gh issue comment` - Post a comment
-- `gh issue edit` - Edit title/body/labels
-- `gh issue close` / `gh issue reopen`
-- `gh pr create`, `gh pr merge`
+- `github-mcp_issue_write` (create/update) — show proposed content first
+- `github-mcp_add_issue_comment` — show comment text before posting
+- `github-mcp_merge_pull_request` — confirm merge method and target
+- `github-mcp_create_pull_request` — confirm title, body, base branch
+
+### gh CLI Usage Rules
+
+- `gh` CLI is **fallback only** — use only when user says "use gh" or MCP tool is unavailable/broken.
+- `gh issue comment`, `gh issue edit`, `gh pr create`, `gh pr merge` remain under `ask`/`deny` permissions.
+- Never run `gh auth login` or modify `gh` token configuration.
 
 ### Issue Triage Workflow
 
