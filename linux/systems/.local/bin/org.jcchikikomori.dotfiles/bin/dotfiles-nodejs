@@ -19,7 +19,13 @@ DEFAULT_NODE_VERSION="22"
 
 # Ensure NVM is loaded in current shell
 _load_nvm() {
-    [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        # Temporarily disable 'set -u' to allow NVM's internal variable initialization
+        # NVM uses '_' for internal state tracking which may not be set in CI environments
+        set +u
+        . "$NVM_DIR/nvm.sh"
+        set -u
+    fi
 }
 
 # Check if NVM is installed
