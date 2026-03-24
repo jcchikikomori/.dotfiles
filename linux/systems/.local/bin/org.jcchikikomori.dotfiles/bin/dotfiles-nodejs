@@ -72,9 +72,12 @@ action_install_nvm() {
         return 1
     fi
 
-    # Reload profile
+    # Reload profile to pick up NVM initialization
     if [ -f "$HOME/.bashrc" ]; then
-        . "$HOME/.bashrc" 2>/dev/null || true
+        # Source bashrc but capture errors for debugging
+        if ! . "$HOME/.bashrc" 2>/dev/null; then
+            echo "[nodejs] WARNING: Failed to source ~/.bashrc, but NVM files may still be present"
+        fi
     fi
 
     # Verify installation
@@ -99,8 +102,14 @@ action_install_node() {
 
     _load_nvm
 
+    # Verify nvm function is available
+    if ! command -v nvm >/dev/null 2>&1 && ! type nvm >/dev/null 2>&1; then
+        echo "[nodejs] ERROR: 'nvm' command not available after loading. Check NVM installation."
+        return 1
+    fi
+
     # Install Node version
-    if nvm install "$version" 2>/dev/null; then
+    if nvm install "$version"; then
         echo "[nodejs] Node.js v${version} installed successfully"
         nvm use "$version" 2>/dev/null || true
         echo "[nodejs] Current: $(node --version 2>/dev/null || echo 'unknown')"
