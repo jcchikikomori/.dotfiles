@@ -28,7 +28,6 @@ else
 fi
 
 echo 'Backing up...'
-rm -rf "$HOME/.backups"
 mkdir -p "$HOME/.backups"
 mkdir -p "$HOME/.binbackups"
 
@@ -58,6 +57,10 @@ fi
 
 if [ -d "$HOME/.git" ]; then
   cp -rf "$HOME/.git" "$HOME/.backups"
+fi
+
+if [ -d "$HOME/.config/opencode" ]; then
+  cp -rf "$HOME/.config/opencode" "$HOME/.backups"
 fi
 
 echo 'Cleaning up tmux...'
@@ -122,11 +125,20 @@ if [ -d "$HOME/.dotfiles/opencode" ] && [ ! -f "$HOME/.dotfiles/opencode/.config
   rm -rf "$HOME/.dotfiles/opencode"
 fi
 
-# Clean up opencode symlinks before restow
+# Clean up opencode symlinks & stale files before restow
 rm -f "$HOME/.config/opencode/opencode.jsonc"
+rm -f "$HOME/.config/opencode/oh-my-opencode.json"
+rm -f "$HOME/.config/opencode/package.json"
+rm -f "$HOME/.config/opencode/bun.lock"
+rm -f "$HOME/.config/opencode/tui.json"
 rm -f "$HOME/.config/opencode/AGENTS.md"
-rm -f "$HOME/.config/opencode/README.md"
+rm -f "$HOME/.config/opencode/GIT_COMMIT_GUARD.md"
 rm -f "$HOME/.config/opencode/.env.example"
+rm -rf "$HOME/.config/opencode/agent"
+rm -rf "$HOME/.config/opencode/agents"
+rm -rf "$HOME/.config/opencode/plugin"
+rm -rf "$HOME/.config/opencode/plugins"
+rm -rf "$HOME/.config/opencode/skills"
 
 # Backup SSH directory
 echo 'y' || cp -rf "$HOME/.ssh" "$HOME/.ssh-backup"
