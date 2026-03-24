@@ -7,7 +7,8 @@
     "AGENTS.md"
   ],
   "plugin": [
-    "opencode-redactor@0.1.1"
+    "opencode-redactor@0.1.1",
+    "opencode-disable-zen"
   ],
   "default_agent": "obama",
   "permission": {
