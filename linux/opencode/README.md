@@ -103,3 +103,4 @@ Add this to your project's `.gitignore`:
 - `.env` is gitignored via `**/.config/**/.env` pattern
 - Never commit tokens to git
 - Use separate tokens per machine if possible (easier to revoke)
+- You may use `opencode-disable-zen` on plugins to avoid using free LLMs from opencode due to privacy issues (model training, NDA-breaking terms)
