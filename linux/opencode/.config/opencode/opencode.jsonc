@@ -7,6 +7,7 @@
     "AGENTS.md"
   ],
   "plugin": [
+    "oh-my-opencode",
     "opencode-redactor@0.1.1",
     "opencode-disable-zen"
   ],
