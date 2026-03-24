@@ -46,6 +46,7 @@
     "github-mcp": {
       "type": "local",
       "command": [
+        "docker",
         "run",
         "-i",
         "--rm",
