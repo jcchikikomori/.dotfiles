@@ -13,9 +13,11 @@ import type { Plugin } from "@opencode-ai/plugin"
  */
 export const GitCommitGuardPlugin: Plugin = async ({ client }) => {
   return {
-    "tool.execute.before": async (input) => {
+    "tool.execute.before": async (input, output) => {
       if (input.tool === "bash") {
-        const command = input.args.command.toLowerCase().trim()
+        const rawCommand = output?.args?.command
+        if (typeof rawCommand !== "string") return
+        const command = rawCommand.toLowerCase().trim()
         
         // Block any form of git commit
         if (command.startsWith("git commit")) {

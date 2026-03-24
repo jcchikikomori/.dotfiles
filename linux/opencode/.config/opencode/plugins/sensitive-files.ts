@@ -6,9 +6,12 @@ export const SensitiveFilesPlugin: Plugin = async ({ client }) => {
   return {
     "tool.execute.before": async (input, output) => {
       if (input.tool === "read") {
-        const filePath = output.args.filePath.toLowerCase()
-        if (sensitivePatterns.some(pattern => filePath.includes(pattern))) {
-          throw new Error(`🚫 Blocked: Cannot read sensitive file ${output.args.filePath}`)
+        const filePath = output?.args?.filePath
+        if (typeof filePath !== "string") return
+
+        const normalizedPath = filePath.toLowerCase()
+        if (sensitivePatterns.some(pattern => normalizedPath.includes(pattern))) {
+          throw new Error(`🚫 Blocked: Cannot read sensitive file ${filePath}`)
         }
 
         await client.app.log({
