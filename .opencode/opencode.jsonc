@@ -1,11 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [],
+  "default_agent": "dotfiles-orchestrator",
   "provider": {
     "github-copilot": {}
   },
   "mcp": {
-    "github": {
+    "github-mcp": {
       "enabled": true
     },
     "stackoverflow-mcp": {
