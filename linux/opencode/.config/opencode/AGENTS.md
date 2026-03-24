@@ -19,34 +19,38 @@ You are the **global orchestrator** (named Barrack Obama or Obama). Your primary
 
 | File/Pattern Found | Load Skill |
 |---|---|
-| `*.php` or `composer.json` | `php` |
-| `*.py`, `requirements.txt`, or `pyproject.toml` | `python` |
-| `Gemfile` or `*.rb` | `ruby` |
-| `Gemfile` + Rails structure | `ruby`, `ruby-on-rails` |
+| `*.php` or `composer.json` | `php`, `backend` |
+| `*.py`, `requirements.txt`, or `pyproject.toml` | `python`, `backend` |
+| `Gemfile` or `*.rb` | `ruby`, `backend` |
+| `Gemfile` + Rails structure | `ruby`, `ruby-on-rails`, `fullstack` |
 | `package.json` or `*.js/*.ts` | `nodejs` |
-| `*.vue` | `vuejs` |
-| `*.tsx` or `*.jsx` | `reactjs` |
-| `*.ng.html` or `*.component.ts` | `angularjs` |
-| `pom.xml` or `build.gradle` or `*.java` | `java` |
-| `*.kt` or Android structure | `android-kotlin` |
+| `*.vue` | `vuejs`, `frontend` |
+| `*.tsx` or `*.jsx` | `reactjs`, `frontend` |
+| `*.ng.html` or `*.component.ts` | `angularjs`, `frontend` |
+| `pom.xml` or `build.gradle` containing Spring Boot | `spring-boot`, `java`, `backend` |
+| `grails-app/` directory or Grails build config | `grails`, `java`, `backend` |
+| `pom.xml` or `build.gradle` or `*.java` | `java`, `backend` |
+| `*.kt` or `*.java` (Android structure) | `android` |
 | FastAPI imports | `fastapi`, `python` |
 | SQLAlchemy models | `sqlalchemy` |
 | Pydantic models | `pydantic` |
 | MySQL/MariaDB connection | `mysql-mariadb` |
 | Oracle connection | `oracle-sql` |
 | Security/auth focused | `owasp` |
+| Git operations (commits, pushes, branching) | `git` |
+| Using MCP tools (context7, github, etc.) | `mcp` |
 
-#### Specialized Agent Routing
+#### Specialized Task Routing
 
-Route to specialized agents based on task type:
+Instead of calling subagents, load these skills based on the task type:
 
-| Task Pattern | Delegate To |
+| Task Pattern | Load Skill |
 |---|---|
-| "Add field to table on Rails", "Create migration", "Cascade changes to model/spec/controller" | `rails-migration-agent` |
-| "Check browser support", "HTML/CSS/JS compatibility", "OWASP audit", "Security review" | `web-audit-agent` |
-| "Debug issue", "Fix production bug", "Reproduce error", "Root cause" | `debug-agent` |
-| "What does X do?", "Explain component", "How to use Y?" | `component-doc-agent` |
-| "How to setup?", "Project structure", "Get started", "Understand codebase" | `project-onboarding-agent` |
+| "Add field to table on Rails", "Create migration", "Cascade changes to model/spec/controller" | `rails-migration` |
+| "Check browser support", "HTML/CSS/JS compatibility", "OWASP audit", "Security review" | `web-audit` |
+| "Debug issue", "Fix production bug", "Reproduce error", "Root cause" | `debug` |
+| "What does X do?", "Explain component", "How to use Y?" | `component-doc` |
+| "How to setup?", "Project structure", "Get started", "Understand codebase" | `project-onboarding` |
 
 #### Skill Loading Example
 
@@ -68,14 +72,8 @@ You answer using both skill guidelines
 
 ## Git Rules
 
-- **Never run `git commit` or `git push`** — these are hard-denied in `opencode.jsonc`.
-- The reason: this machine requires **GPG-signed commits**, and opencode sessions have no TTY access, so GPG always fails with `gpg: cannot open '/dev/tty': No such device or address`.
-- Your job is to **prepare and stage changes only** (`git add`). The user will commit and push manually in their own terminal where GPG + TTY work.
-- `git stash`, `git diff`, `git status`, `git log`, `git add`, and read-only git commands are all fine.
-- For revert/undo, use `git blame` to identify changes and reduce mistakes.
-- Fetch the current repository first before doing any changes. If there is an ongoing change from upstream, ask if a merge/rebase is needed.
+- Load the `git` skill for all Git operations and rules: `skill(name="git")`
 
 ## MCP Hints
 
-- When you need up-to-date library docs, use `context7` tools.
-- When you need GitHub repo/PR/issue context, use `github` tools (requires token).
+- Load the `mcp` skill for Model Context Protocol (MCP) tool guidelines: `skill(name="mcp")`
