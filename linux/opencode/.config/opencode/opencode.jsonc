@@ -53,6 +53,8 @@
         "run",
         "-i",
         "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
         "dhi.io/github-mcp"
       ],
       "enabled": false,
