@@ -22,6 +22,36 @@ _json_tool() {
     fi
 }
 
+# Pre-process JSONC file to remove // comments (both line and inline)
+_json_preprocess() {
+    local file="$1"
+    python3 -c "
+import sys
+content = open('$file').read()
+lines = content.split('\n')
+processed = []
+for line in lines:
+    stripped = line.strip()
+    if not stripped.startswith('//'):
+        # Remove inline // comments
+        result = ''
+        in_string = False
+        i = 0
+        while i < len(line):
+            char = line[i]
+            if char == '\"' and (i == 0 or line[i-1:i] != '\\\\'):
+                in_string = not in_string
+                result += char
+            elif char == '/' and not in_string and i + 1 < len(line) and line[i+1:i+2] == '/':
+                break
+            else:
+                result += char
+            i += 1
+        processed.append(result)
+print('\n'.join(processed))
+"
+}
+
 # Read field from opencode.jsonc (strips single-line // comments before parsing)
 _json_get() {
     local field="$1"
@@ -30,10 +60,10 @@ _json_get() {
     tool=$(_json_tool)
     case "$tool" in
         jq)
-            grep -v '^\s*//' "$file" | jq -r "$field // empty" 2>/dev/null || true
+            _json_preprocess "$file" | jq -r "$field // empty" 2>/dev/null || true
             ;;
         python3)
-            grep -v '^\s*//' "$file" | python3 -c "
+            _json_preprocess "$file" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 import functools, operator
@@ -75,7 +105,7 @@ _mcp_add_jq() {
     local name="$1" type="$2" entry="$3"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
+    _json_preprocess "$OPENCODE_CONFIG" \
         | jq --arg name "$name" --argjson entry "$entry" \
             '.mcp[$name] = $entry' > "$tmp"
     mv "$tmp" "$OPENCODE_CONFIG"
@@ -85,7 +115,7 @@ _mcp_add_python() {
     local name="$1" entry="$2"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 name = '$name'
 entry = $entry
@@ -102,7 +132,7 @@ _mcp_toggle_jq() {
     local name="$1" enabled="$2"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
+    _json_preprocess "$OPENCODE_CONFIG" \
         | jq --arg name "$name" --argjson enabled "$enabled" \
             '.mcp[$name].enabled = $enabled' > "$tmp"
     mv "$tmp" "$OPENCODE_CONFIG"
@@ -112,7 +142,7 @@ _mcp_toggle_python() {
     local name="$1" enabled="$2"
     local tmp
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 name = '$name'
 enabled = $enabled
@@ -126,29 +156,40 @@ print(json.dumps(data, indent=2))
 
 _mcp_cleanup_invalid_jq() {
     local tmp before after removed
-    before=$(grep -v '^\s*//' "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
+    before=$(_json_preprocess "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
     tmp=$(mktemp)
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
-        | jq '.mcp = ((.mcp // {}) | with_entries(select((.value | type) == "object" and (.value | has("type")) and (.value | has("command")))))' > "$tmp"
+    # Keep MCPs that are valid: type=local with command, OR type=remote (any remote is valid)
+    # Defensive: check value is object first
+    _json_preprocess "$OPENCODE_CONFIG" \
+        | jq '.mcp = ((.mcp // {}) | with_entries(select(
+            (.value | type == "object") and
+            (.value.type == "local" | not) or 
+            (.value.type == "local" and (.value.command | type == "array")) or
+            (.value.type == "remote")
+        )))' > "$tmp"
     mv "$tmp" "$OPENCODE_CONFIG"
-    after=$(grep -v '^\s*//' "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
+    after=$(_json_preprocess "$OPENCODE_CONFIG" | jq -r '(.mcp // {} | length)' 2>/dev/null || echo "0")
     removed=$((before - after))
     if [ "$removed" -gt 0 ]; then
-        echo "[wizard] Removed $removed invalid MCP(s) (missing type/command)."
+        echo "[wizard] Removed $removed invalid MCP(s) (missing type/command or type/url)."
     fi
 }
 
 _mcp_cleanup_invalid_python() {
     local tmp removed
     tmp=$(mktemp)
-    removed=$(grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    removed=$(_json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 mcp = data.get('mcp') or {}
 clean = {}
 for k, v in mcp.items():
-    if isinstance(v, dict) and 'type' in v and 'command' in v:
-        clean[k] = v
+    # Keep if: is dict AND has type AND ((type=local AND has command) OR type=remote)
+    if isinstance(v, dict) and 'type' in v:
+        if v['type'] == 'local' and 'command' in v:
+            clean[k] = v
+        elif v['type'] == 'remote':
+            clean[k] = v
 data['mcp'] = clean
 print(json.dumps(data, indent=2))
 print(len(mcp) - len(clean), file=sys.stderr)
@@ -171,18 +212,23 @@ _mcp_cleanup_invalid() {
 
 _mcp_is_manageable_jq() {
     local name="$1"
-    grep -v '^\s*//' "$OPENCODE_CONFIG" \
-        | jq -e --arg name "$name" '.mcp[$name] | (type == "object" and has("type") and has("command"))' > /dev/null 2>&1
+    _json_preprocess "$OPENCODE_CONFIG" \
+        | jq -e --arg name "$name" '.mcp[$name] | (type == "object" and has("type") and (.type == "local" | not) or (.type == "local" and has("command")))' > /dev/null 2>&1
 }
 
 _mcp_is_manageable_python() {
     local name="$1"
-    grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+    _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 name = '$name'
 data = json.load(sys.stdin)
 entry = (data.get('mcp') or {}).get(name)
-ok = isinstance(entry, dict) and 'type' in entry and 'command' in entry
+# Manageable if: is dict with type and either (local with command) or remote
+ok = isinstance(entry, dict) and 'type' in entry
+if ok:
+    if entry['type'] == 'local':
+        ok = 'command' in entry
+    # remote type is always okay (has url)
 raise SystemExit(0 if ok else 1)
 " > /dev/null 2>&1
 }
@@ -303,11 +349,11 @@ action_toggle_mcp() {
     echo "Current MCPs:"
     case "$tool" in
         jq)
-            grep -v '^\s*//' "$OPENCODE_CONFIG" \
+            _json_preprocess "$OPENCODE_CONFIG" \
                 | jq -r '.mcp // {} | to_entries[] | "  \(.key)  enabled=\(.value.enabled // true)"' 2>/dev/null || echo "  (none)"
             ;;
         python3)
-            grep -v '^\s*//' "$OPENCODE_CONFIG" | python3 -c "
+            _json_preprocess "$OPENCODE_CONFIG" | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
 for k, v in (data.get('mcp') or {}).items():
@@ -490,99 +536,209 @@ action_install_project_mcps() {
     fi
 }
 
-action_add_project_mcp() {
+action_install_free_coding_models() {
     echo ""
-    PROJECT_CONFIG_DIR="$PWD/.opencode"
-    PROJECT_CONFIG="$PROJECT_CONFIG_DIR/opencode.jsonc"
 
-    if [ ! -f "$PROJECT_CONFIG" ]; then
-        echo "[wizard] No project config found at $PROJECT_CONFIG"
-        printf "Create it now? [Y/n]: "
-        read create_now
-        if [ "$create_now" = "n" ] || [ "$create_now" = "N" ]; then
-            return
-        fi
-        action_init_project_config
-    fi
-
-    local tool
-    tool=$(_json_tool)
-    if [ "$tool" = "none" ]; then
-        echo "[wizard] Neither jq nor python3 found. Edit $PROJECT_CONFIG manually."
+    # Guard: Termux not supported
+    if [ -n "${PREFIX:-}" ] && echo "$PREFIX" | grep -q "com.termux"; then
+        echo "[wizard] Termux detected — skipping free-coding-models install."
+        echo "  Node.js global packages are not officially supported in this setup."
+        echo "  You can install manually if you have a working npm on Termux:"
+        echo "    npm install -g free-coding-models"
         return
     fi
 
-    printf "MCP type — [l]ocal (command) or [r]emote (URL)? [l/r]: "
-    read mcp_type
+    # Attempt to load NVM so npm is available in non-interactive shells
+    NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        # shellcheck disable=SC1090
+        . "$NVM_DIR/nvm.sh"
+    fi
 
-    printf "MCP server name (unique key, e.g. my-project-mcp): "
-    read mcp_name
+    if ! command -v npm > /dev/null 2>&1; then
+        echo "[wizard] npm not found."
+        echo "  Install Node.js first (option 10 → dotfiles-nodejs),"
+        echo "  then re-run this option."
+        return
+    fi
 
-    case "$mcp_type" in
-        r | R | remote)
-            printf "Remote URL: "
-            read mcp_url
-            printf "Enable immediately? [y/N]: "
-            read mcp_enable
-            enabled="false"
-            [ "$mcp_enable" = "y" ] || [ "$mcp_enable" = "Y" ] && enabled="true"
-            mcp_url_json=$(_json_escape "$tool" "$mcp_url")
-            entry="{\"type\":\"remote\",\"url\":$mcp_url_json,\"command\":[],\"enabled\":$enabled}"
-            ;;
-        *)
-            printf "Command (e.g. npx -y @modelcontextprotocol/server-github): "
-            read mcp_cmd
-            cmd_json=$(echo "$mcp_cmd" | python3 -c "
-import sys, json, shlex
-print(json.dumps(shlex.split(sys.stdin.read().strip())))
-" 2>/dev/null || echo "$(echo "$mcp_cmd" | jq -Rc '[split(\" \")[]]')")
-            printf "Environment variable name to pass (blank to skip): "
-            read env_name
-            env_block="{}"
-            if [ -n "$env_name" ]; then
-                env_value=$(printenv "$env_name" 2>/dev/null || true)
-                if [ -z "$env_value" ]; then
-                    printf "Value for %s (or use {env:%s} for runtime lookup): " "$env_name" "$env_name"
-                    read env_value
-                    [ -z "$env_value" ] && env_value="{env:$env_name}"
-                fi
-                env_name_json=$(_json_escape "$tool" "$env_name")
-                env_value_json=$(_json_escape "$tool" "$env_value")
-                env_block="{$env_name_json:$env_value_json}"
+    if command -v free-coding-models > /dev/null 2>&1; then
+        echo "[wizard] free-coding-models is already installed."
+        printf "Update to the latest version? [y/N]: "
+        read fcm_update
+        if [ "$fcm_update" != "y" ] && [ "$fcm_update" != "Y" ]; then
+            echo "[wizard] Skipped."
+            return
+        fi
+    fi
+
+    echo "[wizard] Installing / updating free-coding-models via npm..."
+    npm install -g free-coding-models
+
+    if command -v free-coding-models > /dev/null 2>&1; then
+        echo ""
+        echo "[wizard] free-coding-models installed!"
+        echo ""
+        echo "  Quick start:"
+        echo "    free-coding-models                  # interactive TUI"
+        echo "    free-coding-models --opencode        # pre-filter for OpenCode models"
+        echo "    free-coding-models --tier S          # S-tier models only"
+        echo "    free-coding-models --fiable          # most reliable model right now"
+        echo ""
+        echo "  Free providers (no credit card needed for basics):"
+        echo "    NVIDIA NIM   https://build.nvidia.com"
+        echo "    Groq         https://console.groq.com/keys"
+        echo "    Cerebras     https://cloud.cerebras.ai"
+        echo "    OpenRouter   https://openrouter.ai/keys"
+        echo "    Google AI    https://aistudio.google.com/apikey"
+        echo ""
+        echo "  Full list: https://github.com/vava-nessa/free-coding-models#-list-of-free-ai-providers"
+        echo ""
+    else
+        echo "[wizard] Installation may have failed. Try manually:"
+        echo "  npm install -g free-coding-models"
+    fi
+}
+
+action_add_credential_provider() {
+    echo ""
+    prov_auth_only=""
+
+    echo "===================================="
+    echo "  Add Credential Provider"
+    echo "===================================="
+    echo "  Select a free LLM provider to configure:"
+    echo ""
+    echo "   1) Z.AI              https://z.ai/manage-apikey/apikey-list"
+    echo "   2) NVIDIA NIM        https://build.nvidia.com"
+    echo "   3) Groq              https://console.groq.com/keys"
+    echo "   4) Cerebras          https://cloud.cerebras.ai"
+    echo "   5) SambaNova         https://sambanova.ai/developers"
+    echo "   6) OpenRouter        https://openrouter.ai/keys"
+    echo "   7) Google AI Studio  https://aistudio.google.com/apikey"
+    echo "   8) Together AI       https://api.together.ai/settings/api-keys"
+    echo "   9) Scaleway          https://console.scaleway.com/iam/api-keys"
+    echo "  10) OpenCode Zen      https://opencode.ai/auth  (auth login only)"
+    echo "  11) iFlow             https://platform.iflow.cn"
+    echo ""
+    printf "Provider [1-11, b=back]: "
+    read prov_choice
+
+    case "$prov_choice" in
+        b | B) return ;;
+        1)  prov_name="Z.AI";              prov_key="ZAI_API_KEY" ;;
+        2)  prov_name="NVIDIA NIM";        prov_key="NVIDIA_API_KEY" ;;
+        3)  prov_name="Groq";              prov_key="GROQ_API_KEY" ;;
+        4)  prov_name="Cerebras";          prov_key="CEREBRAS_API_KEY" ;;
+        5)  prov_name="SambaNova";         prov_key="SAMBANOVA_API_KEY" ;;
+        6)  prov_name="OpenRouter";        prov_key="OPENROUTER_API_KEY" ;;
+        7)  prov_name="Google AI Studio";  prov_key="GOOGLE_API_KEY" ;;
+        8)  prov_name="Together AI";       prov_key="TOGETHER_API_KEY" ;;
+        9)  prov_name="Scaleway";          prov_key="SCALEWAY_API_KEY" ;;
+        10) prov_name="OpenCode Zen";      prov_auth_only="1" ;;
+        11) prov_name="iFlow";             prov_key="IFLOW_API_KEY" ;;
+        *)  echo "[wizard] Invalid selection."; return ;;
+    esac
+
+    echo ""
+    echo "[wizard] Selected: $prov_name"
+
+    # ── OpenCode Zen: auth-only, no env var ──────────────────────────────────
+    if [ -n "$prov_auth_only" ]; then
+        if command -v opencode > /dev/null 2>&1; then
+            echo ""
+            echo "[wizard] OpenCode Zen uses native auth (no API key needed)."
+            printf "Run 'opencode auth login' now? [Y/n]: "
+            read zen_run
+            if [ "$zen_run" != "n" ] && [ "$zen_run" != "N" ]; then
+                opencode auth login
+            else
+                echo "[wizard] Skipped. Run 'opencode auth login' manually when ready."
             fi
-            printf "Enable immediately? [y/N]: "
-            read mcp_enable
-            enabled="false"
-            [ "$mcp_enable" = "y" ] || [ "$mcp_enable" = "Y" ] && enabled="true"
-            entry="{\"type\":\"local\",\"command\":$cmd_json,\"environment\":$env_block,\"enabled\":$enabled}"
-            ;;
-    esac
+        else
+            echo ""
+            echo "[wizard] opencode is not installed or not in PATH."
+            echo "  Install opencode first, then run 'opencode auth login'."
+            echo "  Sign up at: https://opencode.ai/auth"
+        fi
+        return
+    fi
 
-    # Add to project config instead of global
-    local tmp
-    tmp=$(mktemp)
-    case "$tool" in
-        jq)
-            grep -v '^\s*//' "$PROJECT_CONFIG" \
-                | jq --arg name "$mcp_name" --argjson entry "$entry" \
-                    '.mcp[$name] = $entry' > "$tmp"
-            ;;
-        python3)
-            grep -v '^\s*//' "$PROJECT_CONFIG" | python3 -c "
-import sys, json
-name = '$mcp_name'
-entry = $entry
-data = json.load(sys.stdin)
-if 'mcp' not in data:
-    data['mcp'] = {}
-data['mcp'][name] = entry
-print(json.dumps(data, indent=2))
-" > "$tmp"
-            ;;
-    esac
-    mv "$tmp" "$PROJECT_CONFIG"
+    # ── All other providers: have an API key env var ─────────────────────────
+    env_file="$OPENCODE_CONFIG_DIR/.env"
 
-    echo "[wizard] MCP '$mcp_name' added to project config: $PROJECT_CONFIG"
+    # Ensure .env exists
+    if [ ! -f "$env_file" ]; then
+        echo "[wizard] Creating $env_file ..."
+        mkdir -p "$OPENCODE_CONFIG_DIR"
+        touch "$env_file"
+    fi
+
+    if command -v opencode > /dev/null 2>&1; then
+        echo ""
+        echo "  How would you like to configure $prov_name?"
+        echo "    a) opencode auth login only"
+        echo "    b) Save API key to ~/.config/opencode/.env only"
+        echo "    c) Both (auth login + save to .env)"
+        printf "Choice [a/b/c]: "
+        read cred_mode
+    else
+        echo ""
+        echo "[wizard] opencode not found — saving API key to .env only."
+        cred_mode="b"
+    fi
+
+    # ── auth login (option a or c) ────────────────────────────────────────────
+    if [ "$cred_mode" = "a" ] || [ "$cred_mode" = "c" ]; then
+        echo ""
+        echo "[wizard] Running 'opencode auth login' ..."
+        echo "  Hint: select '$prov_name' from the provider list."
+        opencode auth login
+    fi
+
+    # ── write to .env (option b or c) ────────────────────────────────────────
+    if [ "$cred_mode" = "b" ] || [ "$cred_mode" = "c" ]; then
+        echo ""
+        # Check for existing key
+        if grep -q "^${prov_key}=" "$env_file" 2>/dev/null; then
+            existing_val=$(grep "^${prov_key}=" "$env_file" | head -n 1 | cut -d'=' -f2-)
+            echo "[wizard] $prov_key is already set in $env_file"
+            echo "  Current value: ${existing_val}"
+            printf "Overwrite? [y/N]: "
+            read overwrite_key
+            if [ "$overwrite_key" != "y" ] && [ "$overwrite_key" != "Y" ]; then
+                echo "[wizard] Skipped — existing key kept."
+                return
+            fi
+        fi
+
+        printf "Enter your $prov_name API key: "
+        read prov_api_key
+
+        if [ -z "$prov_api_key" ]; then
+            echo "[wizard] No key entered. Aborted."
+            return
+        fi
+
+        # Write key using safe tmp-swap pattern
+        tmp=$(mktemp)
+        grep -v "^${prov_key}=" "$env_file" > "$tmp" 2>/dev/null || true
+        printf '%s=%s\n' "$prov_key" "$prov_api_key" >> "$tmp"
+        mv "$tmp" "$env_file"
+
+        echo ""
+        echo "[wizard] $prov_key saved to $env_file"
+        echo ""
+        echo "  To activate in your current shell session, run:"
+        echo "    set -a; . ~/.config/opencode/.env; set +a"
+        echo ""
+        echo "  Or add this to your ~/.zshrc / ~/.bashrc:"
+        echo "    [ -f ~/.config/opencode/.env ] && set -a && . ~/.config/opencode/.env && set +a"
+    fi
+
+    if [ "$cred_mode" != "a" ] && [ "$cred_mode" != "b" ] && [ "$cred_mode" != "c" ]; then
+        echo "[wizard] Invalid option. No changes made."
+    fi
 }
 
 # ─── Main menu ────────────────────────────────────────────────────────────────
@@ -612,6 +768,9 @@ while true; do
     echo "  9) Add Project MCP"
     echo " 10) Install / check MCP dependencies"
     echo " 11) Install / check project MCP dependencies"
+    echo "  ────────────────────────────────"
+    echo " 12) Install / update free-coding-models"
+    echo " 13) Add credential provider"
     echo "  q) Quit"
     echo "===================================="
     printf "Choice: "
@@ -629,6 +788,8 @@ while true; do
         9) action_add_project_mcp ;;
         10) action_install_mcps ;;
         11) action_install_project_mcps ;;
+        12) action_install_free_coding_models ;;
+        13) action_add_credential_provider ;;
         q | Q) echo "Bye!"; exit 0 ;;
         *) echo "Unknown option: $choice" ;;
     esac

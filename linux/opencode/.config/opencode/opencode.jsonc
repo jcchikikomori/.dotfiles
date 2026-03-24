@@ -1,9 +1,17 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "autoupdate": true,
+  "model": "anthropic/claude-sonnet-4-5",
+  "small_model": "anthropic/claude-haiku-4-5",
   "instructions": [
     "AGENTS.md"
   ],
+  "plugin": [
+    "oh-my-opencode",
+    "opencode-redactor@0.1.1",
+    "opencode-disable-zen"
+  ],
+  "default_agent": "obama",
   "permission": {
     "skill": {
       "*": "allow"
@@ -37,12 +45,14 @@
       ],
       "enabled": true
     },
-    "github": {
+    "github-mcp": {
       "type": "local",
       "command": [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-github"
+        "docker",
+        "run",
+        "-i",
+        "--rm",
+        "dhi.io/github-mcp"
       ],
       "enabled": false,
       "environment": {
