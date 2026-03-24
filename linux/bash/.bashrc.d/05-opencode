@@ -1,8 +1,14 @@
 # opencode() shell wrapper — per-project env loading
+# Sourced by both bash (.bashrc.d/05-opencode) and zsh (.zfunctions).
+#
 # When OPENCODE_ENV_DEBUG=1, prints which env files were loaded.
-# Env precedence:
+# Anti-recursion: if _DOTFILES_OPENCODE_ENV_LOADED is already set, skip
+# wrapper logic and exec the real binary directly.
+#
+# Env precedence (both loaded before exec):
 #   1. ~/.config/opencode/.env          (global)
 #   2. nearest $PWD ancestor .opencode/.env  (project, overrides global)
+
 opencode() {
     # Recursion guard: already inside the env-loader, go straight to real binary
     if [ "${_DOTFILES_OPENCODE_ENV_LOADED:-0}" = "1" ]; then
@@ -11,21 +17,4 @@ opencode() {
     fi
     # Delegate to the helper script which loads env files then exec's opencode
     dotfiles-opencode-env "$@"
-}
-
-remlower() {
-  local dry=0
-  [[ $1 == --dry-run ]] && { dry=1; shift; }
-  (( $# )) || set -- .
-  for root in "$@"; do
-    find "$root" -depth -print0 | while IFS= read -r -d '' f; do
-      d=${f%/*}; n=${f##*/}; lower=${n:l}; dest="$d/$lower"
-      [[ $n == "$lower" ]] && continue
-      if [[ -e "$dest" ]]; then
-        print -r -- "skip: $f -> $dest (exists)"
-      else
-        (( dry )) && print -r -- "would: mv -n -- $f $dest" || mv -n -- "$f" "$dest"
-      fi
-    done
-  done
 }
