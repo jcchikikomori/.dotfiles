@@ -2,6 +2,62 @@
 
 **Use Case:** Creating new database fields via migrations and correctly cascading those changes across the full MVC stack in Ruby on Rails.
 
+## DB Adapter Detection (MANDATORY — resolve before applying DB-specific guidance)
+
+When this skill is loaded, **immediately determine the database adapter** using the following steps in order:
+
+### Step 1 — Gemfile/Gemfile.lock (HIGHEST PRIORITY)
+
+Scan `Gemfile` and `Gemfile.lock` for DB adapter gems:
+
+| Gem found | DB Skill / guidance |
+|---|---|
+| `mysql2` | Load `mysql-mariadb` skill |
+| `trilogy` | Load `mysql-mariadb` skill |
+| `pg` | Load `postgresql` skill |
+| `activerecord-oracle_enhanced-adapter` | Load `oracle-sql` skill |
+| `ruby-oci8` | Load `oracle-sql` skill |
+| `sqlite3` | No dedicated skill — use standard ActiveRecord/SQLite guidance |
+
+### Step 2 — `config/database.yml` adapter field (FALLBACK — only if Step 1 is ambiguous or Gemfile absent)
+
+Read `config/database.yml` and check the `adapter:` field for each environment:
+
+| `adapter:` value | DB Skill / guidance |
+|---|---|
+| `mysql2` or `trilogy` | Load `mysql-mariadb` skill |
+| `postgresql` or `postgis` | Load `postgresql` skill |
+| `oracle_enhanced` | Load `oracle-sql` skill |
+| `sqlite3` | No dedicated skill — use standard guidance |
+
+### Anti-Default Rule
+
+**Do NOT load `oracle-sql` by default** when a Rails migration context is detected. Oracle guidance is **only** appropriate when:
+- Gemfile/Gemfile.lock contains `activerecord-oracle_enhanced-adapter` or `ruby-oci8`, **OR**
+- `config/database.yml` explicitly uses `adapter: oracle_enhanced`
+
+Any other detected adapter must map to its correct skill (or generic SQL) — never silently fall through to Oracle.
+
+### Verification Commands
+
+Run these to confirm adapter detection when working on an unfamiliar project:
+
+```sh
+# Step 1: Gemfile gem evidence
+grep -E 'mysql2|trilogy|pg[^_]|oracle_enhanced|ruby-oci8|sqlite3' Gemfile Gemfile.lock 2>/dev/null
+
+# Step 2: database.yml adapter field (fallback)
+grep 'adapter:' config/database.yml 2>/dev/null
+```
+
+Expected outcomes:
+- `mysql2` or `trilogy` found → `mysql-mariadb` skill
+- `pg` found → `postgresql` skill
+- `oracle_enhanced`/`ruby-oci8` found → `oracle-sql` skill
+- Nothing found in Gemfile → proceed to Step 2
+
+---
+
 ## Core Migration Workflow
 
 ### 1. Planning & Generation

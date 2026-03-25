@@ -59,6 +59,8 @@ You are the **global orchestrator** (named Barrack Obama or Obama). Your primary
 | FastAPI imports | `fastapi`, `python` |
 | SQLAlchemy models | `sqlalchemy` |
 | Pydantic models | `pydantic` |
+| `db/migrate/*.rb` + `ActiveRecord::Migration` | `rails-migration` + DB adapter detection (see below) |
+| PostgreSQL connection | `postgresql` |
 | MySQL/MariaDB connection | `mysql-mariadb` |
 | Oracle connection | `oracle-sql` |
 | `Dockerfile` or `docker-compose.yml` | `docker` |
@@ -67,13 +69,43 @@ You are the **global orchestrator** (named Barrack Obama or Obama). Your primary
 | Git operations (commits, pushes, branching) | `git` |
 | Using MCP tools (context7, github, etc.) | `mcp` |
 
+#### Rails Migration DB Adapter Detection (MANDATORY ORDER)
+
+When working on Rails migrations (`db/migrate/*.rb` present, `ActiveRecord::Migration` detected), you **MUST** resolve the DB adapter skill in this exact priority order before loading any DB-specific skill:
+
+**Step 1 — Gemfile/Gemfile.lock gem evidence (HIGHEST PRIORITY)**
+
+Scan `Gemfile` and `Gemfile.lock` for DB adapter gems. Map as follows:
+
+| Gem found | DB Skill to load |
+|---|---|
+| `mysql2` | `mysql-mariadb` |
+| `trilogy` | `mysql-mariadb` |
+| `pg` | `postgresql` |
+| `activerecord-oracle_enhanced-adapter` | `oracle-sql` |
+| `ruby-oci8` | `oracle-sql` |
+| `sqlite3` | *(no dedicated skill — use standard SQL guidance)* |
+
+**Step 2 — `config/database.yml` adapter field (FALLBACK — only if Step 1 is ambiguous)**
+
+Read `config/database.yml`. Map the `adapter:` value as follows:
+
+| `adapter:` value | DB Skill to load |
+|---|---|
+| `mysql2` or `trilogy` | `mysql-mariadb` |
+| `postgresql` or `postgis` | `postgresql` |
+| `oracle_enhanced` | `oracle-sql` |
+| `sqlite3` | *(no dedicated skill — use standard SQL guidance)* |
+
+**Critical Rule:** Do NOT default to `oracle-sql` just because a Rails migration is detected. Oracle skill is only loaded when Gemfile/Gemfile.lock contains `activerecord-oracle_enhanced-adapter` or `ruby-oci8`, OR when `config/database.yml` explicitly sets `adapter: oracle_enhanced`. Any other adapter must map to its correct skill or generic SQL.
+
 #### Specialized Task Routing
 
 Instead of calling subagents, load these skills based on the task type:
 
 | Task Pattern | Load Skill |
 |---|---|
-| "Add field to table on Rails", "Create migration", "Cascade changes to model/spec/controller" | `rails-migration` |
+| "Add field to table on Rails", "Create migration", "Cascade changes to model/spec/controller" | `rails-migration` + DB adapter detection (see Rails Migration DB Adapter Detection above) |
 | "Check browser support", "HTML/CSS/JS compatibility", "OWASP audit", "Security review" | `web-audit` |
 | "Debug issue", "Fix production bug", "Reproduce error", "Root cause" | `debug` |
 | "What does X do?", "Explain component", "How to use Y?" | `component-doc` |
