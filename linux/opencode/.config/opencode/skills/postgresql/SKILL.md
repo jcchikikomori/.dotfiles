@@ -5,7 +5,7 @@ description: PostgreSQL coding standards, query optimization, indexing, migratio
 
 # PostgreSQL Skill
 
-**Roadmap Alignment:** [roadmap.sh/postgresql](https://roadmap.sh/postgresql)  
+**Roadmap Alignment:** [roadmap.sh/postgresql-dba](https://roadmap.sh/postgresql-dba)  
 **Reference:** [PostgreSQL Official Documentation](https://www.postgresql.org/docs/)
 
 > **Status:** Initial scaffold. Foundational guidance for PostgreSQL development and administration.
