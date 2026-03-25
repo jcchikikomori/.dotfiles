@@ -92,6 +92,9 @@ All packages listed above except `bash`.
   - EmulationStation configuration
   - Other system-level configurations
 
+- **org.jcchikikomori.devtools** (`systems` package, devtools namespace) — developer workflow tools:
+  - `devtools-clean-branch` — rebuild a polluted PR branch by cherry-picking selected commits on a clean base (see `docs/CleanBranch.md`)
+
 ### Flatpak/Wireplumber
 
 - **flatpak** - Flatpak package manager configuration
