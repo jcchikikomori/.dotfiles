@@ -1,0 +1,103 @@
+#!/bin/sh
+# dotfiles-opencode-env — per-project env loader for opencode
+#
+# Resolves env files in precedence order and execs the real opencode binary:
+#   1. ~/.config/opencode/.env          (global — loaded first, lower precedence)
+#   2. nearest $PWD ancestor .opencode/.env  (project — loaded second, overrides global)
+#
+# Usage (called by the opencode() shell wrapper):
+#   dotfiles-opencode-env [opencode-args...]
+#
+# Debug:
+#   OPENCODE_ENV_DEBUG=1 opencode [args...]
+#
+# Anti-recursion: sets _DOTFILES_OPENCODE_ENV_LOADED=1 before exec so the
+# shell wrapper bails out and exec goes straight to the real binary.
+
+# ── Guard: locate the real opencode binary ────────────────────────────────────
+
+# Strip our own bin dir from PATH so command -v finds the real binary.
+_real_opencode=""
+_safe_path=""
+_orig_IFS="$IFS"
+IFS=:
+for _dir in $PATH; do
+    IFS="$_orig_IFS"
+    case "$_dir" in
+        # Skip the dotfiles bin dir to avoid resolving ourselves
+        *org.jcchikikomori.dotfiles/bin*) ;;
+        *)
+            _candidate="$_dir/opencode"
+            if [ -x "$_candidate" ]; then
+                _real_opencode="$_candidate"
+                break
+            fi
+            ;;
+    esac
+    IFS=:
+done
+IFS="$_orig_IFS"
+
+if [ -z "$_real_opencode" ]; then
+    printf '[dotfiles-opencode-env] ERROR: real opencode binary not found in PATH\n' >&2
+    exit 127
+fi
+
+# ── Helper: source an env file with set -a (auto-export) ─────────────────────
+
+_load_env_file() {
+    _f="$1"
+    [ -f "$_f" ] || return 0
+    set -a
+    # shellcheck source=/dev/null
+    . "$_f"
+    set +a
+    if [ "${OPENCODE_ENV_DEBUG:-0}" = "1" ]; then
+        printf '[opencode-env] loaded: %s\n' "$_f" >&2
+    fi
+}
+
+# ── Step 1: global env ────────────────────────────────────────────────────────
+
+_global_env="$HOME/.config/opencode/.env"
+_load_env_file "$_global_env"
+
+# ── Step 2: nearest project .opencode/.env (walk up from $PWD) ───────────────
+
+_find_project_env() {
+    _dir="${PWD}"
+    while true; do
+        _candidate="$_dir/.opencode/.env"
+        if [ -f "$_candidate" ]; then
+            printf '%s\n' "$_candidate"
+            return 0
+        fi
+        # Stop at filesystem root
+        _parent="${_dir%/*}"
+        if [ "$_parent" = "$_dir" ] || [ -z "$_parent" ]; then
+            return 1
+        fi
+        _dir="$_parent"
+    done
+}
+
+_project_env=""
+_project_env=$(_find_project_env) || true
+
+if [ -n "$_project_env" ]; then
+    _load_env_file "$_project_env"
+elif [ "${OPENCODE_ENV_DEBUG:-0}" = "1" ]; then
+    printf '[opencode-env] no project .opencode/.env found (searched from %s)\n' "$PWD" >&2
+fi
+
+# ── Step 3: exec real opencode (no subshell — env is inherited) ───────────────
+
+if [ "${OPENCODE_ENV_DEBUG:-0}" = "1" ]; then
+    printf '[opencode-env] exec: %s\n' "$_real_opencode" >&2
+fi
+
+# Signal to the shell wrapper that env loading is done — prevents recursion
+# if the shell function is somehow still in scope after exec.
+export _DOTFILES_OPENCODE_ENV_LOADED=1
+
+exec "$_real_opencode" "$@"

@@ -17,7 +17,7 @@ Git submodules allow you to include external Git repositories within your projec
 When cloning this repository for the first time, use the `--recurse-submodules` flag to automatically fetch all submodules:
 
 ```bash
-git clone --recurse-submodules https://github.com/jcchikikomori/dotfiles.git ~/.dotfiles
+git clone --recurse-submodules https://github.com/jcchikikomori/.dotfiles.git ~/.dotfiles
 ```
 
 Alternatively, if you've already cloned without submodules:
@@ -144,4 +144,4 @@ GitHub Actions workflows automatically handle submodule cloning. Ensure workflow
 ## References
 
 - [Git Submodules Documentation](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
-- [GitHub Submodules Guide](https://docs.github.com/en/repositories/working-with-submodules)
+- [GitHub Submodules Guide](https://github.com/git-guides)

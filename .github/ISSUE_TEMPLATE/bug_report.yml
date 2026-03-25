@@ -207,7 +207,7 @@ body:
       options:
         - label: I have searched existing issues to make sure this is not a duplicate
           required: true
-        - label: I have read the [README](https://github.com/jcchikikomori/dotfiles/blob/master/README.MD) and relevant documentation
+        - label: I have read the [README](https://github.com/jcchikikomori/.dotfiles/blob/master/README.MD) and relevant documentation
           required: true
         - label: I am using the latest version of the dotfiles (pulled from master)
           required: false

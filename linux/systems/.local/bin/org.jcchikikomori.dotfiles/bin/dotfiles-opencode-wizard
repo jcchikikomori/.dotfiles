@@ -483,10 +483,92 @@ action_edit_env() {
     $default_editor "$ENV_FILE"
 }
 
+_detect_project_default_agent() {
+    local project_dir="$1"
+    local agents_dir="$project_dir/.opencode/agents"
+    local file mode desc name first_primary
+
+    first_primary=""
+
+    [ -d "$agents_dir" ] || {
+        echo ""
+        return
+    }
+
+    for file in "$agents_dir"/*.md; do
+        [ -f "$file" ] || continue
+
+        mode=$(grep '^mode:' "$file" 2>/dev/null | head -n 1 | cut -d':' -f2- | tr -d '[:space:]')
+        [ "$mode" = "subagent" ] && continue
+
+        name=$(basename "$file" .md)
+        desc=$(grep '^description:' "$file" 2>/dev/null | head -n 1 | cut -d':' -f2-)
+
+        if [ -z "$first_primary" ]; then
+            first_primary="$name"
+        fi
+
+        if printf '%s %s\n' "$name" "$desc" | grep -qi 'orchestrator'; then
+            echo "$name"
+            return
+        fi
+    done
+
+    echo "$first_primary"
+}
+
+_project_mcp_status_jq() {
+    _json_preprocess "$OPENCODE_CONFIG" | jq '
+        (.mcp // {})
+        | with_entries(
+            ((.value.environment // {}) | keys) as $required
+            | .value = {
+                enabled: (if ($required | length) == 0
+                    then true
+                    else all($required[]; ((env[.] // "") | length) > 0)
+                end)
+            }
+        )
+    '
+}
+
+_project_mcp_status_python() {
+    _json_preprocess "$OPENCODE_CONFIG" | python3 -c '
+import json
+import os
+import sys
+
+data = json.load(sys.stdin)
+out = {}
+
+for name, cfg in (data.get("mcp") or {}).items():
+    env_required = list((cfg.get("environment") or {}).keys())
+    if not env_required:
+        enabled = True
+    else:
+        enabled = all((os.getenv(key) or "") != "" for key in env_required)
+    out[name] = {"enabled": enabled}
+
+print(json.dumps(out, indent=2))
+'
+}
+
+_project_mcp_status() {
+    local tool="$1"
+    case "$tool" in
+        jq) _project_mcp_status_jq ;;
+        python3) _project_mcp_status_python ;;
+        *) echo "{}" ;;
+    esac
+}
+
 action_init_project_config() {
     echo ""
     PROJECT_CONFIG_DIR="$PWD/.opencode"
     PROJECT_CONFIG="$PROJECT_CONFIG_DIR/opencode.jsonc"
+    detected_default_agent=""
+    project_mcp="{}"
+    tool=$(_json_tool)
 
     if [ -f "$PROJECT_CONFIG" ]; then
         echo "[wizard] Project config already exists: $PROJECT_CONFIG"
@@ -498,14 +580,42 @@ action_init_project_config() {
     fi
 
     mkdir -p "$PROJECT_CONFIG_DIR"
-    cat > "$PROJECT_CONFIG" <<'EOF'
+    detected_default_agent=$(_detect_project_default_agent "$PWD")
+    project_mcp=$(_project_mcp_status "$tool")
+
+    if [ -n "$detected_default_agent" ]; then
+        cat > "$PROJECT_CONFIG" <<EOF
+{
+  "\$schema": "https://opencode.ai/config.json",
+  "default_agent": "$detected_default_agent",
+  "instructions": [],
+  "mcp": $project_mcp
+}
+EOF
+        echo "[wizard] Created project config: $PROJECT_CONFIG"
+        echo "  Detected default_agent: $detected_default_agent"
+    else
+        cat > "$PROJECT_CONFIG" <<'EOF'
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [],
   "mcp": {}
 }
 EOF
-    echo "[wizard] Created project config: $PROJECT_CONFIG"
+        echo "[wizard] Created project config: $PROJECT_CONFIG"
+        echo "  No primary orchestrator agent detected in .opencode/agents/*.md"
+    fi
+
+    if [ -z "$detected_default_agent" ] && [ "$project_mcp" != "{}" ]; then
+        cat > "$PROJECT_CONFIG" <<EOF
+{
+  "\$schema": "https://opencode.ai/config.json",
+  "instructions": [],
+  "mcp": $project_mcp
+}
+EOF
+    fi
+
     echo "  Add project-specific MCPs with option 9."
     echo "  This config extends your global ~/.config/opencode/opencode.jsonc"
 }
@@ -613,7 +723,7 @@ action_add_credential_provider() {
     echo "   2) NVIDIA NIM        https://build.nvidia.com"
     echo "   3) Groq              https://console.groq.com/keys"
     echo "   4) Cerebras          https://cloud.cerebras.ai"
-    echo "   5) SambaNova         https://sambanova.ai/developers"
+    echo "   5) SambaNova         https://cloud.sambanova.ai/apis"
     echo "   6) OpenRouter        https://openrouter.ai/keys"
     echo "   7) Google AI Studio  https://aistudio.google.com/apikey"
     echo "   8) Together AI       https://api.together.ai/settings/api-keys"
@@ -764,7 +874,7 @@ while true; do
     echo "  6) Edit Config"
     echo "  7) Edit Environment (.env)"
     echo "  ────────────────────────────────"
-    echo "  8) Init Project Config (.opencode/)"
+    echo "  8) Generate Project Config (.opencode/opencode.jsonc)"
     echo "  9) Add Project MCP"
     echo " 10) Install / check MCP dependencies"
     echo " 11) Install / check project MCP dependencies"

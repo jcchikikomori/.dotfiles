@@ -55,6 +55,64 @@ fi
 
 This makes the tokens available as environment variables, which opencode reads via `{env:VARIABLE_NAME}` syntax in `opencode.jsonc`.
 
+## Per-Project Env Loading
+
+When you run `opencode`, a shell wrapper automatically loads env files in this order:
+
+1. `~/.config/opencode/.env` — global tokens (loaded first, lower precedence)
+2. Nearest `$PWD` ancestor `.opencode/.env` — project-specific overrides (loaded second, wins)
+
+This happens **per invocation** via a subshell — no persistent shell pollution.
+
+### How It Works
+
+The `opencode()` function (defined in `~/.zfunctions` for zsh, `~/.bashrc.d/05-opencode` for bash) delegates to:
+
+```
+~/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode-env
+```
+
+That script:
+1. Loads `~/.config/opencode/.env` (if it exists)
+2. Walks up from `$PWD` to find the nearest `.opencode/.env` and loads it (overriding globals)
+3. `exec`s the real `opencode` binary — no subshell overhead, env is inherited
+
+### Debug Toggle
+
+Set `OPENCODE_ENV_DEBUG=1` to print which env files are loaded:
+
+```sh
+OPENCODE_ENV_DEBUG=1 opencode
+```
+
+Example output:
+```
+[opencode-env] loaded: /home/you/.config/opencode/.env
+[opencode-env] loaded: /home/you/my-project/.opencode/.env
+[opencode-env] exec: /home/you/.local/bin/opencode
+```
+
+### Project-Level Env File
+
+Create `.opencode/.env` in your project root (gitignored by default):
+
+```sh
+# my-project/.opencode/.env
+GITHUB_PERSONAL_ACCESS_TOKEN=ghp_project_specific_token
+SONARQUBE_URL=https://sonar.mycompany.com
+SONARQUBE_TOKEN=sqp_xxxxxxxxxxxx
+```
+
+Add to your project's `.gitignore`:
+
+```
+.opencode/.env
+```
+
+### Recursion Safety
+
+The wrapper sets `_DOTFILES_OPENCODE_ENV_LOADED=1` before `exec`-ing opencode, so if the function is re-entered (e.g., opencode spawns a sub-shell), it falls back directly to `command opencode` — no infinite loop.
+
 ## Per-Project Configuration
 
 You can override the global config for a specific project by placing an `opencode.jsonc` in the project root or inside a `.opencode/` directory:
@@ -103,3 +161,4 @@ Add this to your project's `.gitignore`:
 - `.env` is gitignored via `**/.config/**/.env` pattern
 - Never commit tokens to git
 - Use separate tokens per machine if possible (easier to revoke)
+- You may use `opencode-disable-zen` on plugins to avoid using free LLMs from opencode due to privacy issues (model training, NDA-breaking terms)

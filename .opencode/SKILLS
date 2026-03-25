@@ -1,0 +1,131 @@
+# OpenCode Skills Configuration for Dotfiles
+
+This file specifies which OpenCode skills should be auto-loaded when working on the dotfiles project.
+The Obama orchestrator will detect these based on project context and load them automatically.
+
+## Auto-Load Skills (By Priority)
+
+### Core Skills (Always Load)
+
+- **git** — Git operations, commits, branching, history analysis
+  - **Detection:** Git operations, `.git/` directory, version control tasks
+  - **Why:** Dotfiles repository is version-controlled; changes require git validation
+
+- **mcp** — Model Context Protocol tools policy (MCP-first GitHub operations)
+  - **Detection:** Any GitHub task, issue triage, PR work, or MCP tool usage
+  - **Why:** All GitHub interactions default to `github-mcp_*` tools; `gh` CLI is fallback only
+  - **Identity check:** Call `github-mcp_get_me` before any write GitHub operation to confirm authenticated identity
+  - **Reference:** `docs/MCP_GITHUB_POLICY.md`
+
+### Platform/Infrastructure Skills
+
+- **docker** — Docker, Docker Compose, containerization
+  - **Detection:** `compose.yml` in root
+  - **Files:** compose.yml (Debian CI smoke test)
+  - **Why:** Docker-based CI/CD testing infrastructure
+
+### Programming Language Skills
+
+- **python** — Python best practices, PEP 8, type hints
+  - **Detection:** `.pyenvtest/main.py` exists; `pyproject.toml` referenced
+  - **Why:** Python installation script testing infrastructure
+
+- **nodejs** — Node.js/TypeScript for OpenCode plugins
+  - **Detection:** `linux/opencode/.config/opencode/plugins/*.ts`, `package.json`
+  - **Files:** git-commit-guard.ts, quality.ts, sensitive-files.ts
+  - **Why:** OpenCode plugin development (TypeScript)
+
+### Configuration & Format Skills
+
+- **yaml** — YAML configuration files
+  - **Detection:** `.pre-commit-config.yaml`, `.github/workflows/*.yml`
+  - **Why:** Configuration management, pre-commit hooks, GitHub Actions
+
+## Context-Specific Skills (Load on Demand)
+
+### When Working on Specific Areas
+
+#### Setup/Installation Scripts
+- Load: **None** (POSIX shell scripts, not framework-specific)
+- Context: `*/setup.sh`, `stowme.sh` files
+- Note: POSIX `#!/bin/sh` only — no bash-specific syntax
+
+#### OpenCode Configuration
+- Load: **nodejs**, **typescript** (for plugin development)
+- Context: Working on `.opencode/plugins/*.ts` or OpenCode config
+- Files: git-commit-guard.ts, quality.ts, sensitive-files.ts
+
+#### Pre-commit Configuration
+- Load: **git**, **python** (for black formatter)
+- Context: Modifying `.pre-commit-config.yaml`
+- Why: commitizen, black code formatter, pre-commit hooks
+
+#### GitHub Actions / CI
+- Load: **docker** (for compose.yml testing)
+- Context: Modifying `.github/workflows/` or scripts/docker/
+- Files: compose.yml, ci-smoke-debian.sh
+
+#### Python Environment Testing
+- Load: **python**
+- Context: Working on `linux/python/.pyenvtest/` or `dotfiles-python` script
+- Why: Python version manager validation
+
+## Skill Loading Strategy
+
+**Proactive Loading** (at session start based on files in working directory):
+
+```
+Detect files/patterns → Load corresponding skills
+├── .git/ → load git
+├── compose.yml → load docker
+├── .pre-commit-config.yaml → load git, python
+├── *.ts in .opencode/ → load nodejs
+└── .pyenvtest/ → load python
+```
+
+**Reactive Loading** (during user interaction):
+
+```
+User asks "fix the setup script" → no special skill needed (POSIX sh)
+User asks "update pre-commit hooks" → load git, python
+User asks "fix Docker CI" → load docker
+User asks "write an OpenCode plugin" → load nodejs, typescript
+```
+
+## Excluded Skills
+
+| Skill | Reason |
+|---|---|
+| php, ruby, ruby-on-rails | No PHP/Ruby code in this project |
+| java, spring-boot, grails | No Java code in this project |
+| reactjs, vuejs, angularjs | No frontend frameworks here |
+| fastapi, sqlalchemy, pydantic | Not used in this project |
+| kubernetes | No K8s deployment files |
+| mysql-mariadb, oracle-sql | No database configuration |
+| android | No mobile development |
+| owasp | Security review not currently triggered |
+| web-audit | No web application to audit |
+| component-doc | Not applicable |
+| project-onboarding | Specific onboarding docs in `.opencode/` |
+
+## Notes
+
+- **POSIX Shell:** All setup/stowme scripts are `#!/bin/sh` (POSIX). No bash-specific skills needed for script edits.
+- **OpenCode Plugins:** TypeScript plugins in `.opencode/` may need `nodejs` skill for understanding `@opencode-ai/plugin` SDK.
+- **Pre-commit Hooks:** The `black` hook requires `python` skill for code formatting best practices.
+- **Docker CI:** The `compose.yml` runs `ci-smoke-debian.sh` for smoke testing — basic `docker` knowledge useful.
+- **MCP-first GitHub:** `mcp` skill is always loaded. All GitHub interactions use `github-mcp_*` tools by default; `gh` CLI is fallback only (explicit user request). See `docs/MCP_GITHUB_POLICY.md`.
+
+## How Obama Uses This File
+
+1. When you open a session in the dotfiles project, Obama reads this file
+2. Obama detects which technologies/files are present
+3. Obama automatically loads the matching skills from `~/.opencode/skills/`
+4. When you ask a question, Obama has the skill context ready to guide the response
+5. No manual `skill(name="...")` calls needed — it's automatic
+
+## Last Updated
+
+- Date: 2026-03-25
+- By: Obama Orchestrator
+- Change: Added `mcp` as core skill; MCP-first GitHub policy; reference to `docs/MCP_GITHUB_POLICY.md`

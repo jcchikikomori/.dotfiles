@@ -6,7 +6,7 @@ description: Java/Kotlin backend development using the Spring Boot framework. Co
 # Spring Boot Developer Skill
 
 **Roadmap Alignment:** [roadmap.sh/spring-boot](https://roadmap.sh/spring-boot)
-**Language Reference:** [Spring Boot Reference Guide](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
+**Language Reference:** [Spring Boot Reference Guide](https://docs.spring.io/spring-boot/reference/)
 
 ## Architecture & Design Patterns
 - **Layered Architecture:** Strictly enforce the **Controller -> Service -> Repository** pattern.

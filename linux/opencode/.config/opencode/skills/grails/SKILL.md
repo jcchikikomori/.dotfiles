@@ -5,7 +5,7 @@ description: Web application development using the Grails framework (Groovy). Co
 
 # Grails Developer Skill
 
-**Reference:** [Grails Framework Documentation](https://grails.github.io/grails-doc/latest/) | [Groovy Language](https://groovy-lang.org/)
+**Reference:** [Grails Framework Documentation](https://docs.grails.org/latest/) | [Groovy Language](https://groovy-lang.org/)
 
 ## Framework Overview
 Grails is a high-productivity web framework for the JVM based on the Groovy language. It relies heavily on "Convention over Configuration," strongly resembling Ruby on Rails, but built on top of Spring Boot and Hibernate.

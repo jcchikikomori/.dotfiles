@@ -71,7 +71,7 @@ The following MCP servers are configured in `opencode.jsonc`:
 
 | Server | Purpose | Use Case |
 |---|---|---|
-| `github` | GitHub API integration | Issues, PRs, repos, search |
+| `github-mcp` | GitHub API integration | Issues, PRs, repos, search |
 | `stackoverflow-mcp` | Stack Overflow search | Error resolution, best practices |
 
 ### Disabled (Available)
@@ -135,12 +135,22 @@ Orchestrator → Maintainer:
 ```
 You: "Triage the open GitHub issues"
 Orchestrator → Maintainer:
-  "Read all open issues using gh CLI. For each issue, provide:
+  "Use github-mcp tools to read all open issues. For each issue, provide:
    - Severity (Low/Medium/High)
    - Affected distros
    - Suggested fix
    Format as structured report. Do not comment or close anything."
 ```
+
+### GitHub Write Operation Safety Check
+
+Before any write operation (create/update issue/PR, comment, merge), agents must:
+
+1. Call `github-mcp_get_me`
+2. Report the returned login
+3. Ask for confirmation before writing
+
+`gh` CLI is fallback-only and used only when explicitly requested by the user or MCP is unavailable.
 
 ### Script Validation
 
