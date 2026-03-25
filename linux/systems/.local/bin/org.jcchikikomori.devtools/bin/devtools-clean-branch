@@ -82,6 +82,55 @@ list_unique_commits() {
   git log --reverse --oneline "${TARGET_BRANCH}..${WORK_BRANCH}"
 }
 
+# ── conflict prompt ──────────────────────────────────────────────────────────
+# Prompt user on a cherry-pick conflict.
+# Prints one of: continue / skip / abort
+prompt_conflict_action() {
+  _hash="$1"
+  _subj="$2"
+  _mode="$3"   # "commit" or "no-commit"
+
+  printf '\n'
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  printf 'CONFLICT while cherry-picking: %s\n' "$_subj"
+  printf '\n'
+  if [ "$_mode" = "commit" ]; then
+    printf 'The cherry-pick is paused. To resolve:\n'
+    printf '  1. Open a NEW terminal and check out this branch.\n'
+    printf '  2. Edit the conflicted files (look for <<<<<<< markers).\n'
+    printf '  3. Stage your resolutions:  git add <files>\n'
+    printf '  4. Return here and choose [c]ontinue.\n'
+    printf '     The script will run: git cherry-pick --continue\n'
+  else
+    printf 'The cherry-pick -n failed (index may be partially applied).\n'
+    printf 'To resolve:\n'
+    printf '  1. Open a NEW terminal and check out this branch.\n'
+    printf '  2. Edit the conflicted files (look for <<<<<<< markers).\n'
+    printf '  3. Stage your resolutions:  git add <files>\n'
+    printf '  4. Return here and choose [c]ontinue.\n'
+    printf '     The script will proceed to the next commit.\n'
+    printf '  Note: In no-commit mode, git cherry-pick --continue is NOT\n'
+    printf '  used; you stage manually and the script moves on.\n'
+  fi
+  printf '\n'
+  printf 'Choices:\n'
+  printf '  [c] continue — conflicts resolved & staged, proceed\n'
+  printf '  [s] skip     — discard this commit and continue with the rest\n'
+  printf '  [a] abort    — abort the entire operation and exit\n'
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  printf 'Action [c/s/a]: ' >&2
+
+  while true; do
+    read -r _choice </dev/tty
+    case "$_choice" in
+      [cC]) printf 'continue'; return ;;
+      [sS]) printf 'skip';    return ;;
+      [aA]) printf 'abort';   return ;;
+      *) printf 'Please enter c, s, or a: ' >&2 ;;
+    esac
+  done
+}
+
 # ── usage ────────────────────────────────────────────────────────────────────
 usage() {
   sed -n '/^# Usage:/,/^[^#]/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
@@ -318,37 +367,91 @@ printf '\n'
 info "Checking out '$WORK_BRANCH' to apply cherry-picks ..."
 git checkout "$WORK_BRANCH"
 
-CHERRY_FAILED=0
+CHERRY_ABORTED=0
 for H in $SELECTED_HASHES; do
   SUBJ=$(git log -1 --pretty=format:"%h %s" "$H" 2>/dev/null || printf '%s' "$H")
+
   if [ "$CREATE_COMMITS" = "1" ]; then
+    # ── commit mode ────────────────────────────────────────────────────────
     info "Cherry-picking (commit): $SUBJ"
-    if ! git cherry-pick "$H"; then
-      warn "Cherry-pick failed for $H. Aborting cherry-pick sequence."
-      git cherry-pick --abort 2>/dev/null || true
-      CHERRY_FAILED=1
-      break
+    if git cherry-pick "$H"; then
+      # Success — continue to next commit.
+      continue
     fi
+
+    # Conflict: prompt user.
+    ACTION=$(prompt_conflict_action "$H" "$SUBJ" "commit")
+    case "$ACTION" in
+      continue)
+        info "Continuing cherry-pick after conflict resolution ..."
+        # Honour GIT_EDITOR=true so cherry-pick --continue doesn't open editor.
+        if GIT_EDITOR=true git cherry-pick --continue; then
+          info "Cherry-pick continued successfully."
+        else
+          warn "git cherry-pick --continue failed. Aborting sequence."
+          git cherry-pick --abort 2>/dev/null || true
+          CHERRY_ABORTED=1
+          break
+        fi
+        ;;
+      skip)
+        info "Skipping commit $SUBJ ..."
+        git cherry-pick --skip 2>/dev/null || git cherry-pick --abort 2>/dev/null || true
+        info "Skipped."
+        ;;
+      abort)
+        info "Aborting cherry-pick sequence ..."
+        git cherry-pick --abort 2>/dev/null || true
+        CHERRY_ABORTED=1
+        break
+        ;;
+    esac
+
   else
+    # ── no-commit mode ─────────────────────────────────────────────────────
     info "Cherry-picking (no-commit / stage only): $SUBJ"
-    if ! git cherry-pick -n "$H"; then
-      warn "Cherry-pick -n failed for $H. Aborting cherry-pick sequence."
-      git cherry-pick --abort 2>/dev/null || true
-      # In no-commit mode, reset the index to avoid leaving a dirty state.
-      git reset HEAD 2>/dev/null || true
-      CHERRY_FAILED=1
-      break
+    if git cherry-pick -n "$H"; then
+      # Success — continue to next commit.
+      continue
     fi
+
+    # cherry-pick -n on conflict: git does NOT leave a cherry-pick session in
+    # progress (there is no CHERRY_PICK_HEAD). The conflicting files are left
+    # in the worktree with conflict markers; the index is partially applied.
+    # User must resolve manually and stage; we then move on.
+    ACTION=$(prompt_conflict_action "$H" "$SUBJ" "no-commit")
+    case "$ACTION" in
+      continue)
+        info "Proceeding to next commit (assuming conflicts resolved & staged)."
+        ;;
+      skip)
+        info "Skipping commit $SUBJ — resetting conflicted changes ..."
+        # Reset any partially applied / conflicted state back to HEAD.
+        git checkout -- . 2>/dev/null || true
+        git reset HEAD 2>/dev/null || true
+        info "Skipped."
+        ;;
+      abort)
+        info "Aborting cherry-pick sequence — resetting index and worktree ..."
+        git checkout -- . 2>/dev/null || true
+        git reset HEAD 2>/dev/null || true
+        CHERRY_ABORTED=1
+        break
+        ;;
+    esac
   fi
 done
 
-if [ "$CHERRY_FAILED" = "1" ]; then
-  warn "Cherry-pick sequence aborted due to conflicts."
-  warn "The branch '$WORK_BRANCH' has been reset to '$TARGET_BRANCH'."
+if [ "$CHERRY_ABORTED" = "1" ]; then
+  printf '\n'
+  warn "Cherry-pick sequence aborted."
+  warn "Branch '$WORK_BRANCH' may be in a partially-applied state."
   warn "Your original commits are safe in backup branch: $BACKUP_BRANCH"
-  warn "Resolve conflicts manually or restore from backup:"
-  warn "  git branch -f $WORK_BRANCH $BACKUP_BRANCH"
-  git checkout -  2>/dev/null || true
+  warn "To restore the original branch:"
+  warn "  git checkout $WORK_BRANCH"
+  warn "  git reset --hard $BACKUP_BRANCH"
+  warn "  # or: git branch -f $WORK_BRANCH $BACKUP_BRANCH"
+  git checkout - 2>/dev/null || true
   exit 1
 fi
 
