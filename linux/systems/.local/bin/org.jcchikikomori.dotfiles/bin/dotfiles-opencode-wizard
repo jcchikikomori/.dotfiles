@@ -723,7 +723,7 @@ action_add_credential_provider() {
     echo "   2) NVIDIA NIM        https://build.nvidia.com"
     echo "   3) Groq              https://console.groq.com/keys"
     echo "   4) Cerebras          https://cloud.cerebras.ai"
-    echo "   5) SambaNova         https://sambanova.ai/developers"
+    echo "   5) SambaNova         https://cloud.sambanova.ai/apis"
     echo "   6) OpenRouter        https://openrouter.ai/keys"
     echo "   7) Google AI Studio  https://aistudio.google.com/apikey"
     echo "   8) Together AI       https://api.together.ai/settings/api-keys"

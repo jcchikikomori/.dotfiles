@@ -99,7 +99,7 @@ Use this structure when starting a new task:
 
 **Frontend Development**
 - Roadmap: [roadmap.sh/frontend](https://roadmap.sh/frontend)
-- GitHub: [kamranahmedse/developer-roadmap](https://github.com/kamranahmedse/developer-roadmap/tree/main/src/data/frontend)
+- GitHub: [kamranahmedse/developer-roadmap](https://github.com/kamranahmedse/developer-roadmap/tree/master/src/data/roadmaps/frontend)
 - React Docs: [react.dev](https://react.dev)
 - Vue Docs: [vuejs.org](https://vuejs.org)
 - CSS/Styling: [tailwindcss.com](https://tailwindcss.com), [getbootstrap.com](https://getbootstrap.com)
@@ -108,16 +108,16 @@ Use this structure when starting a new task:
 
 **Backend Development**
 - Roadmap: [roadmap.sh/backend](https://roadmap.sh/backend)
-- GitHub: [kamranahmedse/developer-roadmap](https://github.com/kamranahmedse/developer-roadmap/tree/main/src/data/backend)
+- GitHub: [kamranahmedse/developer-roadmap](https://github.com/kamranahmedse/developer-roadmap/tree/master/src/data/roadmaps/backend)
 - REST API Design: [restfulapi.net](https://restfulapi.net/)
-- GraphQL: [graphql.org](https://graphql.org/), [GitHub Ruby GraphQL](https://github.com/graphql-ruby/graphql-ruby)
+- GraphQL: [graphql.org](https://graphql.org/), [GraphQL Ruby](https://graphql-ruby.org/getting_started)
 - Authentication: [jwt.io](https://jwt.io/), [OAuth 2.0](https://oauth.net/2/)
 - Databases: [PostgreSQL Docs](https://www.postgresql.org/docs/), [MySQL Docs](https://dev.mysql.com/doc/), [Oracle Docs](https://docs.oracle.com/)
 - Security: [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 
 **Full Stack Development**
 - Roadmap: [roadmap.sh/full-stack](https://roadmap.sh/full-stack)
-- GitHub: [kamranahmedse/developer-roadmap](https://github.com/kamranahmedse/developer-roadmap/tree/main/src/data/fullstack)
+- GitHub: [kamranahmedse/developer-roadmap](https://github.com/kamranahmedse/developer-roadmap/tree/master/src/data/roadmaps/full-stack)
 - Rails Guides: [guides.rubyonrails.org](https://guides.rubyonrails.org/)
 - Rails Upgrade Path: [Rails 7 Guide](https://guides.rubyonrails.org/7_0_release_notes.html), [Rails 8 Guide](https://guides.rubyonrails.org/8_0_release_notes.html)
 - Hotwire: [hotwired.dev](https://hotwired.dev/)

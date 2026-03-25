@@ -7,7 +7,7 @@ description: Ruby coding standards following RuboCop, guard clauses, TDD with RS
 
 ## Style & Conventions
 
-- Follow the **RuboCop Ruby Style Guide**: https://github.com/rubocop-hq/ruby-style-guide
+- Follow the **RuboCop Ruby Style Guide**: https://github.com/rubocop/ruby-style-guide
 - Always follow the repository's existing **RuboCop config** — run `bundle exec rubocop` before finalizing changes.
 - 2-space indentation.
 - Single quotes for strings; double quotes only when interpolation or special chars are needed.
