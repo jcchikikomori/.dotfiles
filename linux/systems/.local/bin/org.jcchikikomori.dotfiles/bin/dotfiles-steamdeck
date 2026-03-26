@@ -166,10 +166,33 @@ docker_remove() {
   log_info "Docker removed successfully"
 }
 
+# Setup local LLM support with Ollama
+llm_setup() {
+  log_info "Setting up local LLM support on Steam Deck..."
+
+  if command -v devtools-steamdeck-llm >/dev/null 2>&1; then
+    devtools-steamdeck-llm install docker
+  else
+    log_error "devtools-steamdeck-llm not found in PATH"
+    log_info "Make sure ~/.local/bin is in your PATH"
+    return 1
+  fi
+}
+
+# Check LLM status shortcut
+llm_status() {
+  if command -v devtools-steamdeck-llm >/dev/null 2>&1; then
+    devtools-steamdeck-llm status
+  else
+    log_error "devtools-steamdeck-llm not found in PATH"
+    return 1
+  fi
+}
+
 # Main command dispatcher
 main() {
   if [ $# -eq 0 ]; then
-    echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+    echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove|llm-setup|llm-status}"
     echo ""
     echo "Commands:"
     echo "  reset-audio      Delete WirePlumber settings to fix corrupt audio"
@@ -179,6 +202,8 @@ main() {
     echo "  yay-remove       Remove yay"
     echo "  docker-install   Install Docker"
     echo "  docker-remove    Remove Docker"
+    echo "  llm-setup        Setup local LLM support with Ollama (ROCM)"
+    echo "  llm-status       Check LLM service status"
     exit 1
   fi
 
@@ -204,9 +229,15 @@ main() {
     docker-remove)
       docker_remove
       ;;
+    llm-setup)
+      llm_setup
+      ;;
+    llm-status)
+      llm_status
+      ;;
     *)
       log_error "Unknown command: $1"
-      echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+      echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove|llm-setup|llm-status}"
       exit 1
       ;;
   esac

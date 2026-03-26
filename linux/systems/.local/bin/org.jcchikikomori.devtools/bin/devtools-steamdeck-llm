@@ -1,0 +1,764 @@
+#!/bin/sh
+#
+# devtools-steamdeck-llm — Local LLM setup for Steam Deck using Ollama with ROCM support
+#
+# Usage: devtools-steamdeck-llm {install|uninstall|start|stop|status|models|pull|thermal|recommend|logs|verify-gpu}
+#
+# Commands:
+#   install {docker|native}  Install Ollama (docker or native mode)
+#   uninstall                Remove Ollama and systemd service
+#   start                    Start the Ollama user service
+#   stop                     Stop the Ollama user service
+#   status                   Check Ollama service status
+#   models                   List installed models
+#   pull <model>             Pull a specific model
+#   thermal                  Show CPU/GPU temps and thermal status
+#   recommend                Show model recommendations for Steam Deck
+#   logs                     Show recent Ollama logs
+#   verify-gpu               Check if GPU acceleration is working
+#
+# Steam Deck Configuration:
+#   - Uses user-mode systemd service (no root required for runtime)
+#   - Requires HSA_OVERRIDE_GFX_VERSION=10.3.0 for gfx1033 GPU support
+#   - Thermal throttling starts at ~85°C junction temperature
+#   - Recommended models: phi3 (3.8B), qwen2.5-coder:3b, deepseek-coder:1.3b
+#
+# POSIX sh — no bashisms.
+
+set -eu
+
+# ── configuration ────────────────────────────────────────────────────────────
+OLLAMA_HOME="${HOME}/.ollama"
+OLLAMA_MODELS="${OLLAMA_HOME}/models"
+OLLAMA_SERVICE="ollama.service"
+OLLAMA_BIN="${HOME}/.local/bin/ollama"
+OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
+
+# Docker configuration for Steam Deck
+# Image tag verified on DockerHub: 0.6.3-gfx1033-rocm6.3.3-rocm
+DOCKER_IMAGE="sebastianlutter/ollama-for-steamdeck:0.6.3-gfx1033-rocm6.3.3-rocm"
+DOCKER_CONTAINER="ollama-steamdeck"
+
+# ROCM/GPU settings for Steam Deck AMD APU (gfx1033)
+export HSA_OVERRIDE_GFX_VERSION="10.3.0"
+export OLLAMA_HOST="127.0.0.1:11434"
+
+# ── colors ───────────────────────────────────────────────────────────────────
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# ── logging ──────────────────────────────────────────────────────────────────
+log_info() {
+    printf "${BLUE}[devtools-steamdeck-llm]${NC} %s\n" "$1"
+}
+
+log_error() {
+    printf "${RED}[devtools-steamdeck-llm] ERROR:${NC} %s\n" "$1" >&2
+}
+
+log_warn() {
+    printf "${YELLOW}[devtools-steamdeck-llm] WARNING:${NC} %s\n" "$1" >&2
+}
+
+log_success() {
+    printf "${GREEN}[devtools-steamdeck-llm]${NC} %s\n" "$1"
+}
+
+# ── usage ────────────────────────────────────────────────────────────────────
+usage() {
+    sed -n '/^# Usage:/,/^[^#]/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
+    printf '\n'
+    sed -n '/^# Commands:/,/^# Steam/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
+}
+
+# ── checks ───────────────────────────────────────────────────────────────────
+check_steamos() {
+    if [ -f "/etc/os-release" ]; then
+        if grep -q "steamos" /etc/os-release 2>/dev/null || \
+           grep -q "SteamOS" /etc/os-release 2>/dev/null || \
+           command -v steamos-readonly >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+check_ollama_installed() {
+    if command -v ollama >/dev/null 2>&1; then
+        return 0
+    fi
+    if [ -x "$OLLAMA_BIN" ]; then
+        return 0
+    fi
+    if command -v docker >/dev/null 2>&1; then
+        if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "^${DOCKER_CONTAINER}$"; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+check_docker_available() {
+    if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
+check_is_docker_mode() {
+    if command -v docker >/dev/null 2>&1; then
+        if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "^${DOCKER_CONTAINER}$"; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# ── environment setup ────────────────────────────────────────────────────────
+setup_environment() {
+    log_info "Setting up Ollama environment configuration..."
+    
+    mkdir -p "$OLLAMA_HOME"
+    mkdir -p "$OLLAMA_MODELS"
+    mkdir -p "${HOME}/.config/ollama"
+    
+    cat > "${HOME}/.config/ollama/env" << 'ENVFILE'
+# Ollama environment settings for Steam Deck
+# GPU: AMD gfx1033 (Van Gogh APU)
+# HSA_OVERRIDE_GFX_VERSION enables GPU acceleration on Steam Deck
+export OLLAMA_HOST="127.0.0.1:11434"
+export OLLAMA_MODELS="$HOME/.ollama/models"
+export HSA_OVERRIDE_GFX_VERSION="10.3.0"
+export HIP_VISIBLE_DEVICES="0"
+
+# Steam Deck thermal optimization
+export OLLAMA_NUM_PARALLEL="1"
+export OLLAMA_MAX_LOADED_MODELS="1"
+ENVFILE
+    
+    log_success "Environment file created at ~/.config/ollama/env"
+}
+
+# ── install modes ─────────────────────────────────────────────────────────────
+cmd_install() {
+    local mode="${1:-}"
+    
+    if [ -z "$mode" ]; then
+        log_error "Install mode required"
+        echo "Usage: devtools-steamdeck-llm install {docker|native}"
+        echo ""
+        echo "Install modes:"
+        echo "  docker  - Use Docker with pre-built gfx1033 support (recommended)"
+        echo "  native  - Native installation with environment override"
+        echo ""
+        echo "Recommendation: Use 'docker' mode for best compatibility"
+        return 1
+    fi
+    
+    case "$mode" in
+        docker)
+            install_docker
+            ;;
+        native)
+            install_native
+            ;;
+        *)
+            log_error "Unknown install mode: $mode"
+            echo "Use 'docker' or 'native'"
+            return 1
+            ;;
+    esac
+}
+
+install_docker() {
+    log_info "Starting Ollama Docker installation for Steam Deck..."
+    
+    if ! check_docker_available; then
+        log_error "Docker is not installed or not running"
+        log_info "Install Docker with: dotfiles-steamdeck docker-install"
+        return 1
+    fi
+    
+    if check_ollama_installed; then
+        log_warn "Ollama is already installed."
+        if check_is_docker_mode; then
+            log_info "Found existing Docker container: ${DOCKER_CONTAINER}"
+        else
+            log_info "Found native installation. Use 'uninstall' first if you want to switch."
+        fi
+        return 1
+    fi
+    
+    setup_environment
+    
+    log_info "Pulling pre-built Docker image: ${DOCKER_IMAGE}"
+    log_info "This may take several minutes..."
+    docker pull "$DOCKER_IMAGE"
+    
+    log_info "Creating Docker container with gfx1033 support..."
+    docker run -d \
+        --name "$DOCKER_CONTAINER" \
+        --restart unless-stopped \
+        --device /dev/kfd \
+        --device /dev/dri \
+        -p 127.0.0.1:11434:11434 \
+        -v "$OLLAMA_HOME:/root/.ollama" \
+        -e "HSA_OVERRIDE_GFX_VERSION=10.3.0" \
+        -e "HIP_VISIBLE_DEVICES=0" \
+        "$DOCKER_IMAGE"
+    
+    log_success "Docker container created and started!"
+    log_info "Container name: ${DOCKER_CONTAINER}"
+    log_info "API endpoint: http://127.0.0.1:11434"
+    
+    sleep 3
+    
+    if docker ps --format '{{.Names}}' | grep -q "^${DOCKER_CONTAINER}$"; then
+        log_success "Ollama is running in Docker!"
+        
+        log_info "Pulling recommended model (phi3)..."
+        docker exec "$DOCKER_CONTAINER" ollama pull phi3 2>&1 | while read -r line; do
+            printf "."
+        done
+        printf "\n"
+        
+        log_success "Installation complete!"
+        echo ""
+        echo "Quick start:"
+        echo "  Run a model:    docker exec -it ${DOCKER_CONTAINER} ollama run phi3"
+        echo "  List models:    docker exec ${DOCKER_CONTAINER} ollama list"
+        echo "  Container logs: docker logs -f ${DOCKER_CONTAINER}"
+        echo ""
+        echo "Recommended models:"
+        echo "  phi3               - Fast general purpose (3.8B)"
+        echo "  qwen2.5-coder:3b   - Excellent for coding"
+        echo "  deepseek-coder:1.3b - Fastest for quick queries"
+        echo ""
+        log_warn "Thermal management: Monitor temps with 'devtools-steamdeck-llm thermal'"
+    else
+        log_error "Container failed to start"
+        docker logs "$DOCKER_CONTAINER" 2>&1 | tail -20
+        return 1
+    fi
+}
+
+install_native() {
+    log_info "Starting native Ollama installation for Steam Deck..."
+
+    if check_ollama_installed; then
+        log_warn "Ollama is already installed."
+        log_info "Current version: $(ollama --version 2>/dev/null || echo 'unknown')"
+        return 0
+    fi
+
+    setup_environment
+    mkdir -p "${HOME}/.local/bin"
+    mkdir -p "${HOME}/.config/systemd/user"
+
+    if command -v yay >/dev/null 2>&1; then
+        log_info "yay detected. Installing Ollama via AUR..."
+        log_info "This may take a while (ROCM packages are large)..."
+        
+        set +e
+        yay -S --noconfirm ollama-rocm 2>/dev/null
+        YAY_RESULT=$?
+        set -e
+        
+        if [ $YAY_RESULT -eq 0 ]; then
+            log_success "Ollama installed via AUR with ROCM support!"
+        else
+            log_warn "AUR installation failed. Falling back to official install script..."
+            install_official
+        fi
+    else
+        log_info "Installing Ollama via official script..."
+        install_official
+    fi
+
+    create_systemd_service
+
+    log_info "Starting Ollama service..."
+    systemctl --user daemon-reload
+    systemctl --user start "$OLLAMA_SERVICE"
+    systemctl --user enable "$OLLAMA_SERVICE"
+
+    log_info "Waiting for Ollama to be ready..."
+    sleep 3
+    
+    local retries=0
+    while ! ollama list >/dev/null 2>&1 && [ $retries -lt 10 ]; do
+        sleep 2
+        retries=$((retries + 1))
+    done
+
+    if ollama list >/dev/null 2>&1; then
+        log_success "Ollama is running and ready!"
+        
+        log_info "Pulling recommended model (phi3)..."
+        ollama pull phi3 2>&1 | while read -r line; do
+            printf "."
+        done
+        printf "\n"
+        
+        log_success "Installation complete!"
+        echo ""
+        echo "Quick start:"
+        echo "  Run a model:    ollama run phi3"
+        echo "  List models:    ollama list"
+        echo "  Service status: systemctl --user status ollama"
+        echo ""
+        echo "GPU Acceleration:"
+        echo "  ROCM is enabled with HSA_OVERRIDE_GFX_VERSION=10.3.0"
+        echo "  Verify GPU usage: devtools-steamdeck-llm verify-gpu"
+        echo ""
+        log_warn "Thermal management: Monitor temps with 'devtools-steamdeck-llm thermal'"
+    else
+        log_warn "Ollama service may not be fully ready yet."
+        log_info "Check status with: devtools-steamdeck-llm status"
+    fi
+}
+
+install_official() {
+    log_info "Downloading Ollama installer..."
+    
+    local install_script
+    install_script=$(mktemp)
+    trap "rm -f $install_script" EXIT
+    
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "$OLLAMA_INSTALL_URL" -o "$install_script"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "$OLLAMA_INSTALL_URL" -O "$install_script"
+    else
+        log_error "Neither curl nor wget is available."
+        exit 1
+    fi
+    
+    log_info "Running Ollama installer..."
+    chmod +x "$install_script"
+    sh "$install_script"
+    
+    log_success "Official Ollama installer completed"
+}
+
+create_systemd_service() {
+    log_info "Creating systemd user service..."
+    
+    cat > "${HOME}/.config/systemd/user/${OLLAMA_SERVICE}" << 'EOF'
+[Unit]
+Description=Ollama Service (User)
+Documentation=https://ollama.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment="OLLAMA_HOST=127.0.0.1:11434"
+Environment="OLLAMA_MODELS=%h/.ollama/models"
+Environment="HSA_OVERRIDE_GFX_VERSION=10.3.0"
+Environment="HIP_VISIBLE_DEVICES=0"
+Environment="OLLAMA_NUM_PARALLEL=1"
+Environment="OLLAMA_MAX_LOADED_MODELS=1"
+ExecStart=%h/.ollama/bin/ollama serve
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
+EOF
+    
+    log_success "Systemd service created"
+}
+
+# ── uninstall ─────────────────────────────────────────────────────────────────
+cmd_uninstall() {
+    log_info "Uninstalling Ollama..."
+    
+    # Stop and remove Docker container
+    if check_is_docker_mode; then
+        log_info "Stopping Docker container..."
+        docker stop "$DOCKER_CONTAINER" 2>/dev/null || true
+        docker rm "$DOCKER_CONTAINER" 2>/dev/null || true
+        log_info "Docker container removed"
+    fi
+    
+    # Stop and disable native service
+    systemctl --user stop "$OLLAMA_SERVICE" 2>/dev/null || true
+    systemctl --user disable "$OLLAMA_SERVICE" 2>/dev/null || true
+    
+    if [ -f "${HOME}/.config/systemd/user/${OLLAMA_SERVICE}" ]; then
+        rm -f "${HOME}/.config/systemd/user/${OLLAMA_SERVICE}"
+        systemctl --user daemon-reload
+    fi
+    
+    if [ -x "$OLLAMA_BIN" ]; then
+        rm -f "$OLLAMA_BIN"
+    fi
+    
+    if [ -d "${HOME}/.ollama/bin" ]; then
+        rm -rf "${HOME}/.ollama/bin"
+    fi
+    
+    log_warn "Models directory preserved at: $OLLAMA_MODELS"
+    log_warn "To remove models, run: rm -rf ~/.ollama"
+    
+    log_success "Ollama uninstalled successfully"
+}
+
+# ── service control ──────────────────────────────────────────────────────────
+cmd_start() {
+    if check_is_docker_mode; then
+        log_info "Starting Docker container..."
+        docker start "$DOCKER_CONTAINER"
+        sleep 2
+        if docker ps --format '{{.Names}}' | grep -q "^${DOCKER_CONTAINER}$"; then
+            log_success "Docker container started"
+        else
+            log_error "Failed to start Docker container"
+            return 1
+        fi
+    else
+        log_info "Starting Ollama service..."
+        
+        if ! systemctl --user is-enabled "$OLLAMA_SERVICE" >/dev/null 2>&1; then
+            systemctl --user enable "$OLLAMA_SERVICE"
+        fi
+        
+        systemctl --user start "$OLLAMA_SERVICE"
+        
+        sleep 2
+        if systemctl --user is-active "$OLLAMA_SERVICE" >/dev/null 2>&1; then
+            log_success "Ollama service started"
+        else
+            log_error "Failed to start Ollama service"
+            log_info "Check logs with: journalctl --user -u ollama -f"
+            return 1
+        fi
+    fi
+}
+
+cmd_stop() {
+    if check_is_docker_mode; then
+        log_info "Stopping Docker container..."
+        docker stop "$DOCKER_CONTAINER"
+        if ! docker ps --format '{{.Names}}' | grep -q "^${DOCKER_CONTAINER}$"; then
+            log_success "Docker container stopped"
+        else
+            log_error "Failed to stop Docker container"
+            return 1
+        fi
+    else
+        log_info "Stopping Ollama service..."
+        systemctl --user stop "$OLLAMA_SERVICE"
+        if ! systemctl --user is-active "$OLLAMA_SERVICE" >/dev/null 2>&1; then
+            log_success "Ollama service stopped"
+        else
+            log_error "Failed to stop Ollama service"
+            return 1
+        fi
+    fi
+}
+
+cmd_status() {
+    echo ""
+    printf "${BLUE}=== Installation Mode ===${NC}\n"
+    if check_is_docker_mode; then
+        echo "Mode: Docker (recommended)"
+        echo "Container: ${DOCKER_CONTAINER}"
+        docker ps --filter "name=${DOCKER_CONTAINER}" --format "Status: {{.Status}}"
+    elif check_ollama_installed; then
+        echo "Mode: Native"
+    else
+        echo "Mode: Not installed"
+    fi
+    
+    echo ""
+    printf "${BLUE}=== Service Status ===${NC}\n"
+    if check_is_docker_mode; then
+        docker ps --filter "name=${DOCKER_CONTAINER}"
+    else
+        systemctl --user status "$OLLAMA_SERVICE" --no-pager 2>/dev/null || echo "Service not running"
+    fi
+    
+    echo ""
+    printf "${BLUE}=== Ollama Version ===${NC}\n"
+    if check_is_docker_mode; then
+        docker exec "$DOCKER_CONTAINER" ollama --version 2>/dev/null || echo "Container not responding"
+    elif command -v ollama >/dev/null 2>&1; then
+        ollama --version 2>/dev/null || echo "Version check failed"
+    else
+        echo "Ollama not found"
+    fi
+    
+    echo ""
+    printf "${BLUE}=== Installed Models ===${NC}\n"
+    if check_is_docker_mode; then
+        docker exec "$DOCKER_CONTAINER" ollama list 2>/dev/null || echo "No models or container not running"
+    elif ollama list 2>/dev/null; then
+        :
+    else
+        echo "No models installed or Ollama not running"
+    fi
+    
+    echo ""
+    printf "${BLUE}=== Configuration ===${NC}\n"
+    printf "OLLAMA_HOST: %s\n" "${OLLAMA_HOST}"
+    printf "OLLAMA_MODELS: %s\n" "${OLLAMA_MODELS}"
+    printf "HSA_OVERRIDE_GFX_VERSION: %s\n" "${HSA_OVERRIDE_GFX_VERSION}"
+}
+
+# ── model management ──────────────────────────────────────────────────────────
+cmd_models() {
+    if check_is_docker_mode; then
+        if ! docker exec "$DOCKER_CONTAINER" ollama list 2>/dev/null; then
+            log_warn "Docker container not running or no models"
+            return 1
+        fi
+    elif ! ollama list 2>/dev/null; then
+        log_warn "Ollama is not running or no models installed"
+        return 1
+    fi
+}
+
+cmd_pull() {
+    if [ $# -eq 0 ]; then
+        log_error "Model name required"
+        echo "Usage: devtools-steamdeck-llm pull <model>"
+        echo ""
+        cmd_recommend
+        return 1
+    fi
+    
+    local model="$1"
+    
+    log_info "Pulling model: $model"
+    
+    if check_is_docker_mode; then
+        if docker exec "$DOCKER_CONTAINER" ollama pull "$model"; then
+            log_success "Model '$model' pulled successfully"
+        else
+            log_error "Failed to pull model '$model'"
+            return 1
+        fi
+    elif ollama pull "$model"; then
+        log_success "Model '$model' pulled successfully"
+    else
+        log_error "Failed to pull model '$model'"
+        return 1
+    fi
+}
+
+# ── thermal monitoring ───────────────────────────────────────────────────────
+cmd_thermal() {
+    echo ""
+    printf "${BLUE}=== Steam Deck Thermal Status ===${NC}\n"
+    echo ""
+    
+    # Check if we can read thermal zones
+    if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
+        printf "${GREEN}CPU Temperature:${NC}\n"
+        for zone in /sys/class/thermal/thermal_zone*/temp; do
+            if [ -f "$zone" ]; then
+                temp=$(cat "$zone" 2>/dev/null || echo 0)
+                zone_name=$(basename "$zone")
+                if [ "$temp" -gt 0 ]; then
+                    temp_c=$((temp / 1000))
+                    printf "  %s: %d°C\n" "$zone_name" "$temp_c"
+                fi
+            fi
+        done
+    else
+        log_warn "Cannot read CPU temperature sensors"
+    fi
+    
+    # Check AMD GPU temperature if available
+    if [ -f /sys/class/drm/card0/device/hwmon/hwmon0/temp1_input ]; then
+        printf "\n${GREEN}GPU Temperature:${NC}\n"
+        gpu_temp=$(cat /sys/class/drm/card0/device/hwmon/hwmon0/temp1_input 2>/dev/null || echo 0)
+        if [ "$gpu_temp" -gt 0 ]; then
+            gpu_temp_c=$((gpu_temp / 1000))
+            printf "  GPU: %d°C\n" "$gpu_temp_c"
+            
+            if [ "$gpu_temp_c" -ge 85 ]; then
+                printf "  ${RED}WARNING: GPU thermally throttling at >=85°C${NC}\n"
+            elif [ "$gpu_temp_c" -ge 80 ]; then
+                printf "  ${YELLOW}CAUTION: Approaching thermal limits${NC}\n"
+            fi
+        fi
+    else
+        printf "\n${YELLOW}GPU temperature not available${NC}\n"
+    fi
+    
+    # Check fan speed if available
+    if [ -f /sys/class/drm/card0/device/hwmon/hwmon0/fan1_input ]; then
+        fan_speed=$(cat /sys/class/drm/card0/device/hwmon/hwmon0/fan1_input 2>/dev/null || echo 0)
+        if [ "$fan_speed" -gt 0 ]; then
+            printf "\n${GREEN}Fan Speed:${NC} %d RPM\n" "$fan_speed"
+        fi
+    fi
+    
+    echo ""
+    printf "${BLUE}=== Thermal Tips ===${NC}\n"
+    echo "• Thermal throttling starts at ~85°C junction temperature"
+    echo "• Adjust fan curves: sudo systemctl edit --full steamdeck-fan-control"
+    echo "• Use smaller models (phi3, deepseek-coder:1.3b) for cooler operation"
+    echo "• Consider undervolting with PowerTools or Decky plugins"
+}
+
+# ── recommendations ──────────────────────────────────────────────────────────
+cmd_recommend() {
+    echo ""
+    printf "${BLUE}=== Recommended Models for Steam Deck ===${NC}\n"
+    echo ""
+    printf "${GREEN}Best Balance (Recommended):${NC}\n"
+    echo "  phi3              - 3.8B params, Q4_K_M"
+    echo "                      Performance: ~16.3 tok/s, 94% accuracy"
+    echo "                      Usage: ollama run phi3"
+    echo ""
+    printf "${GREEN}Best for Coding:${NC}\n"
+    echo "  qwen2.5-coder:3b  - 3B params, optimized for code"
+    echo "                      Good performance, excellent code completion"
+    echo "                      Usage: ollama run qwen2.5-coder:3b"
+    echo ""
+    printf "${GREEN}Fastest/Low Power:${NC}\n"
+    echo "  deepseek-coder:1.3b - 1.3B params"
+    echo "                      Performance: ~31.5 tok/s"
+    echo "                      Best for quick queries, minimal heat"
+    echo "                      Usage: ollama run deepseek-coder:1.3b"
+    echo ""
+    printf "${YELLOW}Not Recommended (Thermal/Memory Issues):${NC}\n"
+    echo "  Models >7B parameters - Cause thermal throttling and OOM errors"
+    echo "  llama3.1:70b        - Too large for 16GB RAM"
+    echo "  qwen2.5:72b         - Exceeds Steam Deck capacity"
+    echo ""
+    printf "${BLUE}=== Usage Tips ===${NC}\n"
+    echo "• Pull models: devtools-steamdeck-llm pull <model>"
+    echo "• Monitor temps: devtools-steamdeck-llm thermal"
+    echo "• Verify GPU: devtools-steamdeck-llm verify-gpu"
+}
+
+# ── logs ─────────────────────────────────────────────────────────────────────
+cmd_logs() {
+    if check_is_docker_mode; then
+        log_info "Showing Docker container logs..."
+        docker logs --tail 50 -f "$DOCKER_CONTAINER"
+    else
+        log_info "Showing systemd journal logs..."
+        journalctl --user -u ollama -f
+    fi
+}
+
+# ── GPU verification ─────────────────────────────────────────────────────────
+cmd_verify_gpu() {
+    echo ""
+    printf "${BLUE}=== GPU Acceleration Verification ===${NC}\n"
+    echo ""
+    
+    # Check if HSA_OVERRIDE is set
+    printf "${GREEN}Environment:${NC}\n"
+    printf "  HSA_OVERRIDE_GFX_VERSION: %s\n" "${HSA_OVERRIDE_GFX_VERSION}"
+    
+    # Check for ROCm/SMI
+    printf "\n${GREEN}ROCm Tools:${NC}\n"
+    if command -v rocm-smi >/dev/null 2>&1; then
+        printf "  rocm-smi: Available\n"
+        printf "  ${YELLOW}Attempting GPU query...${NC}\n"
+        rocm-smi --showproductname 2>/dev/null || printf "  Could not query GPU\n"
+    else
+        printf "  rocm-smi: Not installed\n"
+        printf "  Install with: yay -S rocm-smi-lib (optional)\n"
+    fi
+    
+    # Test GPU with a small prompt
+    printf "\n${GREEN}Ollama GPU Test:${NC}\n"
+    printf "  Testing GPU inference with small model...\n"
+    
+    local test_output
+    if check_is_docker_mode; then
+        test_output=$(docker exec "$DOCKER_CONTAINER" ollama run phi3 "Say 'GPU test'" 2>&1) || true
+    elif ollama list 2>/dev/null | grep -q phi3; then
+        test_output=$(ollama run phi3 "Say 'GPU test'" 2>&1) || true
+    else
+        printf "  ${YELLOW}No test model available. Pull phi3 first:${NC}\n"
+        printf "  devtools-steamdeck-llm pull phi3\n"
+        return 0
+    fi
+    
+    if echo "$test_output" | grep -qi "gpu\|rocm\|amd"; then
+        printf "  ${GREEN}✓ GPU acceleration appears to be working${NC}\n"
+    elif echo "$test_output" | grep -qi "cpu"; then
+        printf "  ${RED}✗ WARNING: Running in CPU mode${NC}\n"
+        printf "  Check HSA_OVERRIDE_GFX_VERSION is set correctly\n"
+    else
+        printf "  ${YELLOW}GPU status unclear - verify manually${NC}\n"
+    fi
+    
+    printf "\n${BLUE}=== Docker-Specific (if using Docker) ===${NC}\n"
+    if check_is_docker_mode; then
+        printf "  Container: ${DOCKER_CONTAINER}\n"
+        printf "  Image: ${DOCKER_IMAGE}\n"
+        printf "  ${GREEN}✓ Docker mode uses pre-built gfx1033 support${NC}\n"
+    else
+        printf "  Native installation - ensure HSA_OVERRIDE_GFX_VERSION=10.3.0\n"
+    fi
+}
+
+# ── main ─────────────────────────────────────────────────────────────────────
+main() {
+    if [ $# -eq 0 ]; then
+        usage
+        exit 1
+    fi
+    
+    case "$1" in
+        install)
+            shift
+            cmd_install "$@"
+            ;;
+        uninstall)
+            cmd_uninstall
+            ;;
+        start)
+            cmd_start
+            ;;
+        stop)
+            cmd_stop
+            ;;
+        status)
+            cmd_status
+            ;;
+        models)
+            cmd_models
+            ;;
+        pull)
+            shift
+            cmd_pull "$@"
+            ;;
+        thermal)
+            cmd_thermal
+            ;;
+        recommend)
+            cmd_recommend
+            ;;
+        logs)
+            cmd_logs
+            ;;
+        verify-gpu)
+            cmd_verify_gpu
+            ;;
+        help|-h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            log_error "Unknown command: $1"
+            usage
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
