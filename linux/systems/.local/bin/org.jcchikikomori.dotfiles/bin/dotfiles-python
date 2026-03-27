@@ -1,61 +1,892 @@
 #!/bin/sh
+# =============================================================================
+# dotfiles-python - Multi-method Python installation manager
+# =============================================================================
+# Supports: pyenv, Homebrew, uv, Miniconda, and system Python
+#
+# Usage: dotfiles-python <command> [options]
+#
+# Commands:
+#   cleanup              Remove all Python managers and leftovers from $HOME
+#   install              Legacy pyenv-based installation (backward compatible)
+#   install-pyenv        Install via pyenv (source compilation, slow)
+#   install-homebrew     Install via Homebrew (pre-built, recommended for Linux)
+#   install-uv           Install via uv (pre-built, fast, recommended for Steam Deck)
+#   install-conda        Install via Miniconda (full conda ecosystem)
+#   status               Show current Python environment status
+#   update               Update global Python version
+#
+# Options:
+#   --ci                 CI mode: assume non-interactive, skip confirmations
+#   --dry-run            Show what would be done without executing
+# =============================================================================
 
-if [ "$1" = "install" ]; then
-  if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
-    echo ""
-    echo "=== Termux Environment Detected ==="
-    echo "Installing python via Termux package manager..."
-    pkg install -y python python-tkinter python-numpy electrum asciinema matplotlib python-cryptography
-    pkg install -y python2
-    echo "Installing pipx via pip..."
-    pip install --user pipx
-    export PATH="$HOME/.local/bin:$PATH"
-    pipx ensurepath
-  else
-    echo "Installing pyenv..."
-    echo "Removing any existing pyenv installation..."
-    if [ -d "$HOME/.pyenv" ]; then
-      rm -rf "$HOME/.pyenv"
+set -e
+
+# -----------------------------------------------------------------------------
+# Configuration
+# -----------------------------------------------------------------------------
+BACKUP_DIR="$HOME/.backups"
+PYENV_ROOT="${PYENV_ROOT:-$HOME/.pyenv}"
+HOMEBREW_ROOT="${HOMEBREW_ROOT:-$HOME/.homebrew}"
+HOMEBREW_ALT="/home/linuxbrew/.linuxbrew"
+UV_INSTALL_DIR="${UV_INSTALL_DIR:-$HOME/.local/share/uv/python}"
+UV_CACHE_DIR="${UV_CACHE_DIR:-$HOME/.cache/uv}"
+CONDA_ROOT="${CONDA_ROOT:-$HOME/.local/share/miniconda}"
+PROFILE_FILE="$HOME/.profile"
+DOTFILES_PYTHON_CONFIG_DIR="${DOTFILES_PYTHON_CONFIG_DIR:-$HOME/.config/dotfiles-python}"
+
+# CI/Dry-run modes
+CI_MODE="${CI:-false}"
+DRY_RUN=false
+
+# -----------------------------------------------------------------------------
+# Utility Functions
+# -----------------------------------------------------------------------------
+
+log_info() {
+    echo "[INFO] $1"
+}
+
+log_warn() {
+    echo "[WARN] $1"
+}
+
+log_error() {
+    echo "[ERROR] $1" >&2
+}
+
+confirm() {
+    if [ "$CI_MODE" = "true" ] || [ "$DRY_RUN" = "true" ]; then
+        return 0
     fi
-    curl https://pyenv.run | bash
-    echo "Loading ccache..."
-    if command -v ccache >/dev/null 2>&1; then
-      export CC="ccache gcc"
-      export CXX="ccache g++"
-      export KERNEL_CC="ccache gcc"
-      export UTILS_CC="ccache gcc"
-      export UTILS_CXX="ccache g++"
+    printf "%s [y/N] " "$1"
+    read -r answer
+    case "$answer" in
+        [yY]|[yY][eE][sS]) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+ensure_backup_dir() {
+    if [ ! -d "$BACKUP_DIR" ]; then
+        if [ "$DRY_RUN" = "true" ]; then
+            log_info "[DRY-RUN] Would create backup directory: $BACKUP_DIR"
+        else
+            mkdir -p "$BACKUP_DIR"
+        fi
     fi
-    echo "Installing python3 from pyenv..."
-    export PYENV_ROOT="$HOME/.pyenv"
+}
+
+backup_path() {
+    local path="$1"
+    local timestamp
+    timestamp="$(date +%Y%m%d-%H%M%S)"
+    local backup_subdir="$BACKUP_DIR/python-cleanup-$timestamp"
+
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would backup $path to $backup_subdir/"
+        return 0
+    fi
+
+    ensure_backup_dir
+    mkdir -p "$backup_subdir"
+    if [ -e "$path" ]; then
+        cp -a "$path" "$backup_subdir/"
+        log_info "Backed up $path to $backup_subdir/"
+    fi
+}
+
+remove_path() {
+    local path="$1"
+    if [ "$DRY_RUN" = "true" ]; then
+        if [ -e "$path" ]; then
+            log_info "[DRY-RUN] Would remove: $path"
+        fi
+    else
+        if [ -e "$path" ]; then
+            backup_path "$path"
+            rm -rf "$path"
+            log_info "Removed: $path"
+        fi
+    fi
+}
+
+# NOTE: profile_remove_block and profile_append have been REMOVED.
+# This script NO LONGER modifies ~/.profile directly.
+# Instead, it creates separate initialization files in ~/.config/dotfiles-python/
+# See: https://github.com/jcchikikomori/dotfiles-python/blob/main/docs/PROFILE_MIGRATION.md
+
+ensure_config_dir() {
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would create config directory: $DOTFILES_PYTHON_CONFIG_DIR"
+        return 0
+    fi
+    if [ ! -d "$DOTFILES_PYTHON_CONFIG_DIR" ]; then
+        mkdir -p "$DOTFILES_PYTHON_CONFIG_DIR"
+        log_info "Created config directory: $DOTFILES_PYTHON_CONFIG_DIR"
+    fi
+}
+
+# Add Python manager init to ~/.profile.local if it exists
+add_to_profile_local() {
+    local init_file="$1"
+    local manager_name="$2"
+    local profile_local="$HOME/.profile.local"
+    
+    # If profile.local doesn't exist, skip
+    if [ ! -f "$profile_local" ]; then
+        log_info "Note: $profile_local not found, skipping auto-add for $manager_name"
+        return 0
+    fi
+    
+    # Check if already present
+    if grep -q "$(basename "$init_file")" "$profile_local" 2>/dev/null; then
+        log_info "$manager_name already configured in $profile_local"
+        return 0
+    fi
+    
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would add $manager_name to $profile_local"
+        return 0
+    fi
+    
+    # Append to profile.local
+    printf '\n# %s Python environment\n' "$manager_name" >> "$profile_local"
+    printf '[ -f %s ] && . %s\n' "$init_file" "$init_file" >> "$profile_local"
+    log_info "Added $manager_name to $profile_local"
+}
+
+# Create an initialization file with environment variables
+# This avoids modifying ~/.profile directly
+create_init_file() {
+    local init_file="$1"
+    local description="$2"
+
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would create: $init_file"
+        return 0
+    fi
+
+    ensure_config_dir
+    touch "$init_file"
+    log_info "Created $description: $init_file"
+}
+
+# Read-only: Show Python-related entries in profile
+show_profile_entries() {
+    if [ ! -f "$PROFILE_FILE" ]; then
+        echo "  (no $PROFILE_FILE found)"
+        return 0
+    fi
+
+    local markers="pyenv|PYENV|uv|UV_|conda|CONDA|homebrew|python@"
+    if grep -qE "$markers" "$PROFILE_FILE" 2>/dev/null; then
+        echo "  Python-related entries in $PROFILE_FILE:"
+        grep -nE "$markers" "$PROFILE_FILE" 2>/dev/null | while read -r line; do
+            echo "    $line"
+        done
+    else
+        echo "  No Python-related entries found in $PROFILE_FILE"
+    fi
+}
+
+get_active_manager() {
+    # Detect which Python manager is active
+    if [ -n "$CONDA_DEFAULT_ENV" ] || [ -n "$CONDA_PREFIX" ]; then
+        echo "conda"
+    elif [ -n "$VIRTUAL_ENV" ] && echo "$VIRTUAL_ENV" | grep -q "uv"; then
+        echo "uv"
+    elif [ -d "$HOME/.localuv"/share/ ]; then
+        # uv installed but not necessarily active
+        echo "uv"
+    elif [ -d "$HOMEBREW_ROOT" ] || [ -d "$HOMEBREW_ALT" ]; then
+        # Check if Homebrew python is in PATH
+        if echo "$PATH" | grep -qE "homebrew|linuxbrew"; then
+            echo "homebrew"
+        fi
+    fi
+
+    # Check pyenv (most intrusive, so check last)
+    if [ -d "$PYENV_ROOT" ] && echo "$PATH" | grep -q ".pyenv"; then
+        echo "pyenv"
+    fi
+
+    echo "none"
+}
+
+get_python_path() {
+    command -v python3 2>/dev/null || command -v python 2>/dev/null || echo "not found"
+}
+
+get_python_version() {
+    local py_path
+    py_path="$(get_python_path)"
+    if [ "$py_path" != "not found" ]; then
+        "$py_path" --version 2>/dev/null || echo "unknown"
+    else
+        echo "not found"
+    fi
+}
+
+get_pipx_venvs() {
+    if command -v pipx >/dev/null 2>&1; then
+        pipx list 2>/dev/null | grep -v "venv name" | grep -v "^$" || echo "  (none)"
+    else
+        echo "  pipx not installed"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# Command: cleanup
+# -----------------------------------------------------------------------------
+cmd_cleanup() {
+    log_info "Starting Python environment cleanup..."
+
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Running in dry-run mode - no changes will be made"
+    fi
+
+    # Check system python first
+    local system_py="/usr/bin/python3"
+    if [ ! -x "$system_py" ] && [ ! -f "$system_py" ]; then
+        log_error "System Python $system_py not found or not executable!"
+        log_error "Aborting cleanup to prevent system damage."
+        exit 1
+    fi
+    log_info "System Python check: OK ($system_py is present)"
+
+    # Confirmation
+    if [ "$DRY_RUN" = "false" ]; then
+        echo ""
+        log_warn "This will remove the following from your HOME directory:"
+        echo "  - $PYENV_ROOT"
+        echo "  - $HOME/.local/share/pipx"
+        echo "  - Homebrew Python (if found)"
+        echo "  - Miniconda"
+        echo "  - uv"
+        echo "  - $DOTFILES_PYTHON_CONFIG_DIR/"
+        echo ""
+        log_warn "NOTE: This script will NOT modify $PROFILE_FILE."
+        echo "      Python entries in $PROFILE_FILE must be removed manually."
+        echo ""
+        confirm "Are you sure you want to proceed?"
+    fi
+
+    # Create backup directory
+    if [ "$DRY_RUN" = "false" ]; then
+        ensure_backup_dir
+    fi
+
+    # Remove pyenv
     if [ -d "$PYENV_ROOT" ]; then
-      export PATH="$PYENV_ROOT/bin:$PATH"
-      eval "$(pyenv init --path)"
-      eval "$(pyenv init -)"
-
-      pyenv install 3.11.4 -v
-      pyenv global 3.11.4
-      pyenv rehash
+        remove_path "$PYENV_ROOT"
     fi
-    echo "Installing pipx..."
+
+    # Remove pipx
+    remove_path "$HOME/.local/share/pipx"
+
+    # Remove specific binaries
+    local pipx_bins="pipx copyparty partyfuse u2c mcp-atlassian stackoverflow-mcp web-forager activate-global-python-argcomplete"
+    for bin in $pipx_bins; do
+        remove_path "$HOME/.local/bin/$bin"
+    done
+
+    # Remove python-argcomplete entries
+    if [ -d "$HOME/.local/bin" ]; then
+        if [ "$DRY_RUN" = "true" ]; then
+            for f in "$HOME"/.local/bin/python-argcomplete-*; do
+                [ -e "$f" ] && log_info "[DRY-RUN] Would remove: $f"
+            done
+            for f in "$HOME"/.local/bin/register-python-argcomplete; do
+                [ -e "$f" ] && log_info "[DRY-RUN] Would remove: $f"
+            done
+        else
+            rm -f "$HOME/.local/bin"/python-argcomplete-* 2>/dev/null || true
+            rm -f "$HOME/.local/bin"/register-python-argcomplete 2>/dev/null || true
+        fi
+    fi
+
+    # Remove Homebrew Python
+    for hb in "$HOMEBREW_ROOT" "$HOMEBREW_ALT"; do
+        for pyver in "$hb"/opt/python@*; do
+            if [ -d "$pyver" ]; then
+                remove_path "$pyver"
+            fi
+        done
+    done
+
+    # Remove uv
+    remove_path "$HOME/.local/share/uv"
+    remove_path "$HOME/.local/bin/uv"
+
+    # Remove Miniconda
+    remove_path "$CONDA_ROOT"
+
+    # Remove dotfiles-python config directory
+    remove_path "$DOTFILES_PYTHON_CONFIG_DIR"
+
+    # NOTE: We no longer modify $PROFILE_FILE
+    # Python-related entries must be removed manually
+
+    echo ""
+    log_info "Cleanup complete!"
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "(dry-run - no actual changes made)"
+    fi
+    echo ""
+    log_info "IMPORTANT: To complete cleanup, manually remove Python entries from $PROFILE_FILE"
+    log_info "Run 'dotfiles-python status' to see what entries exist in $PROFILE_FILE"
+}
+
+# -----------------------------------------------------------------------------
+# Command: status
+# -----------------------------------------------------------------------------
+cmd_status() {
+    echo ""
+    echo "=== Python Environment Status ==="
+    echo ""
+
+    # Active manager
+    local manager
+    manager="$(get_active_manager)"
+    echo "Active Python manager: $manager"
+
+    # Python in PATH
+    echo ""
+    echo "Python in PATH:"
+    echo "  $(get_python_path)"
+    echo "  Version: $(get_python_version)"
+
+    # Install locations
+    echo ""
+    echo "Install Locations:"
+
+    if [ -d "$PYENV_ROOT" ]; then
+        echo "  pyenv: $PYENV_ROOT ($(ls "$PYENV_ROOT/versions" 2>/dev/null | wc -l | tr -d ' ') versions installed)"
+    fi
+
+    for hb in "$HOMEBREW_ROOT" "$HOMEBREW_ALT"; do
+        if [ -d "$hb" ]; then
+            echo "  Homebrew: $hb"
+        fi
+    done
+
+    if [ -d "$HOME/.local/share/uv" ]; then
+        echo "  uv: $HOME/.local/share/uv"
+    fi
+
+    if [ -d "$CONDA_ROOT" ]; then
+        echo "  Miniconda: $CONDA_ROOT"
+    fi
+
+    # dotfiles-python config
+    echo ""
+    echo "dotfiles-python config: $DOTFILES_PYTHON_CONFIG_DIR"
+    if [ -d "$DOTFILES_PYTHON_CONFIG_DIR" ]; then
+        echo "  Init files found:"
+        for f in "$DOTFILES_PYTHON_CONFIG_DIR"/env-*; do
+            [ -f "$f" ] && echo "    - $(basename "$f")"
+        done
+    else
+        echo "  (no config directory)"
+    fi
+
+    # pipx venvs
+    echo ""
+    echo "pipx virtual environments:"
+    get_pipx_venvs | while read -r line; do
+        echo "  $line"
+    done
+
+    # System Python
+    echo ""
+    echo "System Python:"
+    if [ -x "/usr/bin/python3" ]; then
+        /usr/bin/python3 --version
+    else
+        echo "  not found or not executable"
+    fi
+
+    # Profile entries (READ-ONLY - does not modify)
+    echo ""
+    echo "$PROFILE_FILE entries (READ-ONLY):"
+    show_profile_entries
+
+    # SteamOS readonly check
+    if [ -f "/etc/os-release" ] && grep -q "SteamOS" /etc/os-release; then
+        echo ""
+        echo "SteamOS detected:"
+        if mount | grep -q "overlay"; then
+            echo "  Filesystem: READ-ONLY (overlay)"
+        else
+            echo "  Filesystem: RW"
+        fi
+    fi
+
+    echo ""
+}
+
+# -----------------------------------------------------------------------------
+# Command: install (legacy)
+# -----------------------------------------------------------------------------
+cmd_install() {
+    log_info "Legacy install command - using pyenv"
+    cmd_install_pyenv
+}
+
+# -----------------------------------------------------------------------------
+# Command: install-pyenv
+# -----------------------------------------------------------------------------
+cmd_install_pyenv() {
+    log_info "Installing Python via pyenv (source compilation)..."
+
+    # Check for Termux
+    if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+        log_info "Termux environment detected - using pkg"
+        if ! command -v pkg >/dev/null 2>&1; then
+            log_error "pkg not found in Termux"
+            exit 1
+        fi
+        pkg install -y python python-tkinter python-numpy electrum asciinema matplotlib python-cryptography python2 2>/dev/null || true
+        pip install --user pipx
+        export PATH="$HOME/.local/bin:$PATH"
+        pipx ensurepath
+        return 0
+    fi
+
+    # Remove existing pyenv
+    if [ -d "$PYENV_ROOT" ]; then
+        if [ "$DRY_RUN" = "true" ]; then
+            log_info "[DRY-RUN] Would remove existing $PYENV_ROOT"
+        else
+            log_info "Removing existing pyenv installation..."
+            rm -rf "$PYENV_ROOT"
+        fi
+    fi
+
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would install pyenv from pyenv.run"
+        return 0
+    fi
+
+    # Install pyenv
+    curl https://pyenv.run | bash
+
+    # Load ccache if available
+    if command -v ccache >/dev/null 2>&1; then
+        export CC="ccache gcc"
+        export CXX="ccache g++"
+        export KERNEL_CC="ccache gcc"
+        export UTILS_CC="ccache gcc"
+        export UTILS_CXX="ccache g++"
+    fi
+
+    # Initialize pyenv and install Python
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+
+    log_info "Installing Python 3.11.4 via pyenv (this may take a while)..."
+    pyenv install 3.11.4 -v
+    pyenv global 3.11.4
+    pyenv rehash
+
+    # Install pipx
+    log_info "Installing pipx..."
     pip install --user pipx
     export PATH="$HOME/.local/bin:$PATH"
     pipx ensurepath
-  fi
-elif [ "$1" = "update" ]; then
-  # TODO: Bumping the version of python automatically.
-  REQUIRED_VERSION=3.11.4
-  if pyenv versions --bare | grep -q "^$REQUIRED_VERSION$"; then
-    echo "Setting Python $REQUIRED_VERSION as the global version..."
-    pyenv global "$REQUIRED_VERSION"
-    pyenv rehash
-  else
-    echo "Error: Python version $REQUIRED_VERSION not found in pyenv. Please install it first." >&2
-    exit 1
-  fi
+
+    # Create init file instead of modifying .profile
+    ensure_config_dir
+    log_info "Creating pyenv init file: $DOTFILES_PYTHON_CONFIG_DIR/env-pyenv"
+    if [ "$DRY_RUN" = "false" ]; then
+        cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-pyenv" << 'PYENV_EOF'
+# pyenv initialization
+# Generated by dotfiles-python
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+PYENV_EOF
+    fi
+
+    # Auto-add to ~/.profile.local if it exists
+    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-pyenv" "pyenv"
+
+    echo ""
+    log_info "pyenv installation complete!"
+    echo ""
+    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    echo ""
+    echo "  # Load pyenv from dotfiles-python"
+    echo "  [ -f ~/.config/dotfiles-python/env-pyenv ] && . ~/.config/dotfiles-python/env-pyenv"
+    echo ""
+}
+
+# -----------------------------------------------------------------------------
+# Command: install-homebrew
+# -----------------------------------------------------------------------------
+cmd_install_homebrew() {
+    log_info "Installing Python via Homebrew..."
+
+    # Check Homebrew
+    local hb_found=""
+    for hb in "$HOMEBREW_ROOT" "$HOMEBREW_ALT"; do
+        if [ -d "$hb" ]; then
+            hb_found="$hb"
+            break
+        fi
+    done
+
+    if [ -z "$hb_found" ]; then
+        log_error "Homebrew not found at $HOMEBREW_ROOT or $HOMEBREW_ALT"
+        log_error "Please install Homebrew first: https://brew.sh"
+        return 1
+    fi
+
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would install python@3.11, python@3.12, python@3.13 via Homebrew"
+        return 0
+    fi
+
+    export PATH="$hb_found/bin:$PATH"
+
+    # Install Python versions
+    log_info "Installing python@3.11, python@3.12, python@3.13..."
+    brew install python@3.11 python@3.12 python@3.13 2>/dev/null || true
+
+    # Create init file instead of modifying .profile
+    ensure_config_dir
+    log_info "Creating Homebrew init file: $DOTFILES_PYTHON_CONFIG_DIR/env-homebrew"
+    if [ "$DRY_RUN" = "false" ]; then
+        cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-homebrew" << HOMEBREW_EOF
+# Homebrew Python initialization
+# Generated by dotfiles-python
+eval "$($hb_found/bin/brew shellenv)"
+# Versioned Python paths
+export PATH="$hb_found/opt/python@3.11/bin:$hb_found/opt/python@3.12/bin:$PATH"
+HOMEBREW_EOF
+    fi
+
+    # Auto-add to ~/.profile.local if it exists
+    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-homebrew" "Homebrew"
+
+    echo ""
+    log_info "Homebrew Python installation complete!"
+    echo ""
+    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    echo ""
+    echo "  # Load Homebrew Python from dotfiles-python"
+    echo "  [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew"
+    echo ""
+}
+
+# -----------------------------------------------------------------------------
+# Command: install-uv
+# -----------------------------------------------------------------------------
+cmd_install_uv() {
+    log_info "Installing Python via uv (recommended for Steam Deck)..."
+
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would:"
+        log_info "  1. Install uv to $HOME/.local/bin/uv"
+        log_info "  2. Set UV_PYTHON_INSTALL_DIR=$UV_INSTALL_DIR"
+        log_info "  3. Install Python 3.11, 3.12"
+        log_info "  4. Create global venv at $HOME/.venv/global"
+        log_info "  5. Create init file at $DOTFILES_PYTHON_CONFIG_DIR/env-uv"
+        return 0
+    fi
+
+    # Install uv
+    log_info "Installing uv..."
+    if command -v curl >/dev/null 2>&1; then
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    else
+        log_error "curl is required to install uv"
+        return 1
+    fi
+
+    # Set up environment variables
+    export UV_PYTHON_INSTALL_DIR="$UV_INSTALL_DIR"
+    export UV_CACHE_DIR="$UV_CACHE_DIR"
+    export PATH="$HOME/.local/bin:$PATH"
+
+    # Create init file instead of modifying .profile
+    ensure_config_dir
+    log_info "Creating uv init file: $DOTFILES_PYTHON_CONFIG_DIR/env-uv"
+    cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-uv" << UV_EOF
+# uv Python manager initialization
+# Generated by dotfiles-python
+export UV_PYTHON_INSTALL_DIR="\$HOME/.local/share/uv/python"
+export UV_CACHE_DIR="\$HOME/.cache/uv"
+export PATH="\$HOME/.local/bin:\$PATH"
+UV_EOF
+
+    # Install Python versions
+    log_info "Installing Python 3.11 and 3.12..."
+    uv python install 3.11 3.12
+
+    # Create global venv
+    log_info "Creating global venv at $HOME/.venv/global..."
+    mkdir -p "$HOME/.venv"
+    uv venv "$HOME/.venv/global" --python 3.12
+    uv pip install --python "$HOME/.venv/global/bin/python" pip pipx
+
+    # Auto-add to ~/.profile.local if it exists
+    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-uv" "uv"
+
+    echo ""
+    log_info "uv installation complete!"
+    echo ""
+    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    echo ""
+    echo "  # Load uv from dotfiles-python"
+    echo "  [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv"
+    echo ""
+}
+
+# -----------------------------------------------------------------------------
+# Command: install-conda
+# -----------------------------------------------------------------------------
+cmd_install_conda() {
+    log_info "Installing Miniconda..."
+
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would:"
+        log_info "  1. Download Miniconda to $CONDA_ROOT"
+        log_info "  2. Create init file at $DOTFILES_PYTHON_CONFIG_DIR/env-conda"
+        log_info "  3. Create default environment"
+        return 0
+    fi
+
+    # Check for existing installation
+    if [ -d "$CONDA_ROOT" ]; then
+        log_warn "Miniconda already exists at $CONDA_ROOT"
+        confirm "Overwrite existing installation?"
+    fi
+
+    # Download Miniconda
+    log_info "Downloading Miniconda..."
+    if ! command -v curl >/dev/null 2>&1; then
+        log_error "curl is required to download Miniconda"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$CONDA_ROOT")"
+    curl -LsSf https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda-installer.sh
+    sh /tmp/miniconda-installer.sh -b -p "$CONDA_ROOT"
+    rm -f /tmp/miniconda-installer.sh
+
+    # Create init file instead of modifying .profile
+    ensure_config_dir
+    log_info "Creating conda init file: $DOTFILES_PYTHON_CONFIG_DIR/env-conda"
+    cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-conda" << CONDA_EOF
+# Miniconda conda initialization
+# Generated by dotfiles-python
+# >>> conda initialize >>>
+## !! Contents within this block are managed by 'conda init' !!
+__conda_setup="\$($CONDA_ROOT/bin/conda shell.bash hook 2> /dev/null)"
+if [ \$? -eq 0 ]; then
+    eval "\$__conda_setup"
 else
-  echo "Usage: $0 {install|update}"
-  echo "  install: Install pyenv and Python"
-  echo "  update: Update the global Python version"
-  exit 1
+    if [ -f "$CONDA_ROOT/etc/profile.d/conda.sh" ]; then
+        . "$CONDA_ROOT/etc/profile.d/conda.sh"
+    else
+        export PATH="$CONDA_ROOT/bin:\$PATH"
+    fi
 fi
+unset __conda_setup
+## <<< conda initialize <<<
+CONDA_EOF
+
+    # Initialize conda in the current shell for subsequent operations
+    . "$CONDA_ROOT/etc/profile.d/conda.sh" 2>/dev/null || true
+
+    # Create default environment
+    log_info "Creating default conda environment..."
+    conda create -y -n base python=3.11 2>/dev/null || true
+
+    # Auto-add to ~/.profile.local if it exists
+    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-conda" "conda"
+
+    echo ""
+    log_info "Miniconda installation complete!"
+    echo ""
+    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    echo ""
+    echo "  # Load conda from dotfiles-python"
+    echo "  [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda"
+    echo ""
+}
+
+# -----------------------------------------------------------------------------
+# Command: update
+# -----------------------------------------------------------------------------
+cmd_update() {
+    local target_version="${1:-}"
+    local manager
+    manager="$(get_active_manager)"
+
+    log_info "Updating Python (detected manager: $manager)..."
+
+    case "$manager" in
+        pyenv)
+            if [ -z "$target_version" ]; then
+                target_version="3.11.4"
+            fi
+            if "$PYENV_ROOT/bin/pyenv" versions --bare | grep -q "^${target_version}$"; then
+                log_info "Setting Python $target_version as global..."
+                "$PYENV_ROOT/bin/pyenv" global "$target_version"
+                "$PYENV_ROOT/bin/pyenv" rehash
+            else
+                log_error "Python $target_version not found. Install it first."
+                return 1
+            fi
+            ;;
+        conda)
+            if [ -z "$target_version" ]; then
+                target_version="3.11"
+            fi
+            log_info "Updating conda..."
+            "$CONDA_ROOT/bin/conda" update -y python -c "conda-forge"
+            ;;
+        uv)
+            if [ -z "$target_version" ]; then
+                target_version="3.12"
+            fi
+            log_info "Installing/updating Python $target_version via uv..."
+            uv python install "$target_version"
+            ;;
+        homebrew)
+            if [ -z "$target_version" ]; then
+                target_version="3.12"
+            fi
+            log_info "Updating Homebrew Python..."
+            brew upgrade "python@$target_version" 2>/dev/null || brew upgrade python
+            ;;
+        *)
+            log_error "No active Python manager detected. Cannot update."
+            log_error "Run '$0 status' to see current setup."
+            return 1
+            ;;
+    esac
+
+    log_info "Update complete!"
+}
+
+# -----------------------------------------------------------------------------
+# Main Entry Point
+# -----------------------------------------------------------------------------
+
+main() {
+    # Parse global options
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --ci)
+                CI_MODE="true"
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                echo "Usage: $0 <command> [--ci] [--dry-run]"
+                exit 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    local command="${1:-}"
+    [ "$#" -gt 0 ] && shift
+
+    if [ -z "$command" ]; then
+        echo "Usage: $0 <command> [options]"
+        echo ""
+        echo "Commands:"
+        echo "  cleanup              Remove all Python managers and leftovers"
+        echo "  install              Legacy pyenv-based installation"
+        echo "  install-pyenv        Install via pyenv (source compilation)"
+        echo "  install-homebrew     Install via Homebrew (pre-built)"
+        echo "  install-uv           Install via uv (pre-built, fast)"
+        echo "  install-conda        Install via Miniconda"
+        echo "  status               Show current Python environment status"
+        echo "  update               Update global Python version"
+        echo ""
+        echo "Options:"
+        echo "  --ci                 CI mode: skip confirmations"
+        echo "  --dry-run            Show what would be done"
+        exit 1
+    fi
+
+    # Set CI mode from environment if not already set
+    if [ "$CI" = "true" ] && [ "$CI_MODE" = "false" ]; then
+        CI_MODE="true"
+    fi
+
+    # Parse options after command
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --ci)
+                CI_MODE="true"
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            -*)
+                log_error "Unknown option: $1"
+                exit 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    case "$command" in
+        cleanup)
+            cmd_cleanup
+            ;;
+        install)
+            cmd_install
+            ;;
+        install-pyenv)
+            cmd_install_pyenv
+            ;;
+        install-homebrew)
+            cmd_install_homebrew
+            ;;
+        install-uv)
+            cmd_install_uv
+            ;;
+        install-conda)
+            cmd_install_conda
+            ;;
+        status)
+            cmd_status
+            ;;
+        update)
+            cmd_update "$@"
+            ;;
+        *)
+            log_error "Unknown command: $command"
+            echo "Run '$0' without arguments to see available commands."
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

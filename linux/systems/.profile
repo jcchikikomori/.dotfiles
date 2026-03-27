@@ -161,3 +161,10 @@ fi
 if [ -z "$TMUX" ] && [ -z "$TMUX_DISABLE_AT_BOOT" ]; then
     tmux attach || tmux new
 fi
+
+# =============================================================================
+# Local customizations (NOT managed by dotfiles)
+# =============================================================================
+if [ -f "$HOME/.profile.local" ]; then
+    . "$HOME/.profile.local"
+fi

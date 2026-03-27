@@ -8,9 +8,18 @@ on:
 jobs:
   ubuntu:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python_method: pyenv
+            description: "pyenv (source compilation)"
+          - python_method: uv
+            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup some directories
@@ -36,6 +45,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -91,7 +102,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-ubuntu
+          name: dotfiles-logs-ubuntu-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
@@ -136,9 +147,18 @@ jobs:
   arch:
     runs-on: ubuntu-latest
     container: archlinux:latest
+    strategy:
+      matrix:
+        include:
+          - python_method: pyenv
+            description: "pyenv (source compilation)"
+          - python_method: uv
+            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup some directories
@@ -164,6 +184,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -218,7 +240,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-arch
+          name: dotfiles-logs-arch-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
@@ -226,9 +248,18 @@ jobs:
   fedora:
     runs-on: ubuntu-latest
     container: fedora:latest
+    strategy:
+      matrix:
+        include:
+          - python_method: pyenv
+            description: "pyenv (source compilation)"
+          - python_method: uv
+            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v3
       - name: Setup some directories
@@ -254,6 +285,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -308,7 +341,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-fedora
+          name: dotfiles-logs-fedora-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
@@ -316,10 +349,19 @@ jobs:
   debian:
     runs-on: ubuntu-latest
     container: debian:trixie
+    strategy:
+      matrix:
+        include:
+          - python_method: pyenv
+            description: "pyenv (source compilation)"
+          - python_method: uv
+            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       DEBIAN_FRONTEND: noninteractive
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install prerequisites for checkout and setup
         run: |
@@ -349,6 +391,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -403,7 +447,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-debian
+          name: dotfiles-logs-debian-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
