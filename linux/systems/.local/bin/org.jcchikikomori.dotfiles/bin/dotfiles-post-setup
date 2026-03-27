@@ -58,11 +58,98 @@ prompt_installation() {
         elif [ "$script" = "dotfiles-copyparty" ]; then
             $WORKDIR/$script install
         else
-            $WORKDIR/$script
+            sh $WORKDIR/$script
         fi
     else
         echo "Skipped. You can install $name later."
     fi
+}
+
+# Setup ~/.profile.local for user customizations
+setup_profile_local() {
+    local profile_local="$HOME/.profile.local"
+    
+    # Check if already exists
+    if [ -f "$profile_local" ]; then
+        echo "[INFO] ~/.profile.local already exists, skipping"
+        return 0
+    fi
+    
+    # CI/Unattended mode - auto create with defaults
+    if [ "$CI_MODE" = "true" ] || [ -n "$SKIP_INSTALL_PROGLANG" ]; then
+        cat > "$profile_local" << 'EOF'
+# =============================================================================
+# ~/.profile.local - Local customizations for dotfiles
+# =============================================================================
+# This file is NOT managed by dotfiles. Add your personal overrides here.
+# It is sourced at the end of ~/.profile
+#
+# Examples:
+#   export MY_CUSTOM_VAR="value"
+#   alias myalias="command"
+#
+# =============================================================================
+
+# Source Python environments (uncomment the one you use)
+# For uv (recommended for Steam Deck):
+# [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv
+
+# For Miniconda:
+# [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda
+
+# For pyenv:
+# [ -f ~/.config/dotfiles-python/env-pyenv ] && . ~/.config/dotfiles-python/env-pyenv
+
+# For Homebrew Python:
+# [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew
+
+EOF
+        echo "[INFO] Created ~/.profile.local with template (CI mode)"
+        return 0
+    fi
+    
+    # Interactive mode - ask user
+    echo ""
+    echo "Would you like to create ~/.profile.local for your customizations?"
+    echo "This file will NOT be managed by dotfiles and persists across updates."
+    echo "Your ~/.profile will source it automatically."
+    printf "%s [y/N] " "Create ~/.profile.local?"
+    read -r choice
+    case "$choice" in
+        [yY]|[yY][eE][sS])
+            cat > "$profile_local" << 'EOF'
+# =============================================================================
+# ~/.profile.local - Local customizations for dotfiles
+# =============================================================================
+# This file is NOT managed by dotfiles. Add your personal overrides here.
+# It is sourced at the end of ~/.profile
+#
+# Examples:
+#   export MY_CUSTOM_VAR="value"
+#   alias myalias="command"
+#
+# =============================================================================
+
+# Source Python environments (uncomment the one you use)
+# For uv (recommended for Steam Deck):
+# [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv
+
+# For Miniconda:
+# [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda
+
+# For pyenv:
+# [ -f ~/.config/dotfiles-python/env-pyenv ] && . ~/.config/dotfiles-python/env-pyenv
+
+# For Homebrew Python:
+# [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew
+
+EOF
+            echo "Created ~/.profile.local"
+            ;;
+        *)
+            echo "Skipped. You can create it manually later."
+            ;;
+    esac
 }
 
 main() {
@@ -146,6 +233,9 @@ main() {
     git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting
     git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete
     git clone https://github.com/larkery/zsh-histdb.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb
+
+    echo 'Setting up ~/.profile.local for user customizations...'
+    setup_profile_local
 
     cd "$ORIGINAL_DIR"
     rm -rf "$WORKDIR"
