@@ -157,6 +157,63 @@ add_to_profile_local() {
     log_info "Added $manager_name to $profile_local"
 }
 
+# Add global venv activation to ~/.profile.local
+add_venv_activation_to_profile_local() {
+    local profile_local="$HOME/.profile.local"
+    local venv_activate="$HOME/.venv/global/bin/activate"
+    
+    # If profile.local doesn't exist, skip
+    if [ ! -f "$profile_local" ]; then
+        log_info "Note: $profile_local not found, skipping venv auto-activation"
+        return 0
+    fi
+    
+    # Check if already present
+    if grep -q "\.venv/global/bin/activate" "$profile_local" 2>/dev/null; then
+        log_info "Global venv already configured in $profile_local"
+        return 0
+    fi
+    
+    if [ "$DRY_RUN" = "true" ]; then
+        log_info "[DRY-RUN] Would add global venv activation to $profile_local"
+        return 0
+    fi
+    
+    # Append venv activation
+    printf '\n# Global Python venv (auto-created by dotfiles-python)\n' >> "$profile_local"
+    printf 'if [ -d "%s" ]; then\n' "$HOME/.venv" >> "$profile_local"
+    printf '    source "%s"\n' "$venv_activate" >> "$profile_local"
+    printf 'fi\n' >> "$profile_local"
+    log_info "Added global venv activation to $profile_local"
+}
+
+# Remove a Python manager init from ~/.profile.local
+remove_from_profile_local() {
+    local marker="$1"
+    local profile_local="$HOME/.profile.local"
+    
+    if [ ! -f "$profile_local" ]; then
+        return 0
+    fi
+    
+    if [ "$DRY_RUN" = "true" ]; then
+        if grep -q "$marker" "$profile_local" 2>/dev/null; then
+            log_info "[DRY-RUN] Would remove '$marker' from $profile_local"
+        fi
+        return 0
+    fi
+    
+    # Create temp file and remove lines containing the marker
+    local temp_file
+    temp_file="$(mktemp)"
+    if grep -v "$marker" "$profile_local" > "$temp_file"; then
+        mv "$temp_file" "$profile_local"
+        log_info "Removed '$marker' from $profile_local"
+    else
+        rm -f "$temp_file"
+    fi
+}
+
 # Create an initialization file with environment variables
 # This avoids modifying ~/.profile directly
 create_init_file() {
@@ -265,6 +322,7 @@ cmd_cleanup() {
         echo "  - Homebrew Python (if found)"
         echo "  - Miniconda"
         echo "  - uv"
+        echo "  - $HOME/.venv (global venv)"
         echo "  - $DOTFILES_PYTHON_CONFIG_DIR/"
         echo ""
         log_warn "NOTE: This script will NOT modify $PROFILE_FILE."
@@ -325,6 +383,16 @@ cmd_cleanup() {
 
     # Remove dotfiles-python config directory
     remove_path "$DOTFILES_PYTHON_CONFIG_DIR"
+
+    # Remove global venv
+    remove_path "$HOME/.venv"
+
+    # Remove venv activation and manager entries from profile.local
+    remove_from_profile_local "\.venv/global/bin/activate"
+    remove_from_profile_local "env-uv"
+    remove_from_profile_local "env-pyenv"
+    remove_from_profile_local "env-conda"
+    remove_from_profile_local "env-homebrew"
 
     # NOTE: We no longer modify $PROFILE_FILE
     # Python-related entries must be removed manually
@@ -638,13 +706,17 @@ UV_EOF
     # Auto-add to ~/.profile.local if it exists
     add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-uv" "uv"
 
+    # Auto-activate global venv system-wide
+    add_venv_activation_to_profile_local
+
     echo ""
     log_info "uv installation complete!"
     echo ""
-    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    log_info "Global venv created at: $HOME/.venv/global"
+    log_info "It will auto-activate when you start a new shell."
     echo ""
-    echo "  # Load uv from dotfiles-python"
-    echo "  [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv"
+    log_info "To activate immediately:"
+    echo "  source $HOME/.venv/global/bin/activate"
     echo ""
 }
 
