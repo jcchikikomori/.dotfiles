@@ -85,6 +85,33 @@ log_error() {
   printf '%s%s%s\n' "$COLOR_NEGATIVE" "$1" "$COLOR_RESET" >&2
 }
 
+check_submodules() {
+  if [ ! -f "$DOTFILES_PATH/.gitmodules" ]; then
+    return 0
+  fi
+
+  # Check each submodule defined in .gitmodules
+  for submodule_path in $(grep '^[[:space:]]*path=' "$DOTFILES_PATH/.gitmodules" | sed 's/^[[:space:]]*path=//'); do
+    if [ ! -d "$submodule_path" ]; then
+      continue
+    fi
+    if [ -f "$submodule_path/.git" ]; then
+      gitdir_ref=$(cat "$submodule_path/.git" 2>/dev/null)
+      if ! echo "$gitdir_ref" | grep -q "^gitdir:"; then
+        log_error "Error: submodule '$submodule_path' is not properly initialized."
+        log_error "Run: git submodule update --init --recursive"
+        return 1
+      fi
+    else
+      log_error "Error: submodule '$submodule_path' is empty or not initialized."
+      log_error "Run: git submodule update --init --recursive"
+      return 1
+    fi
+  done
+
+  return 0
+}
+
 resolve_dotstow() {
   if command -v dotstow >/dev/null 2>&1; then
     command -v dotstow
@@ -145,6 +172,13 @@ restore_external_symlinks() {
     ln -s "$GHCUP_LINK_TARGET" "$HOME/.ghcup"
   fi
 }
+
+# Guard: ensure submodules are initialized before stowing
+if ! check_submodules; then
+  log_error "Submodule check failed. Please initialize submodules first."
+  log_error "Run: git submodule update --init --recursive"
+  exit 1
+fi
 
 if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
   log_error "Error: dotfiles-cleanup failed."

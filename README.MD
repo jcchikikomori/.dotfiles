@@ -64,10 +64,13 @@ Clone this repository to your system by executing the following...
 ```bash
 git clone https://github.com/jcchikikomori/.dotfiles.git $HOME/.dotfiles
 cd $HOME/.dotfiles
+git submodule update --init --recursive
 ```
 
 > [!WARNING]
 > Do not install this on somewhere else! Only in `$HOME/.dotfiles`.
+>
+> **Important:** If you skip `git submodule update --init --recursive`, stowing will fail for packages that depend on submodules (e.g., `opencode`).
 
 Execute `start.sh` to get started.
 
