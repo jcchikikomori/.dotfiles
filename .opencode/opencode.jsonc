@@ -2,13 +2,20 @@
   "$schema": "https://opencode.ai/config.json",
   "instructions": [],
   "default_agent": "dotfiles-orchestrator",
-  "model": "opencode/kimi-k2.5",
+  "model": "{env:OPENCODE_MODEL}",
+  "small_model": "{env:OPENCODE_SMALL_MODEL}",
   "plugin": [
     "opencode-redactor@0.1.1",
     "envsitter-guard@latest"
   ],
   "provider": {
     "github-copilot": {},
+    "amazon-bedrock": {
+      "options": {
+        "region": "{env:AWS_REGION}",
+        "profile": "{env:AWS_PROFILE}"
+      }
+    },
     "ollama": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "Ollama",
