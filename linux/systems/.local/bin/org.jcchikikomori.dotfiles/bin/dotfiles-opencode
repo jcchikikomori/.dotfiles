@@ -407,19 +407,61 @@ do_install_oac() {
     fi
 }
 
+# ─── Cache management ──────────────────────────────────────────────────────────
+
+do_clear_cache() {
+    OPENCODE_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/opencode"
+    
+    echo ""
+    echo "[dotfiles-opencode] Clearing OpenCode cache..."
+    echo ""
+    
+    if [ -d "$OPENCODE_CACHE" ]; then
+        echo "  Cache location: $OPENCODE_CACHE"
+        
+        # Show cache size before clearing
+        if command -v du > /dev/null 2>&1; then
+            cache_size=$(du -sh "$OPENCODE_CACHE" 2>/dev/null | cut -f1)
+            echo "  Current size:   $cache_size"
+        fi
+        
+        echo ""
+        echo "  Removing cache directory..."
+        rm -rf "$OPENCODE_CACHE"
+        
+        if [ ! -d "$OPENCODE_CACHE" ]; then
+            echo "  [done] Cache cleared successfully"
+        else
+            echo "  [warn] Cache directory still exists — may need manual removal"
+        fi
+    else
+        echo "  [skip] No cache found at $OPENCODE_CACHE"
+    fi
+    
+    echo ""
+    echo "  When to clear cache:"
+    echo "  - After changing model configuration"
+    echo "  - When troubleshooting tool/skill calling issues"
+    echo "  - After updating opencode or MCP servers"
+    echo "  - When experiencing unexpected behavior"
+    echo ""
+}
+
 case "${1:-}" in
     install)       do_install ;;
     update)        do_update ;;
     install-mcps)  do_install_mcps ;;
     install-oac)   do_install_oac ;;
     wizard)        dotfiles-opencode-wizard ;;
+    clear-cache)   do_clear_cache ;;
     *)
-        echo "Usage: dotfiles-opencode {install|update|install-mcps|install-oac|wizard}"
+        echo "Usage: dotfiles-opencode {install|update|install-mcps|install-oac|wizard|clear-cache}"
         echo "  install:       Install opencode and all MCP dependencies"
         echo "  update:        Update opencode to the latest version"
         echo "  install-mcps:  Install/check MCP dependencies only (re-run anytime)"
-        echo "  install-oac:  Install OpenAgentsControl (OAC) separately"
+        echo "  install-oac:   Install OpenAgentsControl (OAC) separately"
         echo "  wizard:        Launch the opencode setup wizard"
+        echo "  clear-cache:   Clear OpenCode cache (useful after config/model changes)"
         exit 1
         ;;
 esac
