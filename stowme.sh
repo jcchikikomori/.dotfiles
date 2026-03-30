@@ -180,6 +180,33 @@ if ! check_submodules; then
   exit 1
 fi
 
+# Handle ~/.profile conflict before stowing
+# If ~/.profile exists as a real file (not symlink), back it up
+handle_profile_conflict() {
+  local profile_file="$HOME/.profile"
+  local backup_dir="$HOME/.backups"
+  
+  # Only act if ~/.profile exists and is NOT a symlink
+  if [ -f "$profile_file" ] && [ ! -L "$profile_file" ]; then
+    # Create backup directory if needed
+    if [ ! -d "$backup_dir" ]; then
+      mkdir -p "$backup_dir"
+    fi
+    
+    # Backup with timestamp
+    local timestamp
+    timestamp="$(date +%Y%m%d-%H%M%S)"
+    local backup_file="$backup_dir/.profile.backup.$timestamp"
+    
+    printf 'Backing up existing ~/.profile to %s\n' "$backup_file"
+    cp -a "$profile_file" "$backup_file"
+    
+    # Remove the original so stow can create symlink
+    rm "$profile_file"
+    printf 'Removed original ~/.profile (stow will replace with symlink)\n'
+  fi
+}
+
 if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
   log_error "Error: dotfiles-cleanup failed."
   restore_external_symlinks
@@ -215,6 +242,10 @@ if ! DOTSTOW_BIN=$(resolve_dotstow); then
 fi
 
 log_positive "Stowing dotfiles for distro: $DETECTED_DISTRO"
+
+# Handle ~/.profile conflict before stowing
+handle_profile_conflict
+
 # darwin excludes Linux-only packages (dxvk, flatpak, wireplumber, lindbergh)
 # bash package also excluded: macOS default shell is zsh and bash configs reference Linux-specific paths
 if [ "$DETECTED_DISTRO" = "darwin" ]; then
