@@ -407,6 +407,62 @@ do_install_oac() {
     fi
 }
 
+# ─── oh-my-opencode-slim config generator ──────────────────────────────────────
+
+do_install_slim_config() {
+    echo ""
+    echo "[dotfiles-opencode] Generating oh-my-opencode-slim configuration..."
+    
+    # Guard: Node.js required
+    if ! command -v node > /dev/null 2>&1; then
+        echo "[dotfiles-opencode] Node.js not found — install it first."
+        return 1
+    fi
+    
+    # Guard: opencode must be installed
+    if ! _is_installed; then
+        echo "[dotfiles-opencode] opencode not installed — run 'dotfiles-opencode install' first."
+        return 1
+    fi
+    
+    # Guard: opencode.jsonc must exist
+    if [ ! -f "$OPENCODE_CONFIG" ]; then
+        echo "[dotfiles-opencode] Config not found at $OPENCODE_CONFIG"
+        return 1
+    fi
+    
+    echo "  Detecting available providers..."
+    echo "  Fetching model list..."
+    echo ""
+    
+    # Path to the script
+    SCRIPT_DIR="$HOME/.dotfiles/linux/opencode/.config/opencode/scripts/generate-slim-config"
+    
+    # Check if script exists
+    if [ ! -d "$SCRIPT_DIR" ]; then
+        echo "[dotfiles-opencode] generate-slim-config not found at $SCRIPT_DIR"
+        echo "  Run: cd $SCRIPT_DIR && npm install && npm run build"
+        return 1
+    fi
+    
+    # Execute generator (pass through all arguments)
+    if cd "$SCRIPT_DIR" && node dist/index.js "$@" 2>&1 | sed 's/^/        /'; then
+        echo ""
+        echo "  [done] Configuration generated successfully"
+        echo ""
+        echo "  Test with: opencode --agent orchestrator"
+        echo "  Or use any agent: council, explorer, oracle, etc."
+        echo ""
+        echo "  To switch presets, edit ~/.config/opencode/oh-my-opencode-slim.jsonc"
+        echo "  Or set: export OH_MY_OPENCODE_SLIM_PRESET=<preset-name>"
+    else
+        echo ""
+        echo "  [fail] Configuration generation failed"
+        echo "  Try: dotfiles-opencode install-slim-config --verbose"
+        return 1
+    fi
+}
+
 # ─── Cache management ──────────────────────────────────────────────────────────
 
 do_clear_cache() {
@@ -448,20 +504,23 @@ do_clear_cache() {
 }
 
 case "${1:-}" in
-    install)       do_install ;;
-    update)        do_update ;;
-    install-mcps)  do_install_mcps ;;
-    install-oac)   do_install_oac ;;
-    wizard)        dotfiles-opencode-wizard ;;
-    clear-cache)   do_clear_cache ;;
+    install)             do_install ;;
+    update)              do_update ;;
+    install-mcps)        do_install_mcps ;;
+    install-oac)         do_install_oac ;;
+    install-slim-config) shift; do_install_slim_config "$@" ;;
+    wizard)              dotfiles-opencode-wizard ;;
+    clear-cache)         do_clear_cache ;;
     *)
-        echo "Usage: dotfiles-opencode {install|update|install-mcps|install-oac|wizard|clear-cache}"
-        echo "  install:       Install opencode and all MCP dependencies"
-        echo "  update:        Update opencode to the latest version"
-        echo "  install-mcps:  Install/check MCP dependencies only (re-run anytime)"
-        echo "  install-oac:   Install OpenAgentsControl (OAC) separately"
-        echo "  wizard:        Launch the opencode setup wizard"
-        echo "  clear-cache:   Clear OpenCode cache (useful after config/model changes)"
+        echo "Usage: dotfiles-opencode {install|update|install-mcps|install-oac|install-slim-config|wizard|clear-cache}"
+        echo "  install:             Install opencode and all MCP dependencies"
+        echo "  update:              Update opencode to the latest version"
+        echo "  install-mcps:        Install/check MCP dependencies only (re-run anytime)"
+        echo "  install-oac:         Install OpenAgentsControl (OAC) separately"
+        echo "  install-slim-config: Generate oh-my-opencode-slim configuration with auto-detected models"
+        echo "                       Flags: --interactive, --prefer <provider>, --dry-run, --reset, --verbose"
+        echo "  wizard:              Launch the opencode setup wizard"
+        echo "  clear-cache:         Clear OpenCode cache (useful after config/model changes)"
         exit 1
         ;;
 esac
