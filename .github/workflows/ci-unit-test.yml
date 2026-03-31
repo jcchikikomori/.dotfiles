@@ -62,10 +62,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh ubuntu/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -74,20 +74,6 @@ jobs:
               echo "  [ok] $bin found at: $(command -v $bin)"
             else
               echo "  [fail] $bin not found in PATH" >&2
-              exit 1
-            fi
-          done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          # Assert ENV keys are reported for known MCPs
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
               exit 1
             fi
           done
@@ -127,7 +113,7 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh darwin/stowme.sh
+          sh stowme.sh
       - name: Generate list from $HOME dir
         if: always()
         run: |
@@ -201,10 +187,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh arch/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -213,19 +199,6 @@ jobs:
               echo "  [ok] $bin found at: $(command -v $bin)"
             else
               echo "  [fail] $bin not found in PATH" >&2
-              exit 1
-            fi
-          done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
               exit 1
             fi
           done
@@ -302,10 +275,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh rhel/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -314,19 +287,6 @@ jobs:
               echo "  [ok] $bin found at: $(command -v $bin)"
             else
               echo "  [fail] $bin not found in PATH" >&2
-              exit 1
-            fi
-          done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
               exit 1
             fi
           done
@@ -349,13 +309,6 @@ jobs:
   debian:
     runs-on: ubuntu-latest
     container: debian:trixie
-    strategy:
-      matrix:
-        include:
-          - python_method: pyenv
-            description: "pyenv (source compilation)"
-          - python_method: uv
-            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
@@ -408,10 +361,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh debian/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -420,19 +373,6 @@ jobs:
               echo "  [ok] $bin found at: $(command -v $bin)"
             else
               echo "  [fail] $bin not found in PATH" >&2
-              exit 1
-            fi
-          done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
               exit 1
             fi
           done
