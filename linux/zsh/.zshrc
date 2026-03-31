@@ -154,12 +154,9 @@ function auto_load_venv() {
         if [[ -z "$VIRTUAL_ENV" ]] || [[ "$VIRTUAL_ENV" != "$venv_path" ]]; then
             source "$venv_path/bin/activate"
         fi
-    else
-        if [[ -n "$VIRTUAL_ENV" ]]; then
-            deactivate
-        fi
     fi
 }
+
 add-zsh-hook chpwd auto_load_venv
 auto_load_venv  # Run on shell initialization too
 

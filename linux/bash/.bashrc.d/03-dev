@@ -53,10 +53,6 @@ auto_load_venv() {
         if [ -z "$VIRTUAL_ENV" ] || [ "$VIRTUAL_ENV" != "$PWD/.venv" ]; then
             source "$PWD/.venv/bin/activate"
         fi
-    else
-        if [ -n "$VIRTUAL_ENV" ]; then
-            deactivate
-        fi
     fi
 }
 
