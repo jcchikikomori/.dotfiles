@@ -142,5 +142,9 @@ rm -rf "$HOME/.config/opencode/plugin"
 rm -rf "$HOME/.config/opencode/plugins"
 rm -rf "$HOME/.config/opencode/skills"
 
+# Create some files
+# rm -f $HOME/.config/opencode/memory_data
+mkdir -p "$HOME/.config/opencode/memory_data"
+
 # Backup SSH directory
 echo 'y' || cp -rf "$HOME/.ssh" "$HOME/.ssh-backup"
