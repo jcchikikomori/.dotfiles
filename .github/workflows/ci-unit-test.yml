@@ -21,6 +21,9 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
+      - name: Install prerequisites for checkout and setup
+        run: |
+          git submodules update --init
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -113,6 +116,9 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
     steps:
+      - name: Install prerequisites for checkout and setup
+        run: |
+          git submodules update --init
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -160,6 +166,9 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
+      - name: Install prerequisites for checkout and setup
+        run: |
+          git submodules update --init
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -261,6 +270,9 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
+      - name: Install prerequisites for checkout and setup
+        run: |
+          git submodules update --init
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -367,6 +379,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y git curl ca-certificates
+          git submodules update --init
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
