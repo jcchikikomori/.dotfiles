@@ -23,7 +23,7 @@ jobs:
     steps:
       - name: Install prerequisites for checkout and setup
         run: |
-          git submodules update --init
+          git submodule update --init --recursive
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -118,7 +118,7 @@ jobs:
     steps:
       - name: Install prerequisites for checkout and setup
         run: |
-          git submodules update --init
+          git submodule update --init --recursive
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -168,7 +168,7 @@ jobs:
     steps:
       - name: Install prerequisites for checkout and setup
         run: |
-          git submodules update --init
+          git submodule update --init --recursive
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -272,7 +272,7 @@ jobs:
     steps:
       - name: Install prerequisites for checkout and setup
         run: |
-          git submodules update --init
+          git submodule update --init --recursive
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
@@ -379,7 +379,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y git curl ca-certificates
-          git submodules update --init
+          git submodule update --init --recursive
       - uses: actions/checkout@v3
       - name: Setup some directories
         run: |
