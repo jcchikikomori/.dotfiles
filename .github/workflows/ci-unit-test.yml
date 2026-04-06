@@ -29,9 +29,6 @@ jobs:
           mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
-      - name: Install prerequisites for checkout and setup
-        run: |
-          git submodule update --init --recursive
       - name: Getting Started
         run: |
           ./start.sh
@@ -62,6 +59,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
+      - name: Ensure submodules are loaded
+        run: |
+          git submodule update --init --recursive
       - name: Simulate Stowing
         if: always()
         run: |
@@ -124,12 +124,12 @@ jobs:
           mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
-      - name: Install prerequisites for checkout and setup
-        run: |
-          git submodule update --init --recursive
       - name: Getting Started
         run: |
           ./start.sh
+      - name: Ensure submodules are loaded
+        run: |
+          git submodule update --init --recursive
       - name: Simulate Stowing
         if: always()
         run: |
@@ -174,9 +174,6 @@ jobs:
           mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
-      - name: Install prerequisites for checkout and setup
-        run: |
-          git submodule update --init --recursive
       - name: Getting Started
         run: |
           ./start.sh
@@ -207,6 +204,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
+      - name: Ensure submodules are loaded
+        run: |
+          git submodule update --init --recursive
       - name: Simulate Stowing
         if: always()
         run: |
@@ -278,9 +278,6 @@ jobs:
           mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
-      - name: Install prerequisites for checkout and setup
-        run: |
-          git submodule update --init --recursive
       - name: Getting Started
         run: |
           ./start.sh
@@ -311,6 +308,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
+      - name: Ensure submodules are loaded
+        run: |
+          git submodule update --init --recursive
       - name: Simulate Stowing
         if: always()
         run: |
@@ -387,7 +387,6 @@ jobs:
         run: |
           apt-get update
           apt-get install -y git curl ca-certificates
-          git submodule update --init --recursive
       - name: Getting Started
         run: |
           ./start.sh
@@ -418,6 +417,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs
+      - name: Ensure submodules are loaded
+        run: |
+          git submodule update --init --recursive
       - name: Simulate Stowing
         if: always()
         run: |
