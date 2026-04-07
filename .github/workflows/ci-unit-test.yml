@@ -67,7 +67,7 @@ jobs:
           sh stowme.sh
       - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
+          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -199,7 +199,7 @@ jobs:
           sh stowme.sh
       - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
+          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -292,7 +292,7 @@ jobs:
           sh stowme.sh
       - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
+          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -380,7 +380,7 @@ jobs:
           sh stowme.sh
       - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
+          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
