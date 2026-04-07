@@ -53,18 +53,29 @@
       "type": "stdio",
       "command": "mcp-atlassian",
       "args": [],
-      "env": ["JIRA_URL", "JIRA_USERNAME", "JIRA_API_TOKEN", "CONFLUENCE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN"],
+      "env": [
+        "JIRA_URL",
+        "JIRA_USERNAME",
+        "JIRA_API_TOKEN",
+        "CONFLUENCE_URL",
+        "CONFLUENCE_USERNAME",
+        "CONFLUENCE_API_TOKEN"
+      ],
       "installMethod": "pipx",
       "categories": ["project-management", "atlassian"],
       "requiredEnv": ["JIRA_URL", "JIRA_USERNAME", "JIRA_API_TOKEN"],
-      "optionalEnv": ["CONFLUENCE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN"]
+      "optionalEnv": [
+        "CONFLUENCE_URL",
+        "CONFLUENCE_USERNAME",
+        "CONFLUENCE_API_TOKEN"
+      ]
     },
     "figma-mcp": {
       "name": "figma-mcp",
       "description": "Figma MCP for design file integration",
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@mcp/figma"],
+      "args": ["-y", "figma-developer-mcp"],
       "env": ["FIGMA_API_KEY"],
       "installMethod": "npx",
       "categories": ["design", "figma"],
@@ -75,7 +86,17 @@
       "description": "SonarQube MCP for code quality analysis (Docker-based)",
       "type": "stdio",
       "command": "docker",
-      "args": ["run", "--pull=always", "-i", "--rm", "-e", "SONARQUBE_TOKEN", "-e", "SONARQUBE_URL", "mcp/sonarqube"],
+      "args": [
+        "run",
+        "--pull=always",
+        "-i",
+        "--rm",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_URL",
+        "mcp/sonarqube"
+      ],
       "env": ["SONARQUBE_URL", "SONARQUBE_TOKEN"],
       "installMethod": "docker",
       "categories": ["code-quality", "analysis"],
@@ -116,7 +137,14 @@
       "description": "Docker-based GitHub MCP for repository operations (alternative to HTTP)",
       "type": "stdio",
       "command": "docker",
-      "args": ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "dhi.io/github-mcp"],
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "dhi.io/github-mcp"
+      ],
       "env": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
       "installMethod": "docker",
       "categories": ["version-control", "github"],
@@ -143,7 +171,12 @@
       "args": ["markitdown-mcp"],
       "env": [],
       "installMethod": "uvx",
-      "categories": ["markdown", "conversion", "document-processing", "utilities"],
+      "categories": [
+        "markdown",
+        "conversion",
+        "document-processing",
+        "utilities"
+      ],
       "notes": "Converts PDF, PowerPoint, Word, Excel, Images (with OCR), Audio (with transcription), HTML, CSV, JSON, XML, ZIP, YouTube URLs, and EPubs to Markdown. Requires Python 3.10+. Use 'uvx markitdown-mcp' or 'pipx install markitdown-mcp'."
     },
     "markdownlint-mcp": {
