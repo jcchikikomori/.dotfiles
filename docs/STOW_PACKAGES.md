@@ -117,13 +117,13 @@ Both AI agent packages share skills and instructions from `shared/ai-agents/`. R
 
 Each AI agent package includes dedicated management scripts:
 
-**OpenCode binaries** (`~/.local/bin/org.jcchikikomori.dotfiles.opencode/bin/`):
+**OpenCode binaries** (`~/.local/bin/org.jcchikikomori.agentic.opencode/bin/`):
 
 - `dotfiles-opencode` — Main management script (install, install-mcps, uninstall, upgrade)
 - `dotfiles-opencode-env` — Environment configuration helper
 - `dotfiles-opencode-wizard` — Interactive setup wizard
 
-**Claude Code binaries** (`~/.local/bin/org.jcchikikomori.dotfiles.claude/bin/`):
+**Claude Code binaries** (`~/.local/bin/org.jcchikikomori.agentic.claude/bin/`):
 
 - `dotfiles-claude` — MCP management script with global/local scope support
   - `install-mcps [--global|--local]` — Install MCPs from shared registry

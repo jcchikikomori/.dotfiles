@@ -48,8 +48,8 @@ fi
 export EDITOR=vim
 export PATH="${HOME}/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles/bin:${PATH}"
-export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles.claude/bin:${PATH}"
-export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles.opencode/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.agentic.claude/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.agentic.opencode/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.devtools/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.emudecktools/bin:${PATH}"
 
