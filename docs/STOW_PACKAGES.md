@@ -113,6 +113,56 @@ All packages listed above except `bash`.
 
 Both AI agent packages share skills and instructions from `shared/ai-agents/`. Run `devtools-ai sync` after stowing to copy shared configs to the appropriate locations.
 
+#### AI Agent Management Tools
+
+Each AI agent package includes dedicated management scripts:
+
+**OpenCode binaries** (`~/.local/bin/org.jcchikikomori.agentic.opencode/bin/`):
+
+- `dotfiles-opencode` — Main management script (install, install-mcps, uninstall, upgrade)
+- `dotfiles-opencode-env` — Environment configuration helper
+- `dotfiles-opencode-wizard` — Interactive setup wizard
+
+**Claude Code binaries** (`~/.local/bin/org.jcchikikomori.agentic.claude/bin/`):
+
+- `dotfiles-claude` — MCP management script with global/local scope support
+  - `install-mcps [--global|--local]` — Install MCPs from shared registry
+  - `add-global <name>` / `add-local <name>` — Add specific MCPs
+  - `list-available` — List MCPs from shared registry
+  - `sync-from-opencode` — Import MCPs from OpenCode config
+  - `list` — List configured MCPs
+
+**Shared tool** (`~/.local/bin/org.jcchikikomori.devtools/bin/`):
+
+- `devtools-ai` — Sync shared configs to both OpenCode and Claude Code
+
+#### Shared MCP Registry
+
+MCP (Model Context Protocol) servers are centrally defined in `shared/ai-agents/mcps.json`. This registry includes:
+
+- **7 MCP servers** pre-configured (context7, github, stackoverflow-mcp, web-forager, mcp-atlassian, figma-mcp, sonarqube-mcp)
+- **Metadata** for each MCP: installation method, required env vars, categories
+- **Consistency** between OpenCode and Claude Code configurations
+
+The registry makes it easy to:
+
+- Maintain a single source of truth for MCP definitions
+- Add new MCPs once, use them in both agents
+- Track required environment variables
+
+#### Environment Variable Setup
+
+All AI agent scripts automatically source `~/.profile.local` for MCP tokens and configuration. Add your tokens to `~/.profile.local`:
+
+```bash
+# ~/.profile.local
+export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
+export STACK_EXCHANGE_API_KEY="your_key_here"
+export FIGMA_API_KEY="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+When you run `dotfiles-post-setup`, it will create `~/.profile.local` with a template containing all supported MCP environment variables.
+
 ## Managing Packages
 
 To add or remove packages, edit the `STOW_PACKAGES` variable in `stowme.sh`:
