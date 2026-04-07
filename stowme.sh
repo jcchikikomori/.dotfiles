@@ -85,6 +85,33 @@ log_error() {
   printf '%s%s%s\n' "$COLOR_NEGATIVE" "$1" "$COLOR_RESET" >&2
 }
 
+check_submodules() {
+  if [ ! -f "$DOTFILES_PATH/.gitmodules" ]; then
+    return 0
+  fi
+
+  # Check each submodule defined in .gitmodules
+  for submodule_path in $(grep '^[[:space:]]*path=' "$DOTFILES_PATH/.gitmodules" | sed 's/^[[:space:]]*path=//'); do
+    if [ ! -d "$submodule_path" ]; then
+      continue
+    fi
+    if [ -f "$submodule_path/.git" ]; then
+      gitdir_ref=$(cat "$submodule_path/.git" 2>/dev/null)
+      if ! echo "$gitdir_ref" | grep -q "^gitdir:"; then
+        log_error "Error: submodule '$submodule_path' is not properly initialized."
+        log_error "Run: git submodule update --init --recursive"
+        return 1
+      fi
+    else
+      log_error "Error: submodule '$submodule_path' is empty or not initialized."
+      log_error "Run: git submodule update --init --recursive"
+      return 1
+    fi
+  done
+
+  return 0
+}
+
 resolve_dotstow() {
   if command -v dotstow >/dev/null 2>&1; then
     command -v dotstow
@@ -145,6 +172,13 @@ restore_external_symlinks() {
     ln -s "$GHCUP_LINK_TARGET" "$HOME/.ghcup"
   fi
 }
+
+# Guard: ensure submodules are initialized before stowing
+if ! check_submodules; then
+  log_error "Submodule check failed. Please initialize submodules first."
+  log_error "Run: git submodule update --init --recursive"
+  exit 1
+fi
 
 # Handle ~/.profile conflict before stowing
 # If ~/.profile exists as a real file (not symlink), back it up
@@ -215,9 +249,9 @@ handle_profile_conflict
 # darwin excludes Linux-only packages (dxvk, flatpak, wireplumber, lindbergh)
 # bash package also excluded: macOS default shell is zsh and bash configs reference Linux-specific paths
 if [ "$DETECTED_DISTRO" = "darwin" ]; then
-  STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode"
+  STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode claude"
 else
-  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode"
+  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode claude"
 fi
 if ! "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
   log_error "Error: dotstow stow failed."
@@ -241,6 +275,13 @@ if [ "$DETECTED_DISTRO" != "darwin" ] && [ "$DETECTED_DISTRO" != "termux" ]; the
   printf 'Note: If you stowed the emudecktools package,\n'
   printf 'run the following to setup automatic syncing with systemd timer:\n'
   printf '  dotfiles-emudeck\n'
+  printf '\n'
+  printf 'Note: If you use AI coding agents (OpenCode or Claude Code),\n'
+  printf 'run the following to sync shared skills and instructions:\n'
+  printf '  devtools-ai sync\n'
+  printf '\n'
+  printf 'For OpenCode, install MCP server binaries (pipx, npx, etc.):\n'
+  printf '  dotfiles-opencode install-mcps\n'
 fi
 
 exit 0

@@ -118,29 +118,11 @@ yay_remove() {
   log_info "yay removed successfully"
 }
 
-# Install Docker
+# Install Docker (legacy - use podman-install instead)
 docker_install() {
-  local status
-  status=$(check_readonly_status) || return 1
-
-  if [ "$status" = "enabled" ]; then
-    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
-    return 1
-  fi
-
-  if command -v docker >/dev/null 2>&1; then
-    log_info "Docker is already installed"
-    return 0
-  fi
-
-  log_info "Installing Docker..."
-  pacman -Syu docker --noconfirm
-
-  log_info "Enabling Docker service..."
-  systemctl enable docker
-  systemctl start docker
-
-  log_info "Docker installed and started successfully"
+  log_warn "docker-install is deprecated. Use 'podman-install' instead."
+  log_info "Podman provides rootless containers, no daemon, and docker CLI compatibility."
+  podman_install
 }
 
 # Remove Docker
@@ -159,26 +141,144 @@ docker_remove() {
   fi
 
   log_info "Removing Docker..."
-  systemctl stop docker || true
-  systemctl disable docker || true
-  pacman -R docker --noconfirm
+  systemctl stop docker 2>/dev/null || true
+  systemctl disable docker 2>/dev/null || true
+  pacman -R docker --noconfirm 2>/dev/null || true
 
   log_info "Docker removed successfully"
+}
+
+# Install Podman (recommended for Steam Deck)
+podman_install() {
+  local status
+  status=$(check_readonly_status) || return 1
+
+  if [ "$status" = "enabled" ]; then
+    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
+    return 1
+  fi
+
+  if command -v podman >/dev/null 2>&1; then
+    log_info "Podman is already installed"
+    return 0
+  fi
+
+  log_info "Installing Podman (rootless container engine)..."
+  log_info "Packages: podman, podman-docker (CLI compatibility), podman-compose"
+
+  # Install podman and compatibility packages
+  pacman -Syu podman podman-docker podman-compose --noconfirm
+
+  log_info "Podman installed successfully"
+  log_info ""
+  log_info "Key benefits on Steam Deck:"
+  log_info "  - Rootless by default (better security)"
+  log_info "  - No daemon required (saves RAM)"
+  log_info "  - Docker CLI compatible via podman-docker"
+  log_info ""
+  log_info "Docker commands will work via podman-docker compatibility layer."
+}
+
+# Remove Podman
+podman_remove() {
+  local status
+  status=$(check_readonly_status) || return 1
+
+  if [ "$status" = "enabled" ]; then
+    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
+    return 1
+  fi
+
+  if ! command -v podman >/dev/null 2>&1; then
+    log_info "Podman is not installed"
+    return 0
+  fi
+
+  log_info "Removing Podman..."
+  pacman -R podman podman-docker podman-compose --noconfirm 2>/dev/null || true
+  log_info "Podman removed successfully"
+}
+
+# Install a package using yay (preferred) or pacman
+package_install() {
+  local package_name="$1"
+
+  if [ -z "$package_name" ]; then
+    log_error "Package name required"
+    echo "Usage: dotfiles-steamdeck package-install <package-name>"
+    return 1
+  fi
+
+  local status
+  status=$(check_readonly_status) || return 1
+
+  if [ "$status" = "enabled" ]; then
+    log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
+    return 1
+  fi
+
+  # Try yay first, then fall back to pacman
+  if command -v yay >/dev/null 2>&1; then
+    log_info "Installing $package_name via yay..."
+    yay -Syy --noconfirm "$package_name"
+  elif command -v pacman >/dev/null 2>&1; then
+    log_info "Installing $package_name via pacman..."
+    sudo pacman -Syy --noconfirm "$package_name"
+  else
+    log_error "Neither yay nor pacman found"
+    return 1
+  fi
+
+  log_info "$package_name installed successfully"
+}
+
+# Setup local LLM support with Ollama
+llm_setup() {
+  log_info "Setting up local LLM support on Steam Deck..."
+
+  if command -v devtools-steamdeck-llm >/dev/null 2>&1; then
+    devtools-steamdeck-llm install container
+  else
+    log_error "devtools-steamdeck-llm not found in PATH"
+    log_info "Make sure ~/.local/bin is in your PATH"
+    return 1
+  fi
+}
+
+# Check LLM status shortcut
+llm_status() {
+  if command -v devtools-steamdeck-llm >/dev/null 2>&1; then
+    devtools-steamdeck-llm status
+  else
+    log_error "devtools-steamdeck-llm not found in PATH"
+    return 1
+  fi
 }
 
 # Main command dispatcher
 main() {
   if [ $# -eq 0 ]; then
-    echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+    echo "Usage: dotfiles-steamdeck {command} [options]"
     echo ""
-    echo "Commands:"
+    echo "System Commands:"
     echo "  reset-audio      Delete WirePlumber settings to fix corrupt audio"
     echo "  writeable        Make SteamOS writeable"
     echo "  readonly         Make SteamOS read-only"
+    echo ""
+    echo "Package Management:"
     echo "  yay-install      Install yay (AUR helper)"
     echo "  yay-remove       Remove yay"
-    echo "  docker-install   Install Docker"
-    echo "  docker-remove    Remove Docker"
+    echo "  package-install  Install a package (uses yay or pacman)"
+    echo ""
+    echo "Container Commands:"
+    echo "  podman-install   Install Podman (recommended, rootless)"
+    echo "  podman-remove    Remove Podman"
+    echo "  docker-install   Deprecated: use 'podman-install'"
+    echo "  docker-remove    Remove Docker (if installed)"
+    echo ""
+    echo "LLM Commands:"
+    echo "  llm-setup        Setup local LLM support with Ollama (ROCM)"
+    echo "  llm-status       Check LLM service status"
     exit 1
   fi
 
@@ -204,9 +304,26 @@ main() {
     docker-remove)
       docker_remove
       ;;
+    podman-install)
+      podman_install
+      ;;
+    podman-remove)
+      podman_remove
+      ;;
+    package-install)
+      shift
+      package_install "$@"
+      ;;
+    llm-setup)
+      llm_setup
+      ;;
+    llm-status)
+      llm_status
+      ;;
     *)
       log_error "Unknown command: $1"
-      echo "Usage: dotfiles-steamdeck {reset-audio|writeable|readonly|yay-install|yay-remove|docker-install|docker-remove}"
+      echo "Usage: dotfiles-steamdeck {command} [options]"
+      echo "Run without arguments for full command list."
       exit 1
       ;;
   esac

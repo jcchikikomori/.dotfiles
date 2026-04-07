@@ -21,7 +21,9 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -83,7 +85,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,7 +101,9 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -120,7 +124,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -146,7 +150,12 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Install git for checkout
+        run: |
+          pacman -Sy --noconfirm git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -208,7 +217,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -234,7 +243,12 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Install git for checkout
+        run: |
+          dnf install -y git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -296,7 +310,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -316,11 +330,13 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - name: Install prerequisites for checkout and setup
+      - name: Install git for checkout
         run: |
           apt-get update
           apt-get install -y git curl ca-certificates
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -382,7 +398,7 @@ jobs:
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4

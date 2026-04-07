@@ -62,8 +62,14 @@ linux/dxvk/.dxvk/log/
 linux/systems/.dotfiles-python-version
 
 # opencode
+.opencode
 linux/opencode/.config/opencode/node_modules
 linux/opencode/.config/opencode/.env
+linux/opencode/.config/opencode/memory_data
+linux/opencode/.config/opencode/oh-my-opencode-slim.json
+
+# opencode-redactor
+linux/opencode/.config/opencode/opencode-redactor.audit.jsonl
 
 # EmuDeck
 linux/zsh/.config/systemd/user/EmuDeckCloudSync.service
