@@ -14,14 +14,17 @@
     },
     "github": {
       "name": "github",
-      "description": "GitHub MCP for repository operations, issues, and PRs",
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "description": "GitHub's official MCP server for repository operations, issues, and PRs",
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
       "env": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
-      "installMethod": "npx",
+      "installMethod": "http",
       "categories": ["version-control", "github"],
-      "requiredEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+      "requiredEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "notes": "Uses GitHub's official remote MCP server via HTTP. Requires GitHub Personal Access Token."
     },
     "stackoverflow-mcp": {
       "name": "stackoverflow-mcp",
