@@ -141,10 +141,10 @@ rm -f "$HOME/.config/opencode/.env.example"
 rm -f "$HOME/.config/opencode/agents"
 rm -f "$HOME/.config/opencode/plugin"
 rm -f "$HOME/.config/opencode/plugins"
-rm -f "$HOME/.config/opencode/skills"
 
-# Clean up stale files before restow
+# Clean up stale files/folders before restow
 rm -rf "$HOME/.config/opencode/agent"
+rm -rf "$HOME/.config/opencode/skills"
 
 # Clean up claude symlinks & stale files before restow
 # Note: settings.json and projects/ are user data, don't remove
