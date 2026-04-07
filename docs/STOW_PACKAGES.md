@@ -9,6 +9,7 @@ This document lists all stow packages managed by this dotfiles repository.
 | `alacritty` | GPU-accelerated terminal emulator | Linux, macOS (limited) |
 | `antigen` | Zsh plugin manager | All |
 | `bash` | Bash shell configuration | Linux |
+| `claude` | Claude Code agent configuration | All |
 | `dxvk` | D3D8/D3D9/D3D10/D3D11 to Vulkan translation layer | Linux (with Wine) |
 | `flags` | CLI flags/arguments configuration | All |
 | `flatpak` | Flatpak configuration | Linux |
@@ -50,6 +51,7 @@ All packages listed above except `bash`.
 | `supermodel` | Sega Model 3 emulator | |
 | `starship` | Cross-shell prompt | |
 | `opencode` | OpenCode agent configuration | |
+| `claude` | Claude Code agent configuration | |
 
 **Note:** `flatpak`, `wireplumber`, `lindbergh`, and `dxvk` are not available on macOS.
 
@@ -103,7 +105,13 @@ All packages listed above except `bash`.
 ### CLI Tools
 
 - **flags** - CLI flags/arguments configuration for various tools
-- **opencode** - OpenCode agent configuration
+
+### AI Coding Agents
+
+- **opencode** - OpenCode agent configuration (git submodule)
+- **claude** - Claude Code agent configuration (git submodule)
+
+Both AI agent packages share skills and instructions from `shared/ai-agents/`. Run `devtools-ai sync` after stowing to copy shared configs to the appropriate locations.
 
 ## Managing Packages
 
@@ -111,10 +119,10 @@ To add or remove packages, edit the `STOW_PACKAGES` variable in `stowme.sh`:
 
 ```sh
 # Linux
-STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode"
+STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode claude"
 
 # macOS
-STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode"
+STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode claude"
 ```
 
 After editing, run `stowme.sh` to apply changes.

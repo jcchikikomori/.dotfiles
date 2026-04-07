@@ -1,0 +1,300 @@
+#!/bin/sh
+# devtools-ai — Sync shared AI agent configs to OpenCode and Claude Code
+# Usage: devtools-ai [sync|status|help]
+#
+# This script copies shared instructions and skills from the dotfiles
+# shared/ai-agents/ directory to each AI coding agent's expected location:
+# - OpenCode: ~/.config/opencode/ (AGENTS.md, skills/)
+# - Claude Code: ~/.claude/ (CLAUDE.md) and ~/.agents/skills/
+
+set -eu
+
+# ─── Configuration ───────────────────────────────────────────────────────────
+
+# Determine dotfiles path
+if [ -n "${DOTFILES_PATH:-}" ]; then
+    DOTFILES_DIR="$DOTFILES_PATH"
+elif [ -d "$HOME/.dotfiles" ]; then
+    DOTFILES_DIR="$HOME/.dotfiles"
+else
+    # Fallback: try to find from script location
+    SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+    DOTFILES_DIR=$(dirname "$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")")
+fi
+
+SHARED_DIR="${DOTFILES_DIR}/shared/ai-agents"
+SHARED_INSTRUCTIONS="${SHARED_DIR}/instructions/global.md"
+SHARED_SKILLS="${SHARED_DIR}/skills"
+
+# OpenCode paths
+OPENCODE_CONFIG_DIR="${HOME}/.config/opencode"
+OPENCODE_AGENTS="${OPENCODE_CONFIG_DIR}/AGENTS.md"
+OPENCODE_SKILLS="${OPENCODE_CONFIG_DIR}/skills"
+
+# Claude Code paths
+CLAUDE_CONFIG_DIR="${HOME}/.claude"
+CLAUDE_INSTRUCTIONS="${CLAUDE_CONFIG_DIR}/CLAUDE.md"
+CLAUDE_SKILLS="${HOME}/.agents/skills"
+
+# ─── Helpers ─────────────────────────────────────────────────────────────────
+
+_usage() {
+    cat <<EOF
+devtools-ai — Sync shared AI agent configs
+
+USAGE:
+    devtools-ai <command>
+
+COMMANDS:
+    sync            Copy shared configs to OpenCode and Claude Code locations
+    sync-all        Sync configs AND install MCP dependencies for both agents
+    status          Show current sync status
+    opencode        Sync only to OpenCode
+    claude          Sync only to Claude Code
+    install-mcps    Install MCP dependencies for both OpenCode and Claude Code
+    help            Show this help message
+
+PATHS:
+    Shared source:   ${SHARED_DIR}
+    OpenCode dest:   ${OPENCODE_CONFIG_DIR}
+    Claude dest:     ${CLAUDE_CONFIG_DIR} and ${CLAUDE_SKILLS}
+
+NOTES:
+    - Run this after updating shared/ai-agents/ in your dotfiles
+    - Generated files should be .gitignored in submodules
+    - Skills are copied (not symlinked) for portability
+    - install-mcps calls dotfiles-opencode and dotfiles-claude
+
+EOF
+}
+
+_log() {
+    printf '[devtools-ai] %s\n' "$1"
+}
+
+_error() {
+    printf '[devtools-ai] ERROR: %s\n' "$1" >&2
+    exit 1
+}
+
+_warn() {
+    printf '[devtools-ai] WARN: %s\n' "$1" >&2
+}
+
+# ─── Sync Functions ──────────────────────────────────────────────────────────
+
+# Sync to OpenCode
+_sync_opencode() {
+    _log "Syncing to OpenCode..."
+
+    # Check source exists
+    if [ ! -d "$SHARED_DIR" ]; then
+        _error "Shared directory not found: $SHARED_DIR"
+    fi
+
+    # Create config directory if needed
+    mkdir -p "$OPENCODE_CONFIG_DIR"
+
+    # Copy instructions as AGENTS.md
+    if [ -f "$SHARED_INSTRUCTIONS" ]; then
+        cp "$SHARED_INSTRUCTIONS" "$OPENCODE_AGENTS"
+        _log "  Copied instructions -> AGENTS.md"
+    else
+        _warn "  No shared instructions found"
+    fi
+
+    # Copy skills
+    if [ -d "$SHARED_SKILLS" ]; then
+        # Remove existing skills and copy fresh
+        if [ -d "$OPENCODE_SKILLS" ]; then
+            rm -rf "$OPENCODE_SKILLS"
+        fi
+        cp -r "$SHARED_SKILLS" "$OPENCODE_SKILLS"
+        skill_count=$(find "$OPENCODE_SKILLS" -maxdepth 1 -type d | wc -l)
+        skill_count=$((skill_count - 1))  # Subtract 1 for the parent dir
+        _log "  Copied $skill_count skills"
+    else
+        _warn "  No shared skills found"
+    fi
+
+    _log "OpenCode sync complete"
+}
+
+# Sync to Claude Code
+_sync_claude() {
+    _log "Syncing to Claude Code..."
+
+    # Check source exists
+    if [ ! -d "$SHARED_DIR" ]; then
+        _error "Shared directory not found: $SHARED_DIR"
+    fi
+
+    # Create config directories if needed
+    mkdir -p "$CLAUDE_CONFIG_DIR"
+    mkdir -p "$CLAUDE_SKILLS"
+
+    # Copy instructions as CLAUDE.md
+    if [ -f "$SHARED_INSTRUCTIONS" ]; then
+        cp "$SHARED_INSTRUCTIONS" "$CLAUDE_INSTRUCTIONS"
+        _log "  Copied instructions -> CLAUDE.md"
+    else
+        _warn "  No shared instructions found"
+    fi
+
+    # Copy skills
+    if [ -d "$SHARED_SKILLS" ]; then
+        # Remove existing skills and copy fresh
+        for skill_dir in "$SHARED_SKILLS"/*; do
+            if [ -d "$skill_dir" ]; then
+                skill_name=$(basename "$skill_dir")
+                target_dir="${CLAUDE_SKILLS}/${skill_name}"
+                
+                # Remove existing and copy fresh
+                if [ -d "$target_dir" ]; then
+                    rm -rf "$target_dir"
+                fi
+                cp -r "$skill_dir" "$target_dir"
+            fi
+        done
+        skill_count=$(find "$CLAUDE_SKILLS" -maxdepth 1 -type d | wc -l)
+        skill_count=$((skill_count - 1))  # Subtract 1 for the parent dir
+        _log "  Copied $skill_count skills"
+    else
+        _warn "  No shared skills found"
+    fi
+
+    _log "Claude Code sync complete"
+}
+
+# Show sync status
+_status() {
+    _log "Checking sync status..."
+    echo ""
+
+    # Check shared source
+    echo "Shared source:"
+    if [ -d "$SHARED_DIR" ]; then
+        echo "  [✓] $SHARED_DIR exists"
+        if [ -f "$SHARED_INSTRUCTIONS" ]; then
+            echo "  [✓] instructions/global.md exists"
+        else
+            echo "  [✗] instructions/global.md missing"
+        fi
+        if [ -d "$SHARED_SKILLS" ]; then
+            skill_count=$(find "$SHARED_SKILLS" -maxdepth 1 -type d | wc -l)
+            skill_count=$((skill_count - 1))
+            echo "  [✓] skills/ exists ($skill_count skills)"
+        else
+            echo "  [✗] skills/ missing"
+        fi
+    else
+        echo "  [✗] $SHARED_DIR missing"
+    fi
+    echo ""
+
+    # Check OpenCode
+    echo "OpenCode:"
+    if [ -f "$OPENCODE_AGENTS" ]; then
+        echo "  [✓] AGENTS.md exists"
+    else
+        echo "  [✗] AGENTS.md missing"
+    fi
+    if [ -d "$OPENCODE_SKILLS" ]; then
+        skill_count=$(find "$OPENCODE_SKILLS" -maxdepth 1 -type d | wc -l)
+        skill_count=$((skill_count - 1))
+        echo "  [✓] skills/ exists ($skill_count skills)"
+    else
+        echo "  [✗] skills/ missing"
+    fi
+    echo ""
+
+    # Check Claude Code
+    echo "Claude Code:"
+    if [ -f "$CLAUDE_INSTRUCTIONS" ]; then
+        echo "  [✓] CLAUDE.md exists"
+    else
+        echo "  [✗] CLAUDE.md missing"
+    fi
+    if [ -d "$CLAUDE_SKILLS" ]; then
+        skill_count=$(find "$CLAUDE_SKILLS" -maxdepth 1 -type d | wc -l)
+        skill_count=$((skill_count - 1))
+        echo "  [✓] ~/.agents/skills/ exists ($skill_count skills)"
+    else
+        echo "  [✗] ~/.agents/skills/ missing"
+    fi
+    echo ""
+}
+
+# Install MCP dependencies for both agents
+_install_mcps() {
+    _log "Installing MCP dependencies for AI agents..."
+    echo ""
+
+    # OpenCode MCPs
+    if command -v dotfiles-opencode > /dev/null 2>&1; then
+        _log "Installing OpenCode MCPs..."
+        dotfiles-opencode install-mcps
+    else
+        _warn "dotfiles-opencode not found in PATH"
+        _warn "Run: stowme.sh first to install dotfiles scripts"
+    fi
+
+    echo ""
+
+    # Claude Code MCPs
+    if command -v dotfiles-claude > /dev/null 2>&1; then
+        _log "Installing Claude Code MCPs..."
+        dotfiles-claude install-mcps
+    else
+        _warn "dotfiles-claude not found in PATH"
+        _warn "Run: stowme.sh first to install dotfiles scripts"
+    fi
+
+    echo ""
+    _log "MCP installation complete!"
+}
+
+# ─── Main ────────────────────────────────────────────────────────────────────
+
+main() {
+    local command="${1:-help}"
+
+    case "$command" in
+        sync)
+            _sync_opencode
+            echo ""
+            _sync_claude
+            echo ""
+            _log "All syncs complete!"
+            ;;
+        sync-all)
+            _sync_opencode
+            echo ""
+            _sync_claude
+            echo ""
+            _log "All syncs complete!"
+            echo ""
+            _install_mcps
+            ;;
+        opencode)
+            _sync_opencode
+            ;;
+        claude)
+            _sync_claude
+            ;;
+        install-mcps)
+            _install_mcps
+            ;;
+        status)
+            _status
+            ;;
+        help|--help|-h)
+            _usage
+            ;;
+        *)
+            _error "Unknown command: $command. Use 'help' for usage information."
+            ;;
+    esac
+}
+
+main "$@"

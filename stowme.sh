@@ -249,9 +249,9 @@ handle_profile_conflict
 # darwin excludes Linux-only packages (dxvk, flatpak, wireplumber, lindbergh)
 # bash package also excluded: macOS default shell is zsh and bash configs reference Linux-specific paths
 if [ "$DETECTED_DISTRO" = "darwin" ]; then
-  STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode"
+  STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode claude"
 else
-  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode"
+  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode claude"
 fi
 if ! "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
   log_error "Error: dotstow stow failed."
@@ -276,9 +276,12 @@ if [ "$DETECTED_DISTRO" != "darwin" ] && [ "$DETECTED_DISTRO" != "termux" ]; the
   printf 'run the following to setup automatic syncing with systemd timer:\n'
   printf '  dotfiles-emudeck\n'
   printf '\n'
-  printf 'Note: If you use opencode AI coding agent,\n'
-  printf 'run the following to install OpenAgentsControl:\n'
-  printf '  dotfiles-opencode install-oac\n'
+  printf 'Note: If you use AI coding agents (OpenCode or Claude Code),\n'
+  printf 'run the following to sync shared skills and instructions:\n'
+  printf '  devtools-ai sync\n'
+  printf '\n'
+  printf 'For OpenCode, install MCP server binaries (pipx, npx, etc.):\n'
+  printf '  dotfiles-opencode install-mcps\n'
 fi
 
 exit 0
