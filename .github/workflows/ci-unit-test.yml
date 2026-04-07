@@ -380,7 +380,7 @@ jobs:
       - name: Install git for checkout
         run: |
           apt-get update
-          apt-get install -y git
+          apt-get install -y git curl ca-certificates
       - uses: actions/checkout@v4
         with:
           submodules: recursive
