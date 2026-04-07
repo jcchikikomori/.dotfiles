@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Shared MCP (Model Context Protocol) server registry for AI coding agents",
+  "mcpServers": {
+    "context7": {
+      "name": "context7",
+      "description": "Context7 MCP for library documentation lookup",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": [],
+      "installMethod": "npx",
+      "categories": ["documentation", "reference"]
+    },
+    "github": {
+      "name": "github",
+      "description": "GitHub MCP for repository operations, issues, and PRs",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "installMethod": "npx",
+      "categories": ["version-control", "github"],
+      "requiredEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+    },
+    "stackoverflow-mcp": {
+      "name": "stackoverflow-mcp",
+      "description": "Stack Overflow MCP for searching questions and answers",
+      "type": "stdio",
+      "command": "stackoverflow-mcp",
+      "args": [],
+      "env": ["STACK_EXCHANGE_API_KEY"],
+      "installMethod": "pipx",
+      "categories": ["documentation", "q-a"],
+      "requiredEnv": ["STACK_EXCHANGE_API_KEY"]
+    },
+    "web-forager": {
+      "name": "web-forager",
+      "description": "Web Forager MCP for web search and content fetching",
+      "type": "stdio",
+      "command": "web-forager",
+      "args": ["serve"],
+      "env": [],
+      "installMethod": "pipx",
+      "categories": ["web", "search"]
+    },
+    "mcp-atlassian": {
+      "name": "mcp-atlassian",
+      "description": "Atlassian MCP for Jira and Confluence integration",
+      "type": "stdio",
+      "command": "mcp-atlassian",
+      "args": [],
+      "env": ["JIRA_URL", "JIRA_USERNAME", "JIRA_API_TOKEN", "CONFLUENCE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN"],
+      "installMethod": "pipx",
+      "categories": ["project-management", "atlassian"],
+      "requiredEnv": ["JIRA_URL", "JIRA_USERNAME", "JIRA_API_TOKEN"],
+      "optionalEnv": ["CONFLUENCE_URL", "CONFLUENCE_USERNAME", "CONFLUENCE_API_TOKEN"]
+    },
+    "figma-mcp": {
+      "name": "figma-mcp",
+      "description": "Figma MCP for design file integration",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@mcp/figma"],
+      "env": ["FIGMA_API_KEY"],
+      "installMethod": "npx",
+      "categories": ["design", "figma"],
+      "requiredEnv": ["FIGMA_API_KEY"]
+    },
+    "sonarqube-mcp": {
+      "name": "sonarqube-mcp",
+      "description": "SonarQube MCP for code quality analysis",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@mcp/sonarqube"],
+      "env": ["SONARQUBE_URL", "SONARQUBE_TOKEN"],
+      "installMethod": "npx",
+      "categories": ["code-quality", "analysis"],
+      "requiredEnv": ["SONARQUBE_URL", "SONARQUBE_TOKEN"]
+    }
+  },
+  "categories": {
+    "documentation": "Documentation and reference tools",
+    "version-control": "Version control and git tools",
+    "github": "GitHub-specific integrations",
+    "q-a": "Q&A and knowledge base tools",
+    "web": "Web search and scraping tools",
+    "search": "Search utilities",
+    "project-management": "Project management tools",
+    "atlassian": "Atlassian product integrations",
+    "design": "Design and prototyping tools",
+    "figma": "Figma-specific integrations",
+    "code-quality": "Code quality and analysis tools",
+    "analysis": "Analysis and metrics tools"
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-04-07",
+    "maintainedBy": "dotfiles",
+    "description": "Central registry of MCP servers for Claude Code and OpenCode"
+  }
+}

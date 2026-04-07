@@ -68,13 +68,13 @@ prompt_installation() {
 # Setup ~/.profile.local for user customizations
 setup_profile_local() {
     local profile_local="$HOME/.profile.local"
-    
+
     # Check if already exists
     if [ -f "$profile_local" ]; then
         echo "[INFO] ~/.profile.local already exists, skipping"
         return 0
     fi
-    
+
     # CI/Unattended mode - auto create with defaults
     if [ "$CI_MODE" = "true" ] || [ -n "$SKIP_INSTALL_PROGLANG" ]; then
         cat > "$profile_local" << 'EOF'
@@ -89,6 +89,10 @@ setup_profile_local() {
 #   alias myalias="command"
 #
 # =============================================================================
+
+# WSL2-related workarounds
+# Render discrete GPU (NVIDIA) over integrated graphics
+# export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
 
 # Source Python environments (uncomment the one you use)
 # For uv (recommended for Steam Deck):
@@ -136,7 +140,7 @@ EOF
             echo "[INFO] Created ~/.profile.local with template (CI mode)"
         return 0
     fi
-    
+
     # Interactive mode - ask user
     echo ""
     echo "Would you like to create ~/.profile.local for your customizations?"
