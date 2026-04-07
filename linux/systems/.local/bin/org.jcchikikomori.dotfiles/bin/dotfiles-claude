@@ -43,10 +43,10 @@ _json_tool() {
 
 _get_mcp_registry() {
     cat <<'EOF'
-context7|npx|npx -y @anthropic-ai/context7-mcp@latest|
+context7|npx|npx -y @upstash/context7-mcp|
 github|npx|npx -y @modelcontextprotocol/server-github|GITHUB_PERSONAL_ACCESS_TOKEN
 stackoverflow-mcp|pipx|stackoverflow-mcp|STACK_EXCHANGE_API_KEY
-web-forager|pipx|web-forager|
+web-forager|pipx|web-forager serve|
 EOF
 }
 

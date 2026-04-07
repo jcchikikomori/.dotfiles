@@ -9,6 +9,11 @@
 
 set -eu
 
+# Source .profile.local for environment variables
+if [ -f "$HOME/.profile.local" ]; then
+    . "$HOME/.profile.local"
+fi
+
 # ─── Configuration ───────────────────────────────────────────────────────────
 
 # Determine dotfiles path

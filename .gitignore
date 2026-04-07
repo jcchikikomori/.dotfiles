@@ -71,6 +71,9 @@ linux/opencode/.config/opencode/oh-my-opencode-slim.json
 # opencode-redactor
 linux/opencode/.config/opencode/opencode-redactor.audit.jsonl
 
+# Claude Code
+.claude/
+
 # EmuDeck
 linux/zsh/.config/systemd/user/EmuDeckCloudSync.service
 

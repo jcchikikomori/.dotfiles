@@ -120,9 +120,9 @@ source $ZSH/oh-my-zsh.sh
 
 ## Path section
 # Default
-export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:$PATH
+# export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:$PATH
 # Dev tools
-export PATH=$HOME/.local/bin/org.jcchikikomori.devtools/bin:$PATH
+# export PATH=$HOME/.local/bin/org.jcchikikomori.devtools/bin:$PATH
 
 # SonarQube Scanner
 export SONAR_SCANNER_VERSION="5.0.1.3006"

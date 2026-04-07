@@ -113,6 +113,37 @@ All packages listed above except `bash`.
 
 Both AI agent packages share skills and instructions from `shared/ai-agents/`. Run `devtools-ai sync` after stowing to copy shared configs to the appropriate locations.
 
+#### AI Agent Management Tools
+
+Each AI agent package includes dedicated management scripts:
+
+**OpenCode binaries** (`~/.local/bin/org.jcchikikomori.dotfiles.opencode/bin/`):
+
+- `dotfiles-opencode` — Main management script (install, install-mcps, uninstall, upgrade)
+- `dotfiles-opencode-env` — Environment configuration helper
+- `dotfiles-opencode-wizard` — Interactive setup wizard
+
+**Claude Code binaries** (`~/.local/bin/org.jcchikikomori.dotfiles.claude/bin/`):
+
+- `dotfiles-claude` — MCP management script (install-mcps, sync-from-opencode, list)
+
+**Shared tool** (`~/.local/bin/org.jcchikikomori.devtools/bin/`):
+
+- `devtools-ai` — Sync shared configs to both OpenCode and Claude Code
+
+#### Environment Variable Setup
+
+All AI agent scripts automatically source `~/.profile.local` for MCP tokens and configuration. Add your tokens to `~/.profile.local`:
+
+```bash
+# ~/.profile.local
+export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
+export STACK_EXCHANGE_API_KEY="your_key_here"
+export FIGMA_API_KEY="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+When you run `dotfiles-post-setup`, it will create `~/.profile.local` with a template containing all supported MCP environment variables.
+
 ## Managing Packages
 
 To add or remove packages, edit the `STOW_PACKAGES` variable in `stowme.sh`:
