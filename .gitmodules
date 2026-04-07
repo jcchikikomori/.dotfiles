@@ -4,3 +4,6 @@
 [submodule "linux/opencode"]
 	path = linux/opencode
 	url = https://github.com/jcchikikomori/dotfiles-opencode.git
+[submodule "linux/claude"]
+	path = linux/claude
+	url = https://github.com/jcchikikomori/dotfiles-claude.git
