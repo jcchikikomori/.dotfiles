@@ -1,0 +1,160 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "dotfiles-claude-plugins",
+  "description": "Curated Claude Code plugins from official marketplace for dotfiles setup",
+  "plugins": {
+    "pyright-lsp": {
+      "marketplace": "claude-plugins-official",
+      "description": "Python code intelligence via Pyright LSP. Provides type checking, go-to-definition, find references, and auto-diagnostics for Python projects.",
+      "category": "code-intelligence",
+      "scope": "user",
+      "requires": ["pyright-langserver"]
+    },
+    "typescript-lsp": {
+      "marketplace": "claude-plugins-official",
+      "description": "TypeScript/JavaScript code intelligence. Real-time diagnostics, navigation, and type information for TS/JS projects.",
+      "category": "code-intelligence",
+      "scope": "user",
+      "requires": ["typescript-language-server", "typescript"]
+    },
+    "commit-commands": {
+      "marketplace": "claude-plugins-official",
+      "description": "Git commit workflows including commit, push, and PR creation. Streamlines git operations with guided commands.",
+      "category": "development-workflows",
+      "scope": "user",
+      "requires": []
+    },
+    "pr-review-toolkit": {
+      "marketplace": "claude-plugins-official",
+      "description": "Specialized agents for reviewing pull requests. Code quality analysis, security checks, and best practice validation.",
+      "category": "development-workflows",
+      "scope": "user",
+      "requires": []
+    },
+    "plugin-dev": {
+      "marketplace": "claude-plugins-official",
+      "description": "Toolkit for creating your own Claude Code plugins. Includes templates, validation, and testing utilities.",
+      "category": "development-workflows",
+      "scope": "user",
+      "requires": []
+    },
+    "github": {
+      "marketplace": "claude-plugins-official",
+      "description": "GitHub integration. Manage issues, PRs, repositories, and workflows directly from Claude Code.",
+      "category": "external-integrations",
+      "scope": "user",
+      "requires": [],
+      "env": ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+    },
+    "atlassian": {
+      "marketplace": "claude-plugins-official",
+      "description": "Atlassian integration for Jira and Confluence. Manage issues, sprints, and documentation.",
+      "category": "external-integrations",
+      "scope": "user",
+      "requires": [],
+      "env": [
+        "JIRA_URL",
+        "JIRA_USERNAME",
+        "JIRA_API_TOKEN",
+        "CONFLUENCE_URL",
+        "CONFLUENCE_USERNAME",
+        "CONFLUENCE_API_TOKEN"
+      ]
+    },
+    "slack": {
+      "marketplace": "claude-plugins-official",
+      "description": "Slack workspace integration. Send messages, manage channels, and integrate workflows.",
+      "category": "external-integrations",
+      "scope": "user",
+      "requires": [],
+      "env": ["SLACK_BOT_TOKEN"]
+    },
+    "chrome-devtools-mcp": {
+      "marketplace": "claude-plugins-official",
+      "description": "Control and inspect a live Chrome browser. Record performance traces, analyze network requests, automate browser actions.",
+      "category": "development",
+      "scope": "user",
+      "requires": []
+    },
+    "explanatory-output-style": {
+      "marketplace": "claude-plugins-official",
+      "description": "Educational output style with insights about implementation choices and best practices.",
+      "category": "output-styles",
+      "scope": "user",
+      "requires": []
+    },
+    "learning-output-style": {
+      "marketplace": "claude-plugins-official",
+      "description": "Interactive learning mode for skill building with step-by-step explanations.",
+      "category": "output-styles",
+      "scope": "user",
+      "requires": []
+    },
+    "context7": {
+      "marketplace": "claude-plugins-official",
+      "description": "Upstash Context7 MCP server for up-to-date documentation lookup. Pull version-specific documentation and code examples directly from source repositories.",
+      "category": "development",
+      "scope": "user",
+      "requires": [],
+      "opencodeEquivalent": "context7"
+    },
+    "playwright": {
+      "marketplace": "claude-plugins-official",
+      "description": "Browser automation and end-to-end testing MCP server by Microsoft. Enables Claude to interact with web pages, take screenshots, fill forms, click elements, and perform automated browser testing workflows.",
+      "category": "testing",
+      "scope": "user",
+      "requires": [],
+      "opencodeEquivalent": null
+    },
+    "ruby-lsp": {
+      "marketplace": "claude-plugins-official",
+      "description": "Ruby language server for code intelligence and analysis",
+      "category": "code-intelligence",
+      "scope": "user",
+      "requires": ["ruby-lsp"],
+      "opencodeEquivalent": null
+    },
+    "security-guidance": {
+      "marketplace": "claude-plugins-official",
+      "description": "Security reminder hook that warns about potential security issues when editing files, including command injection, XSS, and unsafe code patterns",
+      "category": "security",
+      "scope": "user",
+      "requires": [],
+      "opencodeEquivalent": null
+    },
+    "postman": {
+      "marketplace": "claude-plugins-official",
+      "description": "Full API lifecycle management for Claude Code. Sync collections, generate client code, discover APIs, run tests, create mocks, publish docs, and audit security. Powered by the Postman MCP Server.",
+      "category": "development",
+      "scope": "user",
+      "requires": [],
+      "env": ["POSTMAN_API_KEY"],
+      "opencodeEquivalent": null
+    },
+    "claude-mem": {
+      "marketplace": "thedotmack/claude-mem",
+      "description": "3-tier memory system (summaries/timeline/observations) with SQLite+ChromaDB. 46k stars! Automatically captures everything Claude does during coding sessions, compresses with AI, and injects relevant context into future sessions. Web UI included.",
+      "category": "memory",
+      "scope": "user",
+      "requires": [],
+      "opencodeEquivalent": "opencode-mem"
+    },
+    "sensitive-canary": {
+      "marketplace": "chataclaw/sensitive-canary",
+      "description": "Zero-config secret detection. Detects 29 secret types, blocks .env files by filename, fully local. No external servers. No configuration. No API keys. Prevents secrets and PII from reaching the API.",
+      "category": "security",
+      "scope": "user",
+      "requires": [],
+      "opencodeEquivalent": "envsitter-guard"
+    },
+    "figma": {
+      "marketplace": "claude-plugins-official",
+      "description": "Figma design platform integration. Access design files, extract component information, read design tokens, and translate designs into code.",
+      "category": "external-integrations",
+      "scope": "user",
+      "requires": [],
+      "env": ["FIGMA_API_KEY"],
+      "opencodeEquivalent": null
+    }
+  }
+}

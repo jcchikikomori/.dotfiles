@@ -5,9 +5,14 @@
 # This script copies shared instructions and skills from the dotfiles
 # shared/ai-agents/ directory to each AI coding agent's expected location:
 # - OpenCode: ~/.config/opencode/ (AGENTS.md, skills/)
-# - Claude Code: ~/.claude/ (CLAUDE.md) and ~/.agents/skills/
+# - Claude Code: ~/.claude/ (CLAUDE.md) and ~/.claude/skills/
 
 set -eu
+
+# Source .profile.local for environment variables
+if [ -f "$HOME/.profile.local" ]; then
+    . "$HOME/.profile.local"
+fi
 
 # ─── Configuration ───────────────────────────────────────────────────────────
 
@@ -34,7 +39,7 @@ OPENCODE_SKILLS="${OPENCODE_CONFIG_DIR}/skills"
 # Claude Code paths
 CLAUDE_CONFIG_DIR="${HOME}/.claude"
 CLAUDE_INSTRUCTIONS="${CLAUDE_CONFIG_DIR}/CLAUDE.md"
-CLAUDE_SKILLS="${HOME}/.agents/skills"
+CLAUDE_SKILLS="${HOME}/.claude/skills"
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -46,13 +51,14 @@ USAGE:
     devtools-ai <command>
 
 COMMANDS:
-    sync            Copy shared configs to OpenCode and Claude Code locations
-    sync-all        Sync configs AND install MCP dependencies for both agents
-    status          Show current sync status
-    opencode        Sync only to OpenCode
-    claude          Sync only to Claude Code
-    install-mcps    Install MCP dependencies for both OpenCode and Claude Code
-    help            Show this help message
+    sync                  Copy shared configs to OpenCode and Claude Code locations
+    sync-all              Sync configs AND install MCP dependencies for both agents
+    status                Show current sync status
+    opencode              Sync only to OpenCode
+    claude                Sync only to Claude Code
+    install-mcps          Install MCP dependencies for both OpenCode and Claude Code
+    generate-instructions Generate instruction files from shared source
+    help                  Show this help message
 
 PATHS:
     Shared source:   ${SHARED_DIR}
@@ -64,6 +70,7 @@ NOTES:
     - Generated files should be .gitignored in submodules
     - Skills are copied (not symlinked) for portability
     - install-mcps calls dotfiles-opencode and dotfiles-claude
+    - generate-instructions calls agent-specific binaries
 
 EOF
 }
@@ -254,6 +261,35 @@ _install_mcps() {
     _log "MCP installation complete!"
 }
 
+# Generate instruction files from shared source
+_generate_instructions() {
+    _log "Generating instruction files from shared source..."
+    echo ""
+
+    # OpenCode instructions
+    if command -v dotfiles-opencode > /dev/null 2>&1; then
+        _log "Generating OpenCode AGENTS.md..."
+        dotfiles-opencode generate-instructions
+    else
+        _warn "dotfiles-opencode not found in PATH"
+        _warn "Run: stowme.sh first to install dotfiles scripts"
+    fi
+
+    echo ""
+
+    # Claude Code instructions
+    if command -v dotfiles-claude > /dev/null 2>&1; then
+        _log "Generating Claude Code CLAUDE.md..."
+        dotfiles-claude generate-instructions
+    else
+        _warn "dotfiles-claude not found in PATH"
+        _warn "Run: stowme.sh first to install dotfiles scripts"
+    fi
+
+    echo ""
+    _log "Instruction generation complete!"
+}
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 main() {
@@ -284,6 +320,9 @@ main() {
             ;;
         install-mcps)
             _install_mcps
+            ;;
+        generate-instructions)
+            _generate_instructions
             ;;
         status)
             _status

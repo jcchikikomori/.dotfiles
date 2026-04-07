@@ -68,13 +68,13 @@ prompt_installation() {
 # Setup ~/.profile.local for user customizations
 setup_profile_local() {
     local profile_local="$HOME/.profile.local"
-    
+
     # Check if already exists
     if [ -f "$profile_local" ]; then
         echo "[INFO] ~/.profile.local already exists, skipping"
         return 0
     fi
-    
+
     # CI/Unattended mode - auto create with defaults
     if [ "$CI_MODE" = "true" ] || [ -n "$SKIP_INSTALL_PROGLANG" ]; then
         cat > "$profile_local" << 'EOF'
@@ -90,6 +90,10 @@ setup_profile_local() {
 #
 # =============================================================================
 
+# WSL2-related workarounds
+# Render discrete GPU (NVIDIA) over integrated graphics
+# export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
+
 # Source Python environments (uncomment the one you use)
 # For uv (recommended for Steam Deck):
 # [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv
@@ -103,11 +107,40 @@ setup_profile_local() {
 # For Homebrew Python:
 # [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew
 
+# =============================================================================
+# MCP (Model Context Protocol) Server Tokens
+# =============================================================================
+# These tokens are used by AI coding agents (OpenCode, Claude Code) for MCPs.
+# Uncomment and fill in the values below. They will be automatically sourced
+# by the dotfiles-opencode and dotfiles-claude scripts.
+#
+# GitHub MCP - Required for GitHub operations (repos, issues, PRs)
+# export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
+#
+# Stack Overflow MCP - Required for Stack Overflow search
+# export STACK_EXCHANGE_API_KEY="your_key_here"
+#
+# Figma MCP - Required for Figma integration
+# export FIGMA_API_KEY="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#
+# Atlassian MCPs (Jira, Confluence)
+# export JIRA_URL="https://your-domain.atlassian.net"
+# export JIRA_USERNAME="your.email@example.com"
+# export JIRA_API_TOKEN="your_token_here"
+# export CONFLUENCE_URL="https://your-domain.atlassian.net/wiki"
+# export CONFLUENCE_USERNAME="your.email@example.com"
+# export CONFLUENCE_API_TOKEN="your_token_here"
+#
+# SonarQube MCP
+# export SONARQUBE_URL="https://sonarqube.example.com"
+# export SONARQUBE_TOKEN="your_token_here"
+# =============================================================================
+
 EOF
-        echo "[INFO] Created ~/.profile.local with template (CI mode)"
+            echo "[INFO] Created ~/.profile.local with template (CI mode)"
         return 0
     fi
-    
+
     # Interactive mode - ask user
     echo ""
     echo "Would you like to create ~/.profile.local for your customizations?"
@@ -142,6 +175,35 @@ EOF
 
 # For Homebrew Python:
 # [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew
+
+# =============================================================================
+# MCP (Model Context Protocol) Server Tokens
+# =============================================================================
+# These tokens are used by AI coding agents (OpenCode, Claude Code) for MCPs.
+# Uncomment and fill in the values below. They will be automatically sourced
+# by the dotfiles-opencode and dotfiles-claude scripts.
+#
+# GitHub MCP - Required for GitHub operations (repos, issues, PRs)
+# export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
+#
+# Stack Overflow MCP - Required for Stack Overflow search
+# export STACK_EXCHANGE_API_KEY="your_key_here"
+#
+# Figma MCP - Required for Figma integration
+# export FIGMA_API_KEY="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#
+# Atlassian MCPs (Jira, Confluence)
+# export JIRA_URL="https://your-domain.atlassian.net"
+# export JIRA_USERNAME="your.email@example.com"
+# export JIRA_API_TOKEN="your_token_here"
+# export CONFLUENCE_URL="https://your-domain.atlassian.net/wiki"
+# export CONFLUENCE_USERNAME="your.email@example.com"
+# export CONFLUENCE_API_TOKEN="your_token_here"
+#
+# SonarQube MCP
+# export SONARQUBE_URL="https://sonarqube.example.com"
+# export SONARQUBE_TOKEN="your_token_here"
+# =============================================================================
 
 EOF
             echo "Created ~/.profile.local"
