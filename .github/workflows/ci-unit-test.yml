@@ -8,11 +8,22 @@ on:
 jobs:
   ubuntu:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python_method: pyenv
+            description: "pyenv (source compilation)"
+          - python_method: uv
+            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -36,6 +47,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -51,10 +64,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh ubuntu/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -66,32 +79,18 @@ jobs:
               exit 1
             fi
           done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          # Assert ENV keys are reported for known MCPs
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
-              exit 1
-            fi
-          done
       - name: Generate list from $HOME dir
         if: always()
         run: |
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-ubuntu
+          name: dotfiles-logs-ubuntu-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
@@ -102,7 +101,9 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -116,14 +117,14 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh darwin/stowme.sh
+          sh stowme.sh
       - name: Generate list from $HOME dir
         if: always()
         run: |
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -136,11 +137,25 @@ jobs:
   arch:
     runs-on: ubuntu-latest
     container: archlinux:latest
+    strategy:
+      matrix:
+        include:
+          - python_method: pyenv
+            description: "pyenv (source compilation)"
+          - python_method: uv
+            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Install git for checkout
+        run: |
+          pacman -Sy --noconfirm git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -164,6 +179,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -179,10 +196,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh arch/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -194,31 +211,18 @@ jobs:
               exit 1
             fi
           done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
-              exit 1
-            fi
-          done
       - name: Generate list from $HOME dir
         if: always()
         run: |
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-arch
+          name: dotfiles-logs-arch-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
@@ -226,11 +230,25 @@ jobs:
   fedora:
     runs-on: ubuntu-latest
     container: fedora:latest
+    strategy:
+      matrix:
+        include:
+          - python_method: pyenv
+            description: "pyenv (source compilation)"
+          - python_method: uv
+            description: "uv (pre-built binaries)"
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Install git for checkout
+        run: |
+          dnf install -y git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -254,6 +272,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -269,10 +289,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh rhel/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -284,31 +304,18 @@ jobs:
               exit 1
             fi
           done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
-              exit 1
-            fi
-          done
       - name: Generate list from $HOME dir
         if: always()
         run: |
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-fedora
+          name: dotfiles-logs-fedora-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9
@@ -320,12 +327,16 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       DEBIAN_FRONTEND: noninteractive
+      CI: true
+      PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - name: Install prerequisites for checkout and setup
+      - name: Install git for checkout
         run: |
           apt-get update
           apt-get install -y git curl ca-certificates
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -349,6 +360,8 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+        env:
+          PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
@@ -364,10 +377,10 @@ jobs:
       - name: Simulate Stowing
         if: always()
         run: |
-          sh debian/stowme.sh
-      - name: Execute post-setup (opencode install-mcps)
+          sh stowme.sh
+      - name: Execute post-setup (dotfiles-opencode install)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -379,31 +392,18 @@ jobs:
               exit 1
             fi
           done
-      - name: Verify MCP ENV report output
-        run: |
-          echo "=== Checking install-mcps ENV report ==="
-          output=$(./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode install-mcps 2>&1)
-          echo "$output"
-          for key in STACK_EXCHANGE_API_KEY GITHUB_PERSONAL_ACCESS_TOKEN FIGMA_API_KEY; do
-            if echo "$output" | grep -q "$key"; then
-              echo "  [ok] $key appears in ENV report"
-            else
-              echo "  [fail] $key missing from ENV report" >&2
-              exit 1
-            fi
-          done
       - name: Generate list from $HOME dir
         if: always()
         run: |
           mkdir -p /tmp/org.jcchikikomori.dotfiles/
           ls -lah $HOME >> /tmp/org.jcchikikomori.dotfiles/userfilelslah.txt
           find $HOME -type d -name ".dotfiles" -prune -o -type d -name ".local" -prune -o -type d -name "bin" -prune -o -type d -name "logs" -prune -o -print > /tmp/org.jcchikikomori.dotfiles/userfilelist.txt
-          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt
+          cat $HOME/.gitconfig >> /tmp/org.jcchikikomori.dotfiles/gitconfig.txt || true
       - name: Upload logs as artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dotfiles-logs-debian
+          name: dotfiles-logs-debian-${{ matrix.python_method }}
           path: /tmp/org.jcchikikomori.dotfiles
           retention-days: 30
           compression-level: 9

@@ -1,3 +1,9 @@
 [submodule "linux/vscode/.config/Code/User/prompts"]
 	path = linux/vscode/.config/Code/User/prompts
 	url = https://github.com/jcchikikomori/impromptu
+[submodule "linux/opencode"]
+	path = linux/opencode
+	url = https://github.com/jcchikikomori/dotfiles-opencode.git
+[submodule "linux/claude"]
+	path = linux/claude
+	url = https://github.com/jcchikikomori/dotfiles-claude.git

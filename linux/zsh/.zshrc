@@ -143,18 +143,20 @@ function set_win_title(){
 }
 precmd_functions+=(set_win_title)
 
-# Autoload Python venv if .venv exists
+# Autoload Python venv if .venv or .venv/global exists
 function auto_load_venv() {
-    if [[ -d "$PWD/.venv" ]]; then
-        if [[ -z "$VIRTUAL_ENV" ]] || [[ "$VIRTUAL_ENV" != "$PWD/.venv" ]]; then
-            source "$PWD/.venv/bin/activate"
-        fi
-    else
-        if [[ -n "$VIRTUAL_ENV" ]]; then
-            deactivate
+    local venv_path="$PWD/.venv"
+    # Support both .venv and .venv/global (from dotfiles-python)
+    if [[ -d "$PWD/.venv/global" ]]; then
+        venv_path="$PWD/.venv/global"
+    fi
+    if [[ -d "$venv_path" ]]; then
+        if [[ -z "$VIRTUAL_ENV" ]] || [[ "$VIRTUAL_ENV" != "$venv_path" ]]; then
+            source "$venv_path/bin/activate"
         fi
     fi
 }
+
 add-zsh-hook chpwd auto_load_venv
 auto_load_venv  # Run on shell initialization too
 
