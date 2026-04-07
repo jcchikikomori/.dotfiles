@@ -21,10 +21,9 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Ensure submodules are loaded
-        run: |
-          git submodule update --init --recursive
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -116,10 +115,9 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
     steps:
-      - uses: actions/checkout@v3
-      - name: Ensure submodules are loaded
-        run: |
-          git submodule update --init --recursive
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -166,13 +164,12 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Install git for submodules
+      - name: Install git for checkout
         run: |
           pacman -Sy --noconfirm git
-      - name: Ensure submodules are loaded
-        run: |
-          git submodule update --init --recursive
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -273,13 +270,12 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Install git for submodules
+      - name: Install git for checkout
         run: |
           dnf install -y git
-      - name: Ensure submodules are loaded
-        run: |
-          git submodule update --init --recursive
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
@@ -381,14 +377,13 @@ jobs:
       CI: true
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
-      - uses: actions/checkout@v3
-      - name: Install prerequisites for checkout and setup
+      - name: Install git for checkout
         run: |
           apt-get update
-          apt-get install -y git curl ca-certificates
-      - name: Ensure submodules are loaded
-        run: |
-          git submodule update --init --recursive
+          apt-get install -y git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Setup some directories
         run: |
           mkdir -p $HOME/.dotfiles
