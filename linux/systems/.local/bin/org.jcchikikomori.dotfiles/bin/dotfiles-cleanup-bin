@@ -8,4 +8,36 @@ if [ -L "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin" ]; then
   rm -f $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
 fi
 
+echo "Cleaning up scripts in $HOME/.local/bin/org.jcchikikomori.agentic.claude/bin..."
+
+# Check if the file is a symlink
+if [ -L "$HOME/.local/bin/org.jcchikikomori.agentic.claude/bin" ]; then
+  echo "Deleting symlink $HOME/.local/bin/org.jcchikikomori.agentic.claude/bin..."
+  rm -f $HOME/.local/bin/org.jcchikikomori.agentic.claude/bin
+fi
+
+echo "Cleaning up scripts in $HOME/.local/bin/org.jcchikikomori.agentic.opencode/bin..."
+
+# Check if the file is a symlink
+if [ -L "$HOME/.local/bin/org.jcchikikomori.agentic.opencode/bin" ]; then
+  echo "Deleting symlink $HOME/.local/bin/org.jcchikikomori.agentic.opencode/bin..."
+  rm -f $HOME/.local/bin/org.jcchikikomori.agentic.opencode/bin
+fi
+
+echo "Cleaning up scripts in $HOME/.local/bin/org.jcchikikomori.devtools/bin..."
+
+# Check if the file is a symlink
+if [ -L "$HOME/.local/bin/org.jcchikikomori.devtools/bin" ]; then
+  echo "Deleting symlink $HOME/.local/bin/org.jcchikikomori.devtools/bin..."
+  rm -f $HOME/.local/bin/org.jcchikikomori.devtools/bin
+fi
+
+echo "Cleaning up scripts in $HOME/.local/bin/org.jcchikikomori.emudecktools/bin..."
+
+# Check if the file is a symlink
+if [ -L "$HOME/.local/bin/org.jcchikikomori.emudecktools/bin" ]; then
+  echo "Deleting symlink $HOME/.local/bin/org.jcchikikomori.emudecktools/bin..."
+  rm -f $HOME/.local/bin/org.jcchikikomori.emudecktools/bin
+fi
+
 echo "Scripts cleanup completed."
