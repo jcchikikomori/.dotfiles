@@ -167,6 +167,9 @@ jobs:
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v3
+      - name: Install git for submodules
+        run: |
+          pacman -Sy --noconfirm git
       - name: Ensure submodules are loaded
         run: |
           git submodule update --init --recursive
@@ -271,6 +274,9 @@ jobs:
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v3
+      - name: Install git for submodules
+        run: |
+          dnf install -y git
       - name: Ensure submodules are loaded
         run: |
           git submodule update --init --recursive
