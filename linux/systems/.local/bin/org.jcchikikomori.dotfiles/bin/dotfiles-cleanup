@@ -81,13 +81,6 @@ rm -rf "$HOME/.vscode"
 rm -rf "$HOME/.vscode-server"
 rm -rf "$HOME/.config/Code/User/prompts"
 
-# echo 'Cleaning up scripts...'
-# if [ -f "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin" ]; then
-#   sh "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin"
-# else
-#   echo "Warning: $HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin does not exist. Skipping script cleanup."
-# fi
-
 echo 'Cleaning up other files...'
 rm -f "$HOME/.gitconfig"
 rm -f "$HOME/.alacritty.yml"
