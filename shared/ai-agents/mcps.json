@@ -5,12 +5,12 @@
     "context7": {
       "name": "context7",
       "description": "Context7 MCP for library documentation lookup",
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
       "env": [],
-      "installMethod": "npx",
-      "categories": ["documentation", "reference"]
+      "installMethod": "http",
+      "categories": ["documentation", "reference"],
+      "notes": "Uses Context7's remote MCP server via HTTP. No authentication required."
     },
     "github": {
       "name": "github",
@@ -72,14 +72,90 @@
     },
     "sonarqube-mcp": {
       "name": "sonarqube-mcp",
-      "description": "SonarQube MCP for code quality analysis",
+      "description": "SonarQube MCP for code quality analysis (Docker-based)",
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@mcp/sonarqube"],
+      "command": "docker",
+      "args": ["run", "--pull=always", "-i", "--rm", "-e", "SONARQUBE_TOKEN", "-e", "SONARQUBE_URL", "mcp/sonarqube"],
       "env": ["SONARQUBE_URL", "SONARQUBE_TOKEN"],
-      "installMethod": "npx",
+      "installMethod": "docker",
       "categories": ["code-quality", "analysis"],
       "requiredEnv": ["SONARQUBE_URL", "SONARQUBE_TOKEN"]
+    },
+    "buildkite-mcp": {
+      "name": "buildkite-mcp",
+      "description": "Buildkite MCP for CI/CD pipeline integration",
+      "type": "http",
+      "url": "https://mcp.buildkite.com/mcp",
+      "env": [],
+      "installMethod": "http",
+      "categories": ["ci-cd", "buildkite"],
+      "notes": "Uses Buildkite's remote MCP server via HTTP. Authentication handled by Buildkite."
+    },
+    "chrome-devtools": {
+      "name": "chrome-devtools",
+      "description": "Chrome DevTools MCP for browser automation and testing",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest", "--no-usage-statistics"],
+      "env": [],
+      "installMethod": "npx",
+      "categories": ["testing", "browser", "automation"]
+    },
+    "mcp-ocr": {
+      "name": "mcp-ocr",
+      "description": "OCR (Optical Character Recognition) MCP for extracting text from images",
+      "type": "stdio",
+      "command": "mcp-ocr",
+      "args": [],
+      "env": [],
+      "installMethod": "pipx",
+      "categories": ["ocr", "image-processing", "utilities"]
+    },
+    "github-mcp-docker": {
+      "name": "github-mcp-docker",
+      "description": "Docker-based GitHub MCP for repository operations (alternative to HTTP)",
+      "type": "stdio",
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "dhi.io/github-mcp"],
+      "env": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "installMethod": "docker",
+      "categories": ["version-control", "github"],
+      "requiredEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+      "notes": "Docker-based alternative to the HTTP GitHub MCP. Use this if you prefer local Docker execution."
+    },
+    "figma-developer-mcp": {
+      "name": "figma-developer-mcp",
+      "description": "Figma Developer MCP for design file integration (alternative implementation)",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp", "--stdio"],
+      "env": ["FIGMA_API_KEY"],
+      "installMethod": "npx",
+      "categories": ["design", "figma"],
+      "requiredEnv": ["FIGMA_API_KEY"],
+      "notes": "Alternative Figma MCP implementation. Use this or figma-mcp depending on your needs."
+    },
+    "markitdown-mcp": {
+      "name": "markitdown-mcp",
+      "description": "Microsoft MarkItDown MCP for converting various file formats (PDF, DOCX, PPTX, XLSX, images, audio, HTML, etc.) to clean Markdown",
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["markitdown-mcp"],
+      "env": [],
+      "installMethod": "uvx",
+      "categories": ["markdown", "conversion", "document-processing", "utilities"],
+      "notes": "Converts PDF, PowerPoint, Word, Excel, Images (with OCR), Audio (with transcription), HTML, CSV, JSON, XML, ZIP, YouTube URLs, and EPubs to Markdown. Requires Python 3.10+. Use 'uvx markitdown-mcp' or 'pipx install markitdown-mcp'."
+    },
+    "markdownlint-mcp": {
+      "name": "markdownlint-mcp",
+      "description": "Markdown linter MCP for validating, fixing, and ensuring compliance of Markdown files with industry standards",
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "markdownlint-mcp"],
+      "env": [],
+      "installMethod": "npx",
+      "categories": ["markdown", "linting", "code-quality", "validation"],
+      "notes": "Provides lint_markdown, fix_markdown, and get_configuration tools. Supports all 52 markdownlint rules with 30 auto-fixable rules. Based on CommonMark and GitHub Flavored Markdown standards."
     }
   },
   "categories": {
@@ -94,7 +170,20 @@
     "design": "Design and prototyping tools",
     "figma": "Figma-specific integrations",
     "code-quality": "Code quality and analysis tools",
-    "analysis": "Analysis and metrics tools"
+    "analysis": "Analysis and metrics tools",
+    "ci-cd": "Continuous Integration and Deployment tools",
+    "buildkite": "Buildkite-specific integrations",
+    "testing": "Testing and quality assurance tools",
+    "browser": "Browser automation and testing tools",
+    "automation": "Automation utilities",
+    "ocr": "Optical Character Recognition tools",
+    "image-processing": "Image and media processing tools",
+    "utilities": "General utility tools",
+    "markdown": "Markdown processing and conversion tools",
+    "conversion": "File format conversion tools",
+    "document-processing": "Document processing and manipulation tools",
+    "linting": "Code and content linting tools",
+    "validation": "Validation and compliance checking tools"
   },
   "metadata": {
     "version": "1.0.0",
