@@ -5,7 +5,7 @@
 # This script copies shared instructions and skills from the dotfiles
 # shared/ai-agents/ directory to each AI coding agent's expected location:
 # - OpenCode: ~/.config/opencode/ (AGENTS.md, skills/)
-# - Claude Code: ~/.claude/ (CLAUDE.md) and ~/.agents/skills/
+# - Claude Code: ~/.claude/ (CLAUDE.md) and ~/.claude/skills/
 
 set -eu
 
@@ -34,7 +34,7 @@ OPENCODE_SKILLS="${OPENCODE_CONFIG_DIR}/skills"
 # Claude Code paths
 CLAUDE_CONFIG_DIR="${HOME}/.claude"
 CLAUDE_INSTRUCTIONS="${CLAUDE_CONFIG_DIR}/CLAUDE.md"
-CLAUDE_SKILLS="${HOME}/.agents/skills"
+CLAUDE_SKILLS="${HOME}/.claude/skills"
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 

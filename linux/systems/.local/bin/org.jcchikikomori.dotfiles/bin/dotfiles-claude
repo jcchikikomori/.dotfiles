@@ -157,7 +157,7 @@ _add_mcp_with_env() {
             val=""
             eval "val=\${${key}:-}"
             if [ -n "$val" ]; then
-                env_flags="$env_flags -e $key"
+                env_flags="$env_flags -e $key=$val"
             fi
             IFS=","
         done
