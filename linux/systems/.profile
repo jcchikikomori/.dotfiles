@@ -157,6 +157,10 @@ if [ -f "$HOME/.config/opencode/.env" ]; then
     set +a
 fi
 
+if [ -f "$HOME/.zopencode" ]; then
+    . "$HOME/.zopencode"
+fi
+
 # Start TMUX if not already running
 if [ -z "$TMUX" ] && [ -z "$TMUX_DISABLE_AT_BOOT" ]; then
     tmux attach || tmux new
