@@ -185,22 +185,22 @@ fi
 handle_profile_conflict() {
   local profile_file="$HOME/.profile"
   local backup_dir="$HOME/.backups"
-  
+
   # Only act if ~/.profile exists and is NOT a symlink
   if [ -f "$profile_file" ] && [ ! -L "$profile_file" ]; then
     # Create backup directory if needed
     if [ ! -d "$backup_dir" ]; then
       mkdir -p "$backup_dir"
     fi
-    
+
     # Backup with timestamp
     local timestamp
     timestamp="$(date +%Y%m%d-%H%M%S)"
     local backup_file="$backup_dir/.profile.backup.$timestamp"
-    
+
     printf 'Backing up existing ~/.profile to %s\n' "$backup_file"
     cp -a "$profile_file" "$backup_file"
-    
+
     # Remove the original so stow can create symlink
     rm "$profile_file"
     printf 'Removed original ~/.profile (stow will replace with symlink)\n'
@@ -209,6 +209,12 @@ handle_profile_conflict() {
 
 if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
   log_error "Error: dotfiles-cleanup failed."
+  restore_external_symlinks
+  exit 1
+fi
+
+if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin"; then
+  log_error "Error: dotfiles-cleanup-bin failed."
   restore_external_symlinks
   exit 1
 fi
