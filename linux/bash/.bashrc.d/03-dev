@@ -47,6 +47,10 @@ if [ -f "$HOME/.config/opencode/.env" ]; then
     set +a
 fi
 
+if [ -f "$HOME/.zopencode" ]; then
+    . "$HOME/.zopencode"
+fi
+
 # Autoload Python venv if .venv exists
 auto_load_venv() {
     if [ -d "$PWD/.venv" ]; then
