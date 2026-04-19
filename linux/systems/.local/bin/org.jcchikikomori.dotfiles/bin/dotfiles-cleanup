@@ -64,6 +64,10 @@ if [ -d "$HOME/.config/opencode/memory_data" ]; then
   cp -rf "$HOME/.config/opencode/memory_data" "$HOME/.backups/opencode"
 fi
 
+if [ -d "$HOME/.opencode" ]; then
+  cp -rf "$HOME/.opencode" "$HOME/.backups/opencode"
+fi
+
 if [ -d "$HOME/.claude" ]; then
   cp -rf "$HOME/.claude" "$HOME/.backups"
 fi
@@ -127,7 +131,7 @@ if [ -d "$HOME/.dotfiles/opencode" ] && [ ! -f "$HOME/.dotfiles/opencode/.config
   rm -rf "$HOME/.dotfiles/opencode"
 fi
 
-# Clean up opencode symlinks
+# Clean up opencode symlinks, old folders & stale files before restow
 rm -f "$HOME/.config/opencode/opencode.jsonc"
 rm -f "$HOME/.config/opencode/oh-my-opencode.json"
 rm -f "$HOME/.config/opencode/oh-my-opencode-slim.json"
@@ -138,12 +142,12 @@ rm -f "$HOME/.config/opencode/tui.json"
 rm -f "$HOME/.config/opencode/AGENTS.md"
 rm -f "$HOME/.config/opencode/GIT_COMMIT_GUARD.md"
 rm -f "$HOME/.config/opencode/.env.example"
-rm -f "$HOME/.config/opencode/agents"
-rm -f "$HOME/.config/opencode/plugin"
-rm -f "$HOME/.config/opencode/plugins"
-
-# Clean up stale files/folders before restow
+rm -f "$HOME/.zopencode"
+rm -rf "$HOME/.opencode"
 rm -rf "$HOME/.config/opencode/agent"
+rm -rf "$HOME/.config/opencode/agents"
+rm -rf "$HOME/.config/opencode/plugin"
+rm -rf "$HOME/.config/opencode/plugins"
 rm -rf "$HOME/.config/opencode/skills"
 
 # Clean up claude symlinks & stale files before restow
