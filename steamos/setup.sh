@@ -43,6 +43,33 @@ pacman_install() {
 # Unlocking SteamOS rootfs...
 sudo steamos-readonly disable
 
+# Fix pacman keyring (resets on SteamOS updates)
+if ! pacman-key --list-keys >/dev/null 2>&1; then
+  echo "Initializing pacman keyring..."
+  sudo pacman-key --init
+  sudo pacman-key --populate archlinux
+fi
+
+# Chaotic AUR
+if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
+  echo 'Importing Chaotic AUR keys...'
+  sudo pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keyserver.ubuntu.com:80
+  echo 'Signing Chaotic AUR keys...'
+  sudo pacman-key --lsign-key 3056513887B78AEB
+  echo 'Installing Chaotic AUR keyring and mirrorlist...'
+  sudo pacman -U --noconfirm --noprogressbar 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  echo "
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
+  sudo pacman -Syy --noconfirm --noprogressbar
+else
+  echo "chaotic-aur repository is already registered. Skipping..."
+fi
+
+# Synchronize package databases
+sudo pacman -Syy --noconfirm --noprogressbar
+
 # Install essentials
 pacman_install "-Syy --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
   base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr
