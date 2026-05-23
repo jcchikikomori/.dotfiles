@@ -142,8 +142,9 @@ if [ -d "$RBENV_ROOT" ]; then
     eval "$(rbenv init -)"
 fi
 
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    . "$NVM_DIR/nvm.sh"
+if [ -d "$NVM_DIR" ]; then
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 fi
 
 if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then

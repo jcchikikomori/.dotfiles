@@ -29,8 +29,9 @@ fi
 # fi
 
 # NVM (Node Version Manager)
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    . "$NVM_DIR/nvm.sh"
+if [ -n "$NVM_DIR" ] && [ -d "$NVM_DIR" ]; then
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 fi
 
 # SDKMAN (Software Development Kit Manager)
@@ -61,11 +62,10 @@ auto_load_venv() {
 }
 
 # Add to PROMPT_COMMAND to run on each prompt
-if [[ "$PROMPT_COMMAND" == *"auto_load_venv"* ]]; then
-    : # already exists
-else
-    PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}auto_load_venv"
-fi
+case "$PROMPT_COMMAND" in
+    *auto_load_venv*) : ;;  # already exists
+    *) PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}auto_load_venv" ;;
+esac
 
 # Run on shell initialization too
 auto_load_venv
