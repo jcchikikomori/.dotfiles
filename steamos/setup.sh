@@ -43,6 +43,65 @@ pacman_install() {
 # Unlocking SteamOS rootfs...
 sudo steamos-readonly disable
 
+# Fix pacman keyring (resets on SteamOS updates)
+# Based on /usr/bin/steamos-devmode + community-confirmed fix
+echo "Checking pacman keyring status..."
+KEYRING_OK=0
+if pacman-key --list-keys >/dev/null 2>&1; then
+  # Verify holo keyring is actually populated (SteamOS-specific)
+  if pacman-key --list-keys | grep -q "holo\|steamos\|GitLab CI" 2>/dev/null; then
+    KEYRING_OK=1
+  fi
+fi
+
+if [ "$KEYRING_OK" -eq 0 ]; then
+  echo "Fixing pacman keyring..."
+  # Clean everything
+  sudo rm -rf /etc/pacman.d/gnupg/
+  sudo rm -rf /usr/lib/holo/pacmandb/sync/*
+  sudo rm -rf /var/cache/pacman/pkg/*.pkg.tar.*
+
+  # Initialize and populate keyrings
+  sudo pacman-key --init
+  sudo pacman-key --populate archlinux holo
+
+  # Set SigLevel = TrustAll to install keyring packages
+  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  sudo awk '$1 == "SigLevel" {print "SigLevel = TrustAll"; next} {print}' /etc/pacman.conf > /tmp/pacman.conf.new
+  sudo mv /tmp/pacman.conf.new /etc/pacman.conf
+
+  # Install updated keyring packages with cache cleared
+  sudo pacman -Syy --noconfirm --needed archlinux-keyring holo-keyring
+
+  # Re-populate with updated keys
+  sudo pacman-key --populate archlinux holo
+
+  # Restore original pacman.conf
+  sudo mv -f /etc/pacman.conf.bak /etc/pacman.conf
+  echo "Keyring fix complete."
+fi
+
+# Import SteamOS CI package builder key (for rclone and other SteamOS packages)
+echo "y" | sudo pacman-key --recv-keys F1A6668FBB7D7104B070C1CA6E47A12868A2E00D --keyserver keyserver.ubuntu.com 2>/dev/null || true
+sudo pacman-key --lsign-key F1A6668FBB7D7104B070C1CA6E47A12868A2E00D 2>/dev/null || true
+
+# Chaotic AUR
+if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
+  echo 'Importing Chaotic AUR keys...'
+  echo "y" | sudo pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keyserver.ubuntu.com:80
+  echo 'Signing Chaotic AUR keys...'
+  echo "y" | sudo pacman-key --lsign-key 3056513887B78AEB
+  echo 'Installing Chaotic AUR keyring and mirrorlist...'
+  sudo pacman -U --noconfirm --noprogressbar 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
+  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  echo "
+[chaotic-aur]
+Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
+  sudo pacman -Syy --noconfirm --noprogressbar
+else
+  echo "chaotic-aur repository is already registered. Skipping..."
+fi
+
 # Install essentials
 pacman_install "-Syy --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
   base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr
