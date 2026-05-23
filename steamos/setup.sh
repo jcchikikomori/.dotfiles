@@ -85,6 +85,13 @@ fi
 echo "y" | sudo pacman-key --recv-keys F1A6668FBB7D7104B070C1CA6E47A12868A2E00D --keyserver keyserver.ubuntu.com 2>/dev/null || true
 sudo pacman-key --lsign-key F1A6668FBB7D7104B070C1CA6E47A12868A2E00D 2>/dev/null || true
 
+# Set global SigLevel to TrustAll for third-party package support
+if grep -q "^SigLevel" /etc/pacman.conf; then
+  sudo sed -i 's/^SigLevel.*/SigLevel = TrustAll/' /etc/pacman.conf
+else
+  sudo sed -i '/^\[options\]/a SigLevel = TrustAll' /etc/pacman.conf
+fi
+
 # Chaotic AUR
 if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
   echo 'Importing Chaotic AUR keys...'
@@ -102,9 +109,62 @@ else
   echo "chaotic-aur repository is already registered. Skipping..."
 fi
 
+# CachyOS Repository
+if ! grep -q "\[cachyos-v3\]" /etc/pacman.conf; then
+  echo 'Importing CachyOS keys...'
+  echo "y" | sudo pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+  echo 'Signing CachyOS keys...'
+  echo "y" | sudo pacman-key --lsign-key F3B607488DB35A47
+  echo 'Installing CachyOS keyring and mirrorlist...'
+  sudo pacman -U --noconfirm \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-27-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v3-mirrorlist-27-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v4-mirrorlist-27-1-any.pkg.tar.zst'
+  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  echo "
+[cachyos-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos-core-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos-extra-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos]
+Include = /etc/pacman.d/cachyos-mirrorlist
+" | sudo tee -a /etc/pacman.conf
+  sudo pacman -Syy --noconfirm --noprogressbar
+else
+  echo "CachyOS repository is already registered. Skipping..."
+fi
+
+# Install CachyOS packages
+pacman_install "-S --noconfirm --noprogressbar" dmemcg-booster kcgroups plasma-foreground-booster
+
 # Install essentials
 pacman_install "-Syy --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
   base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr
+
+# Install yay (AUR helper)
+if ! command -v yay >/dev/null 2>&1; then
+  echo "Installing yay..."
+  tmp_dir=$(mktemp -d)
+  cd "$tmp_dir"
+  git clone https://aur.archlinux.org/yay-bin.git
+  cd yay-bin
+  git checkout 7d1b1a155500987cd7684a4b2afd76a98b6ed922
+  makepkg -si --noconfirm
+  cd /
+  rm -rf "$tmp_dir"
+  echo "yay installed successfully"
+else
+  echo "yay is already installed"
+fi
+
+# Install AUR packages
+yay -S --noconfirm podman-docker-git
 
 # Workarounds & Misc software
 pacman_install "-S --noconfirm --noprogressbar" xsel ncdu

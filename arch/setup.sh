@@ -55,6 +55,9 @@ mkdir -p temp && cd temp/
 git clone https://aur.archlinux.org/yay.git $HOME/yay
 cd $HOME/yay
 makepkg -si --noconfirm
+# Install AUR packages
+yay -S --noconfirm podman-docker-git
+
 # Cleanup
 cd ../..
 rm -rf temp/
@@ -78,6 +81,40 @@ Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
 else
   echo "chaotic-aur repository is already registered. Skipping..."
 fi
+
+# CachyOS Repository
+if ! grep -q "\[cachyos-v3\]" /etc/pacman.conf; then
+  echo 'Importing CachyOS keys...'
+  sudo pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+  echo 'Signing CachyOS keys...'
+  sudo pacman-key --lsign-key F3B607488DB35A47
+  echo 'Installing CachyOS keyring and mirrorlist...'
+  sudo pacman -U --noconfirm \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-27-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v3-mirrorlist-27-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v4-mirrorlist-27-1-any.pkg.tar.zst'
+  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  echo "
+[cachyos-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos-core-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos-extra-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos]
+Include = /etc/pacman.d/cachyos-mirrorlist
+" | sudo tee -a /etc/pacman.conf
+  sudo pacman -Syyu --noconfirm --noprogressbar
+else
+  echo "CachyOS repository is already registered. Skipping..."
+fi
+
+# Install CachyOS packages
+pacman_install "-S --noconfirm --noprogressbar" dmemcg-booster kcgroups plasma-foreground-booster
 
 # Installing rclone
 pacman_install "-S --noconfirm --noprogressbar" rclone
