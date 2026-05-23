@@ -65,7 +65,7 @@ if [ "$KEYRING_OK" -eq 0 ]; then
   sudo pacman-key --init
   sudo pacman-key --populate archlinux holo
 
-  # Temporarily set SigLevel = TrustAll to install keyring packages
+  # Set SigLevel = TrustAll to install keyring packages
   sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
   sudo awk '$1 == "SigLevel" {print "SigLevel = TrustAll"; next} {print}' /etc/pacman.conf > /tmp/pacman.conf.new
   sudo mv /tmp/pacman.conf.new /etc/pacman.conf
@@ -101,9 +101,6 @@ Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
 else
   echo "chaotic-aur repository is already registered. Skipping..."
 fi
-
-# Synchronize package databases
-sudo pacman -Syy --noconfirm --noprogressbar
 
 # Install essentials
 pacman_install "-Syy --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
