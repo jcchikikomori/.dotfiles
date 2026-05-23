@@ -2,7 +2,7 @@
 
 # Space-separated package list to force install on file conflicts.
 # Example: PACMAN_FORCE_CONFLICT_PACKAGES="python3 openssh" sh ./arch/setup.sh
-PACMAN_FORCE_CONFLICT_PACKAGES="${PACMAN_FORCE_CONFLICT_PACKAGES:-gvim}"
+PACMAN_FORCE_CONFLICT_PACKAGES="${PACMAN_FORCE_CONFLICT_PACKAGES:-}"
 PACMAN_OVERWRITE_GLOB="${PACMAN_OVERWRITE_GLOB:-*}"
 
 is_forced_package() {
@@ -47,7 +47,7 @@ sudo locale-gen en_US.UTF-8
 sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
-pacman_install "-Syyu --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
+pacman_install "-Syyu --noconfirm --noprogressbar" nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
 pacman_install "-S --noconfirm --noprogressbar" base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr less
 # Ensure temp directory exists
 mkdir -p temp && cd temp/
@@ -138,7 +138,7 @@ if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
   echo "Setup Completed."
-  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
+  echo "Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 fi
 
 exit 0

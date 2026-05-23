@@ -2,7 +2,7 @@
 
 # Space-separated package list to force install on file conflicts.
 # Example: PACMAN_FORCE_CONFLICT_PACKAGES="python3 openssh" sh ./steamos/setup.sh
-PACMAN_FORCE_CONFLICT_PACKAGES="${PACMAN_FORCE_CONFLICT_PACKAGES:-gvim}"
+PACMAN_FORCE_CONFLICT_PACKAGES="${PACMAN_FORCE_CONFLICT_PACKAGES:-}"
 PACMAN_OVERWRITE_GLOB="${PACMAN_OVERWRITE_GLOB:-*}"
 
 is_forced_package() {
@@ -144,7 +144,7 @@ fi
 pacman_install "-S --noconfirm --noprogressbar" dmemcg-booster kcgroups plasma-foreground-booster
 
 # Install essentials
-pacman_install "-Syy --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
+pacman_install "-Syy --noconfirm --noprogressbar" nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip \
   base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr
 
 # Install yay (AUR helper)
@@ -180,7 +180,7 @@ if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
   echo "Setup Completed."
-  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
+  echo "Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 fi
 
 exit 0
