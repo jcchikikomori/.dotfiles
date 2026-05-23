@@ -2,7 +2,7 @@
 
 # Space-separated package list to force install on file conflicts.
 # Example: PACMAN_FORCE_CONFLICT_PACKAGES="python3 openssh" sh ./arch/setup.sh
-PACMAN_FORCE_CONFLICT_PACKAGES="${PACMAN_FORCE_CONFLICT_PACKAGES:-gvim}"
+PACMAN_FORCE_CONFLICT_PACKAGES="${PACMAN_FORCE_CONFLICT_PACKAGES:-}"
 PACMAN_OVERWRITE_GLOB="${PACMAN_OVERWRITE_GLOB:-*}"
 
 is_forced_package() {
@@ -47,7 +47,7 @@ sudo locale-gen en_US.UTF-8
 sudo localectl set-locale LANG=en_US.UTF-8
 
 # Install essentials
-pacman_install "-Syyu --noconfirm --noprogressbar" gvim nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
+pacman_install "-Syyu --noconfirm --noprogressbar" nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
 pacman_install "-S --noconfirm --noprogressbar" base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr less
 # Ensure temp directory exists
 mkdir -p temp && cd temp/
@@ -55,6 +55,9 @@ mkdir -p temp && cd temp/
 git clone https://aur.archlinux.org/yay.git $HOME/yay
 cd $HOME/yay
 makepkg -si --noconfirm
+# Install AUR packages
+yay -S --noconfirm podman-docker-git
+
 # Cleanup
 cd ../..
 rm -rf temp/
@@ -79,6 +82,40 @@ else
   echo "chaotic-aur repository is already registered. Skipping..."
 fi
 
+# CachyOS Repository
+if ! grep -q "\[cachyos-v3\]" /etc/pacman.conf; then
+  echo 'Importing CachyOS keys...'
+  sudo pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
+  echo 'Signing CachyOS keys...'
+  sudo pacman-key --lsign-key F3B607488DB35A47
+  echo 'Installing CachyOS keyring and mirrorlist...'
+  sudo pacman -U --noconfirm \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-27-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v3-mirrorlist-27-1-any.pkg.tar.zst' \
+    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v4-mirrorlist-27-1-any.pkg.tar.zst'
+  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  echo "
+[cachyos-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos-core-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos-extra-v3]
+Include = /etc/pacman.d/cachyos-v3-mirrorlist
+
+[cachyos]
+Include = /etc/pacman.d/cachyos-mirrorlist
+" | sudo tee -a /etc/pacman.conf
+  sudo pacman -Syyu --noconfirm --noprogressbar
+else
+  echo "CachyOS repository is already registered. Skipping..."
+fi
+
+# Install CachyOS packages
+pacman_install "-S --noconfirm --noprogressbar" dmemcg-booster kcgroups plasma-foreground-booster
+
 # Installing rclone
 pacman_install "-S --noconfirm --noprogressbar" rclone
 
@@ -101,7 +138,7 @@ if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 else
   echo "Setup Completed."
-  echo 'Please install dependencies into your home directory (Execute: dotfiles-post-setup).'
+  echo "Please install dependencies into your home directory (Execute: dotfiles-post-setup)."
 fi
 
 exit 0

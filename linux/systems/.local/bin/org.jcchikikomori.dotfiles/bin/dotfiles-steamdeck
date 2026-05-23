@@ -255,13 +255,29 @@ llm_status() {
   fi
 }
 
+# Patch /etc/hosts with game-related entries
+patch_hosts() {
+  if grep -q "nba2k14" /etc/hosts 2>/dev/null; then
+    log_info "Game host entries already exist. Skipping."
+    return 0
+  fi
+
+  log_info "Patching /etc/hosts with game-related entries..."
+  echo "
+127.0.0.1    nba2k14.pc.2ksports.com
+::1          ns.take2games.com" | sudo tee -a /etc/hosts > /dev/null
+
+  log_info "Hosts file patched successfully."
+}
+
 # Main command dispatcher
 main() {
   if [ $# -eq 0 ]; then
     echo "Usage: dotfiles-steamdeck {command} [options]"
     echo ""
-    echo "System Commands:"
+    echo     "System Commands:"
     echo "  reset-audio      Delete WirePlumber settings to fix corrupt audio"
+    echo "  patch-hosts      Patch /etc/hosts with game-related entries"
     echo "  writeable        Make SteamOS writeable"
     echo "  readonly         Make SteamOS read-only"
     echo ""
@@ -285,6 +301,9 @@ main() {
   case "$1" in
     reset-audio)
       reset_audio
+      ;;
+    patch-hosts)
+      patch_hosts
       ;;
     writeable)
       make_writeable
