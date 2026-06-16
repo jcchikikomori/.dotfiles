@@ -45,13 +45,11 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
-      - name: Execute post-setup (pre-commit)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
       - name: Execute post-setup (php)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
@@ -177,13 +175,11 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
-      - name: Execute post-setup (pre-commit)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
       - name: Execute post-setup (php)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
@@ -270,13 +266,11 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
-      - name: Execute post-setup (pre-commit)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
       - name: Execute post-setup (php)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
@@ -358,13 +352,11 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
-      - name: Execute post-setup (pre-commit)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python--pre-commit
       - name: Execute post-setup (php)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-php install
