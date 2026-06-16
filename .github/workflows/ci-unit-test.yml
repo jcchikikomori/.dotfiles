@@ -45,7 +45,7 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
@@ -177,7 +177,7 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
@@ -270,7 +270,7 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
@@ -358,7 +358,7 @@ jobs:
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
       - name: Execute post-setup (python)
         run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}

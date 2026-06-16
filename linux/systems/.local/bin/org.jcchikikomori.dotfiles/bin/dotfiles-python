@@ -9,10 +9,10 @@
 # Commands:
 #   cleanup              Remove all Python managers and leftovers from $HOME
 #   install              Legacy pyenv-based installation (backward compatible)
-#   install-pyenv        Install via pyenv (source compilation, slow)
-#   install-homebrew     Install via Homebrew (pre-built, recommended for Linux)
-#   install-uv           Install via uv (pre-built, fast, recommended for Steam Deck)
-#   install-conda        Install via Miniconda (full conda ecosystem)
+#   install pyenv        Install via pyenv (source compilation, slow)
+#   install homebrew     Install via Homebrew (pre-built, recommended for Linux)
+#   install uv           Install via uv (pre-built, fast, recommended for Steam Deck)
+#   install conda        Install via Miniconda (full conda ecosystem)
 #   status               Show current Python environment status
 #   update               Update global Python version
 #
@@ -254,7 +254,7 @@ get_active_manager() {
         echo "conda"
     elif [ -n "$VIRTUAL_ENV" ] && echo "$VIRTUAL_ENV" | grep -q "uv"; then
         echo "uv"
-    elif [ -d "$HOME/.localuv"/share/ ]; then
+    elif [ -d "$HOME/.local/share/uv" ]; then
         # uv installed but not necessarily active
         echo "uv"
     elif [ -d "$HOMEBREW_ROOT" ] || [ -d "$HOMEBREW_ALT" ]; then
@@ -496,11 +496,30 @@ cmd_status() {
 }
 
 # -----------------------------------------------------------------------------
-# Command: install (legacy)
+# Command: install (Default)
 # -----------------------------------------------------------------------------
 cmd_install() {
-    log_info "Legacy install command - using pyenv"
-    cmd_install_pyenv
+    local method="${1:-${PYTHON_INSTALL_METHOD:-pyenv}}"
+    log_info "Install method: $method"
+    case "$method" in
+        uv)
+            cmd_install_uv
+            ;;
+        pyenv)
+            cmd_install_pyenv
+            ;;
+        homebrew)
+            cmd_install_homebrew
+            ;;
+        conda)
+            cmd_install_conda
+            ;;
+        *)
+            log_error "Unknown PYTHON_INSTALL_METHOD: $method"
+            log_error "Supported methods: pyenv, uv, homebrew, conda"
+            exit 1
+            ;;
+    esac
 }
 
 # -----------------------------------------------------------------------------
@@ -889,10 +908,10 @@ main() {
         echo "Commands:"
         echo "  cleanup              Remove all Python managers and leftovers"
         echo "  install              Legacy pyenv-based installation"
-        echo "  install-pyenv        Install via pyenv (source compilation)"
-        echo "  install-homebrew     Install via Homebrew (pre-built)"
-        echo "  install-uv           Install via uv (pre-built, fast)"
-        echo "  install-conda        Install via Miniconda"
+        echo "  install pyenv        Install via pyenv (source compilation)"
+        echo "  install homebrew     Install via Homebrew (pre-built)"
+        echo "  install uv           Install via uv (pre-built, fast)"
+        echo "  install conda        Install via Miniconda"
         echo "  status               Show current Python environment status"
         echo "  update               Update global Python version"
         echo ""
@@ -933,19 +952,7 @@ main() {
             cmd_cleanup
             ;;
         install)
-            cmd_install
-            ;;
-        install-pyenv)
-            cmd_install_pyenv
-            ;;
-        install-homebrew)
-            cmd_install_homebrew
-            ;;
-        install-uv)
-            cmd_install_uv
-            ;;
-        install-conda)
-            cmd_install_conda
+            cmd_install "$@"
             ;;
         status)
             cmd_status
