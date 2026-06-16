@@ -47,6 +47,7 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
@@ -61,6 +62,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
+      - name: Execute post-setup (copyparty)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -179,6 +183,7 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
@@ -193,6 +198,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
+      - name: Execute post-setup (copyparty)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -272,6 +280,7 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
@@ -286,6 +295,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
+      - name: Execute post-setup (copyparty)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -360,6 +372,7 @@ jobs:
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.venv/global/bin" >> $GITHUB_PATH
         env:
           PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
       - name: Execute post-setup (pre-commit)
@@ -374,6 +387,9 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
+      - name: Execute post-setup (copyparty)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |

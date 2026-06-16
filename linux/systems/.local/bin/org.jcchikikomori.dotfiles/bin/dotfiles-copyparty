@@ -23,8 +23,8 @@ check_required_tools() {
     return 1
   fi
 
-  if ! command -v python3 >/dev/null 2>&1; then
-    log_error "python3 is required but not found"
+  if ! command -v python3 >/dev/null 2>&1 && ! command -v uv >/dev/null 2>&1; then
+    log_error "python3 or uv is required but not found"
     return 1
   fi
 }
@@ -34,8 +34,22 @@ ensure_pipx() {
     return 0
   fi
 
+  # Ensure ~/.local/bin is in PATH so pipx binary is discoverable
+  export PATH="$HOME/.local/bin:$PATH"
+
   log_info "pipx not found. Installing pipx for current user..."
-  python3 -m pip install --user --upgrade pipx
+
+  # Strategy 1: python3 -m pip
+  if command -v python3 >/dev/null 2>&1 && python3 -m pip --version >/dev/null 2>&1; then
+    python3 -m pip install --user --upgrade pipx
+  # Strategy 2: uv tool install
+  elif command -v uv >/dev/null 2>&1; then
+    log_info "pip not available, installing pipx via uv..."
+    uv tool install pipx
+  else
+    log_error "Neither pip nor uv found. Install Python first via dotfiles-python."
+    return 1
+  fi
 
   if [ ! -x "$HOME/.local/bin/pipx" ]; then
     log_error "pipx installation failed or ~/.local/bin/pipx is not executable"
