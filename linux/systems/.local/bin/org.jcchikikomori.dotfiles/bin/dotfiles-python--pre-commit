@@ -5,53 +5,46 @@ WORKDIR=$(mktemp -d)
 PYENV_ROOT="$HOME/.pyenv"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-setup() {
-  # Check if pre-commit is installed
-  if command -v pre-commit &> /dev/null; then
-      echo "pre-commit is already installed. Exiting..."
-      exit 0
-  else
-      echo "pre-commit not found. Installing pre-commit..."
-      if ! pip install --user pre-commit; then
-          echo "Error: Failed to install pre-commit." >&2
-          exit 1
-      fi
-  fi
-}
-
-# Detect Termux environment and install Python accordingly
-if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
-    echo ""
-    echo "=== Termux Environment Detected ==="
-    echo "Installing pre-commit via pip in Termux..."
-    setup
-else
-    # Check if pre-commit is already available
-    if command -v pre-commit &> /dev/null; then
+# Install pre-commit using the best available method.
+# Handles: pip/pip3 (with or without venv), uv tool, pyenv.
+install_pre_commit() {
+    # Already installed?
+    if command -v pre-commit >/dev/null 2>&1; then
         echo "pre-commit is already installed. Exiting..."
         exit 0
     fi
 
-    # Strategy 1: pip or pip3 is directly available
-    if command -v pip &> /dev/null; then
+    # Helper: install via pip, dropping --user if inside a venv
+    _pip_install() {
+        local pip_cmd="$1"
+        if [ -n "$VIRTUAL_ENV" ]; then
+            echo "  (inside venv, using pip without --user)"
+            $pip_cmd install pre-commit
+        else
+            $pip_cmd install --user pre-commit
+        fi
+    }
+
+    # Strategy 1: pip or pip3 directly available
+    if command -v pip >/dev/null 2>&1; then
         echo "Installing pre-commit via pip..."
-        pip install --user pre-commit || { echo "Error: Failed to install pre-commit via pip." >&2; exit 1; }
+        _pip_install pip || { echo "Error: Failed to install pre-commit via pip." >&2; exit 1; }
         exit 0
     fi
-    if command -v pip3 &> /dev/null; then
+    if command -v pip3 >/dev/null 2>&1; then
         echo "Installing pre-commit via pip3..."
-        pip3 install --user pre-commit || { echo "Error: Failed to install pre-commit via pip3." >&2; exit 1; }
+        _pip_install pip3 || { echo "Error: Failed to install pre-commit via pip3." >&2; exit 1; }
         exit 0
     fi
 
-    # Strategy 2: uv is available (uv tool install)
-    if command -v uv &> /dev/null; then
+    # Strategy 2: uv tool install (no --user issue, uv manages its own venvs)
+    if command -v uv >/dev/null 2>&1; then
         echo "Installing pre-commit via uv tool..."
         uv tool install pre-commit || { echo "Error: Failed to install pre-commit via uv." >&2; exit 1; }
         exit 0
     fi
 
-    # Strategy 3: pyenv is available
+    # Strategy 3: pyenv
     if [ -d "$PYENV_ROOT" ]; then
         echo "pyenv found. Loading pyenv environment..."
         export PATH="$PYENV_ROOT/bin:$PATH"
@@ -62,17 +55,44 @@ else
             echo "Setting Python $LATEST_VERSION as the global version..."
             pyenv global "$LATEST_VERSION"
             pyenv rehash
-            setup
+            if command -v pip >/dev/null 2>&1; then
+                _pip_install pip || { echo "Error: Failed to install pre-commit." >&2; exit 1; }
+            elif command -v pip3 >/dev/null 2>&1; then
+                _pip_install pip3 || { echo "Error: Failed to install pre-commit." >&2; exit 1; }
+            else
+                echo "Error: pip not found after loading pyenv." >&2
+                exit 1
+            fi
             exit 0
         else
-            echo "Error: No Python versions found in pyenv. Please install a Python version using pyenv." >&2
+            echo "Error: No Python versions found in pyenv." >&2
             exit 1
         fi
     fi
 
-    # No supported Python manager found
+    # Fallback: system python3 -m pip (last resort)
+    if command -v python3 >/dev/null 2>&1; then
+        echo "Falling back to python3 -m pip..."
+        if [ -n "$VIRTUAL_ENV" ]; then
+            python3 -m pip install pre-commit || { echo "Error: Failed to install pre-commit." >&2; exit 1; }
+        else
+            python3 -m pip install --user pre-commit || { echo "Error: Failed to install pre-commit." >&2; exit 1; }
+        fi
+        exit 0
+    fi
+
     echo "Error: No supported Python manager found." >&2
-    echo "  Supported: pip/pip3, uv, pyenv" >&2
+    echo "  Supported: pip/pip3, uv, pyenv, python3 -m pip" >&2
     echo "  Please install Python via dotfiles-python first." >&2
     exit 1
+}
+
+# Detect Termux environment
+if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+    echo ""
+    echo "=== Termux Environment Detected ==="
+    echo "Installing pre-commit via pip in Termux..."
+    install_pre_commit
+else
+    install_pre_commit
 fi
