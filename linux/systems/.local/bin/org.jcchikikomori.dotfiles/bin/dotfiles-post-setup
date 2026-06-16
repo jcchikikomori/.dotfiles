@@ -19,7 +19,6 @@ setup_directory() {
     cp -r "dotfiles-vim" "$WORKDIR"
     cp -r "dotfiles-git" "$WORKDIR"
     cp -r "dotfiles-nerf" "$WORKDIR"
-    cp -r "dotfiles-opencode" "$WORKDIR"
     echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
@@ -56,6 +55,8 @@ prompt_installation() {
         elif [ "$script" = "dotfiles-ruby" ]; then
             $WORKDIR/$script install
         elif [ "$script" = "dotfiles-copyparty" ]; then
+            $WORKDIR/$script install
+        elif [ "$script" = "dotfiles-opencode" ]; then
             $WORKDIR/$script install
         else
             sh $WORKDIR/$script
@@ -281,7 +282,16 @@ main() {
     fi
 
     if [ -z "$PREFIX" ] || ! echo "$PREFIX" | grep -q "com.termux"; then
-        prompt_installation "opencode AI coding agent" "dotfiles-opencode"
+        DOTFILES_DIR="${DOTFILES_PATH:-$HOME/.dotfiles}"
+        OPENCODE_SUBMODULE_SCRIPT="$DOTFILES_DIR/linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode"
+        if [ -f "$OPENCODE_SUBMODULE_SCRIPT" ]; then
+            cp "$OPENCODE_SUBMODULE_SCRIPT" "$WORKDIR/dotfiles-opencode"
+            chmod +x "$WORKDIR/dotfiles-opencode"
+            prompt_installation "opencode AI coding agent" "dotfiles-opencode"
+        else
+            echo "Warning: opencode submodule not initialized. Skipping."
+            echo "  Run: git submodule update --init --recursive"
+        fi
     fi
 
     echo 'Setting up oh-my-zsh...'
