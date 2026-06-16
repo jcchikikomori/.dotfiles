@@ -62,9 +62,6 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
-      - name: Execute post-setup (copyparty)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -198,9 +195,6 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
-      - name: Execute post-setup (copyparty)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -295,9 +289,6 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
-      - name: Execute post-setup (copyparty)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |
@@ -387,9 +378,6 @@ jobs:
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
-      - name: Execute post-setup (copyparty)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-copyparty install
       - name: Simulate Stowing
         if: always()
         run: |
