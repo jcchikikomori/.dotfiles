@@ -9,10 +9,10 @@
 # Commands:
 #   cleanup              Remove all Python managers and leftovers from $HOME
 #   install              Legacy pyenv-based installation (backward compatible)
-#   install-pyenv        Install via pyenv (source compilation, slow)
-#   install-homebrew     Install via Homebrew (pre-built, recommended for Linux)
-#   install-uv           Install via uv (pre-built, fast, recommended for Steam Deck)
-#   install-conda        Install via Miniconda (full conda ecosystem)
+#   install pyenv        Install via pyenv (source compilation, slow)
+#   install homebrew     Install via Homebrew (pre-built, recommended for Linux)
+#   install uv           Install via uv (pre-built, fast, recommended for Steam Deck)
+#   install conda        Install via Miniconda (full conda ecosystem)
 #   status               Show current Python environment status
 #   update               Update global Python version
 #
@@ -254,7 +254,7 @@ get_active_manager() {
         echo "conda"
     elif [ -n "$VIRTUAL_ENV" ] && echo "$VIRTUAL_ENV" | grep -q "uv"; then
         echo "uv"
-    elif [ -d "$HOME/.localuv"/share/ ]; then
+    elif [ -d "$HOME/.local/share/uv" ]; then
         # uv installed but not necessarily active
         echo "uv"
     elif [ -d "$HOMEBREW_ROOT" ] || [ -d "$HOMEBREW_ALT" ]; then
@@ -496,11 +496,30 @@ cmd_status() {
 }
 
 # -----------------------------------------------------------------------------
-# Command: install (legacy)
+# Command: install (Default)
 # -----------------------------------------------------------------------------
 cmd_install() {
-    log_info "Legacy install command - using pyenv"
-    cmd_install_pyenv
+    local method="${1:-${PYTHON_INSTALL_METHOD:-pyenv}}"
+    log_info "Install method: $method"
+    case "$method" in
+        uv)
+            cmd_install_uv
+            ;;
+        pyenv)
+            cmd_install_pyenv
+            ;;
+        homebrew)
+            cmd_install_homebrew
+            ;;
+        conda)
+            cmd_install_conda
+            ;;
+        *)
+            log_error "Unknown PYTHON_INSTALL_METHOD: $method"
+            log_error "Supported methods: pyenv, uv, homebrew, conda"
+            exit 1
+            ;;
+    esac
 }
 
 # -----------------------------------------------------------------------------
@@ -581,9 +600,6 @@ eval "$(pyenv init -)"
 PYENV_EOF
     fi
 
-    # Auto-add to ~/.profile.local if it exists
-    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-pyenv" "pyenv"
-
     echo ""
     log_info "pyenv installation complete!"
     echo ""
@@ -638,9 +654,6 @@ eval "$($hb_found/bin/brew shellenv)"
 export PATH="$hb_found/opt/python@3.11/bin:$hb_found/opt/python@3.12/bin:$PATH"
 HOMEBREW_EOF
     fi
-
-    # Auto-add to ~/.profile.local if it exists
-    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-homebrew" "Homebrew"
 
     echo ""
     log_info "Homebrew Python installation complete!"
@@ -703,20 +716,17 @@ UV_EOF
     uv venv "$HOME/.venv/global" --python 3.12
     uv pip install --python "$HOME/.venv/global/bin/python" pip pipx
 
-    # Auto-add to ~/.profile.local if it exists
-    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-uv" "uv"
-
-    # Auto-activate global venv system-wide
-    add_venv_activation_to_profile_local
-
     echo ""
     log_info "uv installation complete!"
     echo ""
     log_info "Global venv created at: $HOME/.venv/global"
-    log_info "It will auto-activate when you start a new shell."
-    echo ""
-    log_info "To activate immediately:"
+    echo "  To activate immediately:"
     echo "  source $HOME/.venv/global/bin/activate"
+    echo ""
+    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    echo ""
+    echo "  # Load uv from dotfiles-python"
+    echo "  [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv"
     echo ""
 }
 
@@ -780,9 +790,6 @@ CONDA_EOF
     # Create default environment
     log_info "Creating default conda environment..."
     conda create -y -n base python=3.11 2>/dev/null || true
-
-    # Auto-add to ~/.profile.local if it exists
-    add_to_profile_local "$DOTFILES_PYTHON_CONFIG_DIR/env-conda" "conda"
 
     echo ""
     log_info "Miniconda installation complete!"
@@ -889,10 +896,10 @@ main() {
         echo "Commands:"
         echo "  cleanup              Remove all Python managers and leftovers"
         echo "  install              Legacy pyenv-based installation"
-        echo "  install-pyenv        Install via pyenv (source compilation)"
-        echo "  install-homebrew     Install via Homebrew (pre-built)"
-        echo "  install-uv           Install via uv (pre-built, fast)"
-        echo "  install-conda        Install via Miniconda"
+        echo "  install pyenv        Install via pyenv (source compilation)"
+        echo "  install homebrew     Install via Homebrew (pre-built)"
+        echo "  install uv           Install via uv (pre-built, fast)"
+        echo "  install conda        Install via Miniconda"
         echo "  status               Show current Python environment status"
         echo "  update               Update global Python version"
         echo ""
@@ -933,19 +940,7 @@ main() {
             cmd_cleanup
             ;;
         install)
-            cmd_install
-            ;;
-        install-pyenv)
-            cmd_install_pyenv
-            ;;
-        install-homebrew)
-            cmd_install_homebrew
-            ;;
-        install-uv)
-            cmd_install_uv
-            ;;
-        install-conda)
-            cmd_install_conda
+            cmd_install "$@"
             ;;
         status)
             cmd_status
