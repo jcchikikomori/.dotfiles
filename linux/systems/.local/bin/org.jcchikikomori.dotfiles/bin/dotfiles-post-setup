@@ -59,7 +59,7 @@ prompt_installation() {
         elif [ "$script" = "dotfiles-opencode" ]; then
             $WORKDIR/$script install
         else
-            sh $WORKDIR/$script
+            $WORKDIR/$script
         fi
     else
         echo "Skipped. You can install $name later."
