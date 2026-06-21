@@ -179,6 +179,7 @@ setopt pushd_ignore_dups
 setopt pushdminus
 
 # Completion.
+fpath+=($HOME/.zsh/completions)
 autoload -Uz compinit
 compinit
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'       # Case insensitive tab completion

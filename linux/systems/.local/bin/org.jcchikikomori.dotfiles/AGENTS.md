@@ -56,3 +56,4 @@ dotfiles-arch install-packages
 - `arch/setup.sh` has been stripped of AUR-related logic; use `dotfiles-arch` for that instead.
 - On SteamOS, any command that modifies the system checks `steamos-readonly status` first. If the rootfs is read-only, the script exits with instructions to run `dotfiles-steamdeck writeable` or `sudo steamos-readonly disable`.
 - `install-yay` installs `debugedit` and `fakeroot` if missing, since SteamOS 3.8.10+ removed them but `makepkg` requires them to build `yay-bin`.
+- Zsh tab completion is available for `dotfiles-arch` via `~/.zsh/completions/_dotfiles-arch` after stowing the `zsh` package.
