@@ -59,8 +59,29 @@ is_installed() {
   pacman -Q "$1" >/dev/null 2>&1
 }
 
+# Check if the root filesystem is immutable (SteamOS)
+require_writeable_rootfs() {
+  if ! command -v steamos-readonly >/dev/null 2>&1; then
+    return 0
+  fi
+
+  set +e
+  readonly_status=$(steamos-readonly status 2>&1)
+  set -e
+
+  if echo "$readonly_status" | grep -q "enabled"; then
+    log_error "SteamOS rootfs is read-only."
+    log_error "Please make it writeable before running this command:"
+    log_error "  dotfiles-steamdeck writeable"
+    log_error "or:"
+    log_error "  sudo steamos-readonly disable"
+    return 1
+  fi
+}
+
 # Fix pacman keyring (generic Arch version based on steamos/setup.sh)
 fix_keyring() {
+  require_writeable_rootfs
   log_info "Checking pacman keyring status..."
 
   KEYRING_OK=0
@@ -102,6 +123,7 @@ fix_keyring() {
 
 # Add Chaotic AUR and CachyOS repositories
 setup_repositories() {
+  require_writeable_rootfs
   log_info "Setting up third-party repositories..."
 
   # Chaotic AUR
@@ -157,12 +179,21 @@ Include = /etc/pacman.d/cachyos-mirrorlist
 
 # Install yay (AUR helper)
 install_yay() {
+  require_writeable_rootfs
   if command -v yay >/dev/null 2>&1; then
     log_info "yay is already installed"
     return 0
   fi
 
   log_info "Installing yay..."
+
+  # SteamOS 3.8.10+ removed debugedit and fakeroot, which are required by makepkg.
+  for pkg in debugedit fakeroot; do
+    if ! is_installed "$pkg"; then
+      log_info "Installing $pkg (required to build yay on SteamOS 3.8.10+)..."
+      sudo pacman -S --noconfirm --needed "$pkg"
+    fi
+  done
 
   tmp_dir=$(mktemp -d)
   trap "rm -rf $tmp_dir" EXIT
@@ -180,9 +211,10 @@ install_yay() {
 
 # Install mandatory packages
 install_packages() {
-  log_info "Installing mandatory AUR packages..."
+  require_writeable_rootfs
+  log_info "Installing mandatory packages..."
 
-  for package_name in podman-docker-git xsel ncdu rclone; do
+  for package_name in xsel ncdu rclone; do
     if is_installed "$package_name"; then
       log_info "$package_name is already installed"
     else
@@ -194,6 +226,7 @@ install_packages() {
 
 # Install optional edge packages (common on SteamOS 3.8.10+ or other distros)
 install_packages_edge() {
+  require_writeable_rootfs
   log_info "Installing optional extra packages..."
 
   for package_name in dmemcg-booster kcgroups plasma-foreground-booster; do

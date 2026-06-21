@@ -13,7 +13,7 @@ setup / all              Full chain: fix-keyring → setup-repositories → inst
 fix-keyring              Initialize or repair the pacman keyring
 setup-repositories       Add Chaotic AUR and CachyOS repositories
 install-yay              Build and install yay-bin from AUR
-install-packages         Install mandatory packages (podman-docker-git, xsel, ncdu, rclone)
+install-packages         Install mandatory packages (xsel, ncdu, rclone)
 install-packages-edge    Install optional edge packages (dmemcg-booster, kcgroups, plasma-foreground-booster)
 help                     Show usage
 ```
@@ -54,3 +54,5 @@ dotfiles-arch install-packages
 - This script is **not** invoked by `start.sh`; it is intended to be run manually when AUR setup is needed.
 - SteamOS-specific handling (e.g. `steamos-readonly`, `holo` keyring) is kept in `dotfiles-steamdeck` and `steamos/setup.sh`, not here.
 - `arch/setup.sh` has been stripped of AUR-related logic; use `dotfiles-arch` for that instead.
+- On SteamOS, any command that modifies the system checks `steamos-readonly status` first. If the rootfs is read-only, the script exits with instructions to run `dotfiles-steamdeck writeable` or `sudo steamos-readonly disable`.
+- `install-yay` installs `debugedit` and `fakeroot` if missing, since SteamOS 3.8.10+ removed them but `makepkg` requires them to build `yay-bin`.
