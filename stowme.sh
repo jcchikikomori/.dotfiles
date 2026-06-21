@@ -284,10 +284,10 @@ if [ "$DETECTED_DISTRO" != "darwin" ] && [ "$DETECTED_DISTRO" != "termux" ]; the
   printf '\n'
   printf 'Note: If you use AI coding agents (OpenCode or Claude Code),\n'
   printf 'run the following to sync shared skills and instructions:\n'
-  printf '  devtools-ai sync\n'
+  printf '  devtools-opencode sync\n'
   printf '\n'
   printf 'For OpenCode, install MCP server binaries (pipx, npx, etc.):\n'
-  printf '  dotfiles-opencode install-mcps\n'
+  printf '  devtools-opencode mcp install\n'
 fi
 
 exit 0

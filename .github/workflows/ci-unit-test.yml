@@ -63,9 +63,9 @@ jobs:
         if: always()
         run: |
           sh stowme.sh
-      - name: Execute post-setup (dotfiles-opencode install)
+      - name: Execute post-setup (devtools-opencode install)
         run: |
-          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
+          ./linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -193,9 +193,9 @@ jobs:
         if: always()
         run: |
           sh stowme.sh
-      - name: Execute post-setup (dotfiles-opencode install)
+      - name: Execute post-setup (devtools-opencode install)
         run: |
-          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
+          ./linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -284,9 +284,9 @@ jobs:
         if: always()
         run: |
           sh stowme.sh
-      - name: Execute post-setup (dotfiles-opencode install)
+      - name: Execute post-setup (devtools-opencode install)
         run: |
-          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
+          ./linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="
@@ -370,9 +370,9 @@ jobs:
         if: always()
         run: |
           sh stowme.sh
-      - name: Execute post-setup (dotfiles-opencode install)
+      - name: Execute post-setup (devtools-opencode install)
         run: |
-          ./linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode install
+          ./linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-opencode install
       - name: Verify MCP binaries are in PATH
         run: |
           echo "=== Verifying pipx-installed MCP binaries ==="

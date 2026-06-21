@@ -1,0 +1,939 @@
+#!/bin/sh
+# devtools-opencode — Unified OpenCode setup and management tool
+# https://opencode.ai/docs
+#
+# Usage: devtools-opencode <command> [options]
+#
+# Commands:
+#   install              Install or update opencode and MCP dependencies
+#   update               Alias for install
+#   sync                 Sync shared AI agent configs to OpenCode
+#   mcp [install|list|status]  Manage MCP dependencies
+#   vscode [generate|apply|list|project|install]  VSCode MCP integration
+#   wizard               Launch interactive setup wizard
+#   clear-cache          Clear opencode cache
+#   status               Show opencode installation and config status
+#   env                  Show environment setup info
+#   help                 Show this help message
+#
+# This script consolidates opencode-related functionality from:
+#   - dotfiles-opencode (install, update, MCP management)
+#   - devtools-ai (config sync)
+#   - devtools-opencode-vscode (VSCode integration)
+
+set -eu
+
+# Source .profile.local for environment variables (MCP tokens, etc.)
+if [ -f "$HOME/.profile.local" ]; then
+    . "$HOME/.profile.local"
+fi
+
+# ─── Configuration ───────────────────────────────────────────────────────────
+
+OPENCODE_CONFIG="$HOME/.config/opencode/opencode.jsonc"
+OPENCODE_CONFIG_DIR="$HOME/.config/opencode"
+OPENCODE_ENV="$HOME/.config/opencode/.env"
+OPENCODE_AGENTS="$HOME/.config/opencode/AGENTS.md"
+OPENCODE_SKILLS="$HOME/.config/opencode/skills"
+
+# Determine dotfiles path
+if [ -n "${DOTFILES_PATH:-}" ]; then
+    DOTFILES_DIR="$DOTFILES_PATH"
+elif [ -d "$HOME/.dotfiles" ]; then
+    DOTFILES_DIR="$HOME/.dotfiles"
+else
+    SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+    DOTFILES_DIR=$(dirname "$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")")
+fi
+
+SHARED_DIR="${DOTFILES_DIR}/shared/ai-agents"
+SHARED_INSTRUCTIONS="${SHARED_DIR}/instructions/global.md"
+SHARED_SKILLS="${SHARED_DIR}/skills"
+
+# MCP registry paths
+OPENCODE_PACKAGE_DIR="${DOTFILES_DIR}/linux/opencode"
+LOCAL_MCPS_FILE="${OPENCODE_PACKAGE_DIR}/.config/opencode/mcps.json"
+SHARED_MCPS_FILE="${DOTFILES_DIR}/shared/ai-agents/mcps.json"
+
+if [ -f "$LOCAL_MCPS_FILE" ]; then
+    MCPS_FILE="$LOCAL_MCPS_FILE"
+else
+    MCPS_FILE="$SHARED_MCPS_FILE"
+fi
+
+# VSCode paths
+VSCODE_SETTINGS_DIR="${HOME}/.config/Code/User"
+VSCODE_SETTINGS="${VSCODE_SETTINGS_DIR}/settings.json"
+VSCODE_EXTENSIONS_DIR="${HOME}/.vscode/extensions"
+
+# ─── Helpers ─────────────────────────────────────────────────────────────────
+
+_log() {
+    printf '[devtools-opencode] %s\n' "$1"
+}
+
+_error() {
+    printf '[devtools-opencode] ERROR: %s\n' "$1" >&2
+    exit 1
+}
+
+_warn() {
+    printf '[devtools-opencode] WARN: %s\n' "$1" >&2
+}
+
+_usage() {
+    cat <<EOF
+devtools-opencode — Unified OpenCode setup and management tool
+
+USAGE:
+    devtools-opencode <command> [options]
+
+COMMANDS:
+    install              Install or update opencode and all MCP dependencies
+    update               Alias for install
+    sync                 Sync shared AI agent configs to OpenCode
+    mcp                  Manage MCP dependencies
+      install            Install/check all MCP dependencies
+      list               List configured MCPs
+      status             Show MCP installation status
+    vscode               VSCode MCP integration
+      generate           Generate VSCode MCP settings JSON
+      apply              Apply MCP settings to VSCode (backs up first)
+      list               List MCPs from opencode.jsonc
+      project [path]     Generate project-level .vscode/mcp.json
+      install [name]     Install MCPs via VSCode CLI
+    wizard               Launch interactive setup wizard
+    clear-cache          Clear opencode cache
+    status               Show opencode installation and config status
+    env                  Show environment setup info
+    help                 Show this help message
+
+EXAMPLES:
+    devtools-opencode install
+    devtools-opencode sync
+    devtools-opencode mcp install
+    devtools-opencode vscode apply
+    devtools-opencode vscode project ./my-project
+    devtools-opencode status
+
+PATHS:
+    Config:      ${OPENCODE_CONFIG_DIR}
+    Shared:      ${SHARED_DIR}
+    MCP registry: ${MCPS_FILE}
+
+EOF
+}
+
+_is_installed() {
+    command -v opencode > /dev/null 2>&1
+}
+
+_detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "${ID:-unknown}"
+    else
+        echo "unknown"
+    fi
+}
+
+_is_termux() {
+    [ -n "${PREFIX:-}" ] && echo "$PREFIX" | grep -q "com.termux"
+}
+
+_has_jq() {
+    command -v jq >/dev/null 2>&1
+}
+
+_json_tool() {
+    if command -v jq > /dev/null 2>&1; then
+        echo "jq"
+    elif command -v python3 > /dev/null 2>&1; then
+        echo "python3"
+    else
+        echo "none"
+    fi
+}
+
+# ─── Sync Functions (from devtools-ai) ───────────────────────────────────────
+
+_sync_opencode() {
+    _log "Syncing shared configs to OpenCode..."
+
+    if [ ! -d "$SHARED_DIR" ]; then
+        _error "Shared directory not found: $SHARED_DIR"
+    fi
+
+    mkdir -p "$OPENCODE_CONFIG_DIR"
+
+    # Copy instructions as AGENTS.md
+    if [ -f "$SHARED_INSTRUCTIONS" ]; then
+        cp "$SHARED_INSTRUCTIONS" "$OPENCODE_AGENTS"
+        _log "  Copied instructions -> AGENTS.md"
+    else
+        _warn "  No shared instructions found"
+    fi
+
+    # Copy skills
+    if [ -d "$SHARED_SKILLS" ]; then
+        if [ -d "$OPENCODE_SKILLS" ]; then
+            rm -rf "$OPENCODE_SKILLS"
+        fi
+        cp -r "$SHARED_SKILLS" "$OPENCODE_SKILLS"
+        skill_count=$(find "$OPENCODE_SKILLS" -maxdepth 1 -type d | wc -l)
+        skill_count=$((skill_count - 1))
+        _log "  Copied $skill_count skills"
+    else
+        _warn "  No shared skills found"
+    fi
+
+    _log "OpenCode sync complete"
+}
+
+# ─── MCP Functions (from dotfiles-opencode) ──────────────────────────────────
+
+# Extract all local MCP entries as lines
+_parse_mcps() {
+    local config="$1"
+    local tool
+    tool=$(_json_tool)
+
+    case "$tool" in
+        jq)
+            grep -v '^\s*//' "$config" | jq -r '
+              .mcp // {} | to_entries[] |
+              "name=\(.key) type=\(.value.type // "local") cmd0=\(.value.command[0] // "") cmd1=\(.value.command[1] // "") env=\(.value.environment // {} | keys | join(","))"
+            ' 2>/dev/null || true
+            ;;
+        python3)
+            grep -v '^\s*//' "$config" | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for name, entry in (data.get('mcp') or {}).items():
+    t = entry.get('type', 'local')
+    cmd = entry.get('command') or []
+    cmd0 = cmd[0] if len(cmd) > 0 else ''
+    cmd1 = cmd[1] if len(cmd) > 1 else ''
+    env_keys = ','.join((entry.get('environment') or {}).keys())
+    print(f'name={name} type={t} cmd0={cmd0} cmd1={cmd1} env={env_keys}')
+" 2>/dev/null || true
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
+# Parse MCPs from mcps.json format
+_parse_mcps_from_json() {
+    local json_file="$1"
+    local tool
+    tool=$(_json_tool)
+
+    [ ! -f "$json_file" ] && return 0
+
+    case "$tool" in
+        jq)
+            jq -r '.mcpServers // {} | to_entries[] |
+              . as $entry |
+              ($entry.value.type // "stdio") as $type |
+              (if $type == "http" then "remote"
+               elif ($entry.value.command // "") != "" then ($entry.value.command // "")
+               else "" end) as $cmd0 |
+              (($entry.value.args // [])[0] // "") as $cmd1 |
+              (($entry.value.env // []) | join(",")) as $env |
+              "name=\($entry.key) type=\($entry.value.installMethod // "pipx") cmd0=\($cmd0) cmd1=\($cmd1) env=\($env)"
+            ' "$json_file" 2>/dev/null || true
+            ;;
+        python3)
+            python3 -c "
+import json
+try:
+    with open('$json_file') as f:
+        data = json.load(f)
+    for name, mcp in (data.get('mcpServers') or {}).items():
+        mcp_type = mcp.get('type', 'stdio')
+        if mcp_type == 'http':
+            cmd0 = 'remote'
+        elif mcp.get('command'):
+            cmd0 = mcp['command']
+        else:
+            cmd0 = ''
+        cmd1 = (mcp.get('args') or [''])[0] if mcp.get('args') else ''
+        env_keys = ','.join(mcp.get('env') or [])
+        install_method = mcp.get('installMethod', 'pipx')
+        print(f'name={name} type={install_method} cmd0={cmd0} cmd1={cmd1} env={env_keys}')
+except Exception:
+    pass
+" 2>/dev/null || true
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
+
+_env_file_get() {
+    local key="$1"
+    local envfile="${2:-$OPENCODE_ENV}"
+    if [ ! -f "$envfile" ]; then
+        echo ""
+        return
+    fi
+    grep -m1 "^${key}=" "$envfile" 2>/dev/null | cut -d= -f2- || echo ""
+}
+
+_report_env() {
+    mcp_name="$1"
+    env_keys="$2"
+    [ -z "$env_keys" ] && return
+
+    echo "            ENV for $mcp_name:"
+    old_ifs="$IFS"
+    IFS=","
+    for key in $env_keys; do
+        IFS="$old_ifs"
+        [ -z "$key" ] && continue
+        val=""
+        eval "val=\${${key}:-}"
+        if [ -z "$val" ]; then
+            val=$(_env_file_get "$key")
+        fi
+        if [ -n "$val" ]; then
+            echo "              $key  → set ✓"
+        else
+            echo "              $key  → NOT SET  ← add to $OPENCODE_ENV"
+        fi
+        IFS=","
+    done
+    IFS="$old_ifs"
+}
+
+_process_mcp_line() {
+    line="$1"
+    [ -z "$line" ] && return 0
+
+    mcp_name=$(echo "$line" | sed 's/.*name=\([^ ]*\).*/\1/')
+    mcp_type=$(echo "$line" | sed 's/.*type=\([^ ]*\).*/\1/')
+    mcp_cmd0=$(echo "$line" | sed 's/.*cmd0=\([^ ]*\).*/\1/')
+    mcp_env=$(echo "$line" | sed 's/.*env=\([^ ]*\).*/\1/')
+
+    if [ "$mcp_type" = "remote" ] || [ "$mcp_cmd0" = "remote" ]; then
+        echo "  [skip]    $mcp_name  (remote — no install needed)"
+        _report_env "$mcp_name" "$mcp_env"
+        return 0
+    fi
+
+    if [ "$mcp_type" = "http" ]; then
+        echo "  [skip]    $mcp_name  (HTTP endpoint — no install needed)"
+        _report_env "$mcp_name" "$mcp_env"
+        return 0
+    fi
+
+    if [ -z "$mcp_cmd0" ]; then
+        echo "  [skip]    $mcp_name  (no command defined)"
+        return 0
+    fi
+
+    if [ "$mcp_cmd0" = "npx" ]; then
+        if command -v npx > /dev/null 2>&1; then
+            echo "  [npx]     $mcp_name  (auto-fetched via npx — OK)"
+        else
+            echo "  [warn]    $mcp_name  needs npx — install Node.js/npm first"
+        fi
+        _report_env "$mcp_name" "$mcp_env"
+        return 0
+    fi
+
+    if [ "$mcp_cmd0" = "uvx" ]; then
+        if command -v uvx > /dev/null 2>&1; then
+            echo "  [uvx]     $mcp_name  (auto-fetched via uvx — OK)"
+        else
+            echo "  [warn]    $mcp_name  needs uvx — install uv first"
+        fi
+        _report_env "$mcp_name" "$mcp_env"
+        return 0
+    fi
+
+    if [ "$mcp_cmd0" = "docker" ]; then
+        if command -v docker > /dev/null 2>&1; then
+            echo "  [docker]  $mcp_name  (Docker image — pull manually if needed)"
+        else
+            echo "  [warn]    $mcp_name  needs Docker — install Docker first"
+        fi
+        _report_env "$mcp_name" "$mcp_env"
+        return 0
+    fi
+
+    if command -v "$mcp_cmd0" > /dev/null 2>&1; then
+        echo "  [ok]      $mcp_name  ($mcp_cmd0 already in PATH)"
+        _report_env "$mcp_name" "$mcp_env"
+        return 0
+    fi
+
+    echo "  [pipx]    $mcp_name  installing '$mcp_cmd0' via pipx..."
+    if pipx install "$mcp_cmd0" 2>&1 | sed 's/^/              /'; then
+        echo "  [done]    $mcp_name  installed OK"
+    else
+        echo "  [fail]    $mcp_name  pipx install '$mcp_cmd0' failed"
+        echo "            If the package name differs, install manually:"
+        echo "            pipx install <correct-package-name>"
+    fi
+    _report_env "$mcp_name" "$mcp_env"
+}
+
+do_mcp_install() {
+    _log "Installing MCP dependencies..."
+
+    if _is_termux; then
+        _log "Termux detected — skipping MCP dependency install."
+        echo "  Install MCP packages manually with: pip install <package>"
+        return
+    fi
+
+    tool=$(_json_tool)
+    if [ "$tool" = "none" ]; then
+        _error "Neither jq nor python3 found — cannot parse configs."
+    fi
+
+    if ! command -v pipx > /dev/null 2>&1; then
+        _error "pipx not found. Install with: pip install --user pipx"
+    fi
+
+    if [ -f "$MCPS_FILE" ]; then
+        _log "Using MCP registry: $MCPS_FILE"
+        echo ""
+        global_parse_tmp=$(mktemp)
+        _parse_mcps_from_json "$MCPS_FILE" > "$global_parse_tmp"
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            _process_mcp_line "$line"
+        done < "$global_parse_tmp"
+        rm -f "$global_parse_tmp"
+    elif [ -f "$OPENCODE_CONFIG" ]; then
+        _log "Parsing $OPENCODE_CONFIG ..."
+        echo ""
+        global_parse_tmp=$(mktemp)
+        _parse_mcps "$OPENCODE_CONFIG" > "$global_parse_tmp"
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            _process_mcp_line "$line"
+        done < "$global_parse_tmp"
+
+        # Project config
+        project_config="$PWD/.opencode/opencode.jsonc"
+        if [ -f "$project_config" ]; then
+            echo ""
+            _log "Scanning project config: $project_config ..."
+            echo ""
+            project_parse_tmp=$(mktemp)
+            _parse_mcps "$project_config" > "$project_parse_tmp"
+            while IFS= read -r pline; do
+                [ -z "$pline" ] && continue
+                p_name=$(echo "$pline" | sed 's/.*name=\([^ ]*\).*/\1/')
+                p_cmd0=$(echo "$pline" | sed 's/.*cmd0=\([^ ]*\).*/\1/')
+                p_env=$(echo "$pline" | sed 's/.*env=\([^ ]*\).*/\1/')
+
+                resolved_line="$pline"
+                resolved_cmd0="$p_cmd0"
+                resolved_env="$p_env"
+                if [ -z "$p_cmd0" ]; then
+                    global_line=$(grep "^name=${p_name} " "$global_parse_tmp" || true)
+                    if [ -z "$global_line" ]; then
+                        echo "  [skip]    $p_name  (no command — define in global config)"
+                        continue
+                    fi
+                    resolved_line="$global_line"
+                    resolved_cmd0=$(echo "$global_line" | sed 's/.*cmd0=\([^ ]*\).*/\1/')
+                    if [ -z "$resolved_env" ]; then
+                        resolved_env=$(echo "$global_line" | sed 's/.*env=\([^ ]*\).*/\1/')
+                    fi
+                    resolved_line=$(echo "$resolved_line" | sed "s/ env=[^ ]*/ env=${resolved_env}/")
+                fi
+
+                global_has=$(grep " cmd0=${resolved_cmd0} " "$global_parse_tmp" || true)
+                if [ -n "$global_has" ]; then
+                    echo "  [ok]      $p_name  (covered by global config)"
+                    _report_env "$p_name" "$resolved_env"
+                    continue
+                fi
+                _process_mcp_line "$resolved_line"
+            done < "$project_parse_tmp"
+            rm -f "$project_parse_tmp"
+        fi
+        rm -f "$global_parse_tmp"
+    else
+        _error "No MCP config found. Expected: $MCPS_FILE or $OPENCODE_CONFIG"
+    fi
+
+    echo ""
+    _log "MCP dependency check complete."
+    echo ""
+    echo "  Next steps:"
+    echo "  1. Fill in missing ENV values in $OPENCODE_ENV"
+    echo "  2. Enable desired MCPs in $OPENCODE_CONFIG"
+    echo "     or run: devtools-opencode wizard"
+    echo ""
+}
+
+do_mcp_list() {
+    _log "Configured MCPs:"
+    echo ""
+
+    if [ ! -f "$OPENCODE_CONFIG" ]; then
+        _warn "No opencode.jsonc found"
+        return 1
+    fi
+
+    if ! _has_jq; then
+        _error "jq is required for listing MCPs"
+    fi
+
+    grep -v '^\s*//' "$OPENCODE_CONFIG" | jq -r '
+        if .mcp then
+            .mcp | to_entries[] |
+            "  \(.key)\n    type:   \(.value.type // "local")\n    enabled: \(.value.enabled // true)"
+        else
+            "  (no MCPs configured)"
+        end
+    ' 2>/dev/null || echo "  (failed to parse MCPs)"
+}
+
+do_mcp_status() {
+    _log "MCP Status:"
+    echo ""
+
+    if [ ! -f "$MCPS_FILE" ] && [ ! -f "$OPENCODE_CONFIG" ]; then
+        _warn "No MCP config found"
+        return 1
+    fi
+
+    tool=$(_json_tool)
+    if [ "$tool" = "none" ]; then
+        _error "jq or python3 required"
+    fi
+
+    # Show registry source
+    if [ -f "$MCPS_FILE" ]; then
+        echo "Registry: $MCPS_FILE"
+        echo ""
+        global_parse_tmp=$(mktemp)
+        _parse_mcps_from_json "$MCPS_FILE" > "$global_parse_tmp"
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            mcp_name=$(echo "$line" | sed 's/.*name=\([^ ]*\).*/\1/')
+            mcp_cmd0=$(echo "$line" | sed 's/.*cmd0=\([^ ]*\).*/\1/')
+            if [ -z "$mcp_cmd0" ] || [ "$mcp_cmd0" = "remote" ]; then
+                echo "  $mcp_name  → remote/HTTP (no binary needed)"
+            elif command -v "$mcp_cmd0" > /dev/null 2>&1; then
+                echo "  $mcp_name  → $mcp_cmd0 ✓"
+            else
+                echo "  $mcp_name  → $mcp_cmd0 ✗ (not installed)"
+            fi
+        done < "$global_parse_tmp"
+        rm -f "$global_parse_tmp"
+    fi
+    echo ""
+}
+
+# ─── VSCode Functions (from devtools-opencode-vscode) ────────────────────────
+
+do_vscode_list() {
+    if [ ! -f "$OPENCODE_CONFIG" ]; then
+        _error "opencode.jsonc not found at $OPENCODE_CONFIG"
+    fi
+
+    if ! _has_jq; then
+        _error "jq is required but not installed"
+    fi
+
+    _log "Enabled MCPs from $OPENCODE_CONFIG:"
+    echo ""
+    grep -v '^\s*//' "$OPENCODE_CONFIG" | jq -r '
+        if .mcp then
+            .mcp | to_entries[] |
+            select(.value.enabled == true) |
+            "  \(.key) (\(.value.type // "local"))"
+        else
+            "  (none)"
+        end
+    ' 2>/dev/null || echo "  (failed to parse)"
+}
+
+do_vscode_generate() {
+    if [ ! -f "$OPENCODE_CONFIG" ]; then
+        _log "No opencode.jsonc found"
+        echo '{}'
+        return
+    fi
+
+    if ! _has_jq; then
+        _log "jq not available, outputting empty config"
+        echo '{"mcpServers": {}}'
+        return
+    fi
+
+    mcp_tmp=$(mktemp)
+    grep -v '^\s*//' "$OPENCODE_CONFIG" | jq '
+        if .mcp then
+            .mcp | to_entries |
+            map({
+                key: .key,
+                value: {
+                    command: (if .value.type == "local" then .value.command else null end),
+                    url: (if .value.type == "remote" then .value.url else null end),
+                    enabled: (.value.enabled // false)
+                }
+            }) | from_entries
+        else
+            {}
+        end
+    ' > "$mcp_tmp" 2>/dev/null || echo '{}' > "$mcp_tmp"
+
+    result=$(cat "$mcp_tmp")
+    rm -f "$mcp_tmp"
+
+    echo '{"mcpServers": '"$result"'}'
+}
+
+do_vscode_apply() {
+    _log "Generating VSCode MCP settings..."
+
+    if [ -f "$VSCODE_SETTINGS" ]; then
+        local backup
+        backup="${VSCODE_SETTINGS}.backup.$(date +%Y%m%d%H%M%S)"
+        cp "$VSCODE_SETTINGS" "$backup"
+        _log "Backed up existing settings to $backup"
+    fi
+
+    local mcp_json
+    mcp_json=$(do_vscode_generate)
+
+    local existing_settings="{}"
+    if [ -f "$VSCODE_SETTINGS" ]; then
+        existing_settings=$(cat "$VSCODE_SETTINGS")
+    fi
+
+    mkdir -p "$VSCODE_SETTINGS_DIR"
+
+    if _has_jq; then
+        mcp_tmp=$(mktemp)
+        echo "$mcp_json" > "$mcp_tmp"
+        echo "$existing_settings" | jq -s '.[0] * .[1]' - "$mcp_tmp" > "$VSCODE_SETTINGS"
+        rm -f "$mcp_tmp"
+    else
+        echo "$mcp_json" > "$VSCODE_SETTINGS"
+    fi
+
+    _log "Applied MCP settings to $VSCODE_SETTINGS"
+    _log "Restart VSCode to load the new MCP servers"
+}
+
+do_vscode_project() {
+    local project_path="${1:-.}"
+
+    case "$project_path" in
+        /*) ;;
+        ~*)
+            project_path="${HOME}${project_path#~}"
+            ;;
+        *)
+            project_path="$(pwd)/${project_path}"
+            ;;
+    esac
+
+    local vscode_dir="${project_path}/.vscode"
+    local mcp_json_file="${vscode_dir}/mcp.json"
+
+    if [ ! -d "$project_path" ]; then
+        _error "Directory does not exist: $project_path"
+    fi
+
+    if [ ! -d "$vscode_dir" ]; then
+        mkdir -p "$vscode_dir"
+        _log "Created .vscode directory"
+    fi
+
+    if [ -f "$mcp_json_file" ]; then
+        local backup
+        backup="${mcp_json_file}.backup.$(date +%Y%m%d%H%M%S)"
+        cp "$mcp_json_file" "$backup"
+        _log "Backed up existing mcp.json to $backup"
+    fi
+
+    if [ ! -f "$OPENCODE_CONFIG" ]; then
+        _error "opencode.jsonc not found"
+    fi
+
+    if ! _has_jq; then
+        _error "jq is required for mcp.json generation"
+    fi
+
+    mcp_tmp=$(mktemp)
+    grep -v '^\s*//' "$OPENCODE_CONFIG" | jq '
+        if .mcp then
+            .mcp | to_entries |
+            map({
+                name: .key,
+                type: .value.type,
+                command: (if .value.type == "local" then .value.command else null end),
+                url: (if .value.type == "remote" then .value.url else null end),
+                enabled: (.value.enabled // false)
+            })
+        else
+            []
+        end
+    ' > "$mcp_tmp" 2>/dev/null || echo '[]' > "$mcp_tmp"
+
+    result=$(cat "$mcp_tmp")
+    rm -f "$mcp_tmp"
+
+    if [ "$result" = "[]" ] || [ -z "$result" ]; then
+        echo '{"servers": {}}' > "$mcp_json_file"
+    else
+        echo "$result" | jq '
+            map({
+                key: .name,
+                value: {
+                    command: .command,
+                    url: .url
+                }
+            }) | from_entries | {"servers": .}
+        ' > "$mcp_json_file" 2>/dev/null || echo '{"servers": {}}' > "$mcp_json_file"
+    fi
+
+    _log "Generated mcp.json at $mcp_json_file"
+}
+
+# ─── Install/Update Functions ────────────────────────────────────────────────
+
+do_install() {
+    if _is_installed; then
+        _log "opencode is already installed: $(opencode --version 2>/dev/null || true)"
+    else
+        DISTRO=$(_detect_distro)
+        case "$DISTRO" in
+            arch | manjaro)
+                if command -v yay > /dev/null 2>&1; then
+                    _log "Installing opencode via yay (AUR)..."
+                    yay -S --noconfirm opencode-bin
+                else
+                    _log "Installing opencode via install script..."
+                    XDG_BIN_DIR="$HOME/.local/bin" curl -fsSL https://opencode.ai/install | bash
+                fi
+                ;;
+            *)
+                _log "Installing opencode via install script..."
+                XDG_BIN_DIR="$HOME/.local/bin" curl -fsSL https://opencode.ai/install | bash
+                ;;
+        esac
+        _log "Installation complete."
+    fi
+
+    # Copy env template
+    ENV_EXAMPLE="$HOME/.config/opencode/.env.example"
+    if [ -f "$ENV_EXAMPLE" ] && [ ! -f "$OPENCODE_ENV" ]; then
+        cp "$ENV_EXAMPLE" "$OPENCODE_ENV"
+        _log "Created $OPENCODE_ENV from template."
+        echo "  Edit it to add your MCP tokens."
+    fi
+
+    # Chain into MCP install
+    do_mcp_install
+
+    echo ""
+    echo "  Next steps:"
+    echo "  1. Run: opencode"
+    echo "  2. Inside opencode, run: /connect"
+    echo "  3. Select your provider and follow the auth flow."
+    echo "  4. Run: /models  to pick your preferred model."
+    echo ""
+    echo "  To add MCPs or create agents, run: devtools-opencode wizard"
+    echo ""
+}
+
+do_update() {
+    do_install
+}
+
+# ─── Cache Management ────────────────────────────────────────────────────────
+
+do_clear_cache() {
+    OPENCODE_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/opencode"
+    _log "Clearing OpenCode cache..."
+    echo ""
+
+    if [ -d "$OPENCODE_CACHE" ]; then
+        echo "  Cache location: $OPENCODE_CACHE"
+        if command -v du > /dev/null 2>&1; then
+            cache_size=$(du -sh "$OPENCODE_CACHE" 2>/dev/null | cut -f1)
+            echo "  Current size:   $cache_size"
+        fi
+        echo ""
+        rm -rf "$OPENCODE_CACHE"
+        if [ ! -d "$OPENCODE_CACHE" ]; then
+            _log "Cache cleared successfully"
+        else
+            _warn "Cache directory still exists"
+        fi
+    else
+        _log "No cache found at $OPENCODE_CACHE"
+    fi
+    echo ""
+}
+
+# ─── Status ──────────────────────────────────────────────────────────────────
+
+do_status() {
+    echo ""
+    echo "=== OpenCode Status ==="
+    echo ""
+
+    # Installation
+    if _is_installed; then
+        echo "Installation: $(opencode --version 2>/dev/null || echo 'installed')"
+    else
+        echo "Installation: not installed"
+    fi
+
+    # Config
+    echo ""
+    echo "Config:"
+    if [ -f "$OPENCODE_CONFIG" ]; then
+        echo "  opencode.jsonc: $OPENCODE_CONFIG ✓"
+    else
+        echo "  opencode.jsonc: not found"
+    fi
+    if [ -f "$OPENCODE_AGENTS" ]; then
+        echo "  AGENTS.md:      $OPENCODE_AGENTS ✓"
+    else
+        echo "  AGENTS.md:      not found"
+    fi
+    if [ -d "$OPENCODE_SKILLS" ]; then
+        skill_count=$(find -L "$OPENCODE_SKILLS" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+        echo "  Skills:         $skill_count skill(s) ✓"
+    else
+        echo "  Skills:         not found"
+    fi
+
+    # MCPs
+    echo ""
+    echo "MCPs:"
+    if [ -f "$MCPS_FILE" ]; then
+        echo "  Registry:       $MCPS_FILE ✓"
+    elif [ -f "$OPENCODE_CONFIG" ]; then
+        echo "  Registry:       using opencode.jsonc"
+    else
+        echo "  Registry:       not found"
+    fi
+
+    # Environment
+    echo ""
+    echo "Environment:"
+    if [ -f "$OPENCODE_ENV" ]; then
+        echo "  .env file:      $OPENCODE_ENV ✓"
+    else
+        echo "  .env file:      not found"
+    fi
+
+    echo ""
+}
+
+# ─── Environment Info ────────────────────────────────────────────────────────
+
+do_env() {
+    echo ""
+    echo "=== OpenCode Environment ==="
+    echo ""
+    echo "Config directory:  $OPENCODE_CONFIG_DIR"
+    echo "Config file:       $OPENCODE_CONFIG"
+    echo "Agents file:       $OPENCODE_AGENTS"
+    echo "Skills directory:  $OPENCODE_SKILLS"
+    echo "Environment file:  $OPENCODE_ENV"
+    echo "MCP registry:      $MCPS_FILE"
+    echo ""
+    echo "To load environment variables in your current shell:"
+    echo "  set -a; . $OPENCODE_ENV; set +a"
+    echo ""
+    echo "Or add to your ~/.zshrc / ~/.bashrc:"
+    echo "  [ -f $OPENCODE_ENV ] && set -a && . $OPENCODE_ENV && set +a"
+    echo ""
+}
+
+# ─── Wizard ──────────────────────────────────────────────────────────────────
+
+do_wizard() {
+    if command -v dotfiles-opencode-wizard > /dev/null 2>&1; then
+        dotfiles-opencode-wizard
+    else
+        _warn "dotfiles-opencode-wizard not found in PATH"
+        echo "  Make sure the opencode package is stowed."
+    fi
+}
+
+# ─── Main ────────────────────────────────────────────────────────────────────
+
+main() {
+    local command="${1:-help}"
+    local subcommand="${2:-}"
+    local arg1="${3:-}"
+
+    case "$command" in
+        install)
+            do_install
+            ;;
+        update)
+            do_update
+            ;;
+        sync)
+            _sync_opencode
+            ;;
+        mcp)
+            case "$subcommand" in
+                install) do_mcp_install ;;
+                list) do_mcp_list ;;
+                status) do_mcp_status ;;
+                *)
+                    echo "Usage: devtools-opencode mcp {install|list|status}"
+                    exit 1
+                    ;;
+            esac
+            ;;
+        vscode)
+            case "$subcommand" in
+                list) do_vscode_list ;;
+                generate) do_vscode_generate ;;
+                apply) do_vscode_apply ;;
+                project) do_vscode_project "$arg1" ;;
+                install)
+                    _warn "VSCode MCP install via CLI requires 'code --add-mcp'"
+                    echo "  Use 'devtools-opencode vscode apply' to add to settings.json instead"
+                    ;;
+                *)
+                    echo "Usage: devtools-opencode vscode {list|generate|apply|project|install}"
+                    exit 1
+                    ;;
+            esac
+            ;;
+        wizard)
+            do_wizard
+            ;;
+        clear-cache)
+            do_clear_cache
+            ;;
+        status)
+            do_status
+            ;;
+        env)
+            do_env
+            ;;
+        help|--help|-h)
+            _usage
+            ;;
+        *)
+            _error "Unknown command: $command. Use 'help' for usage information."
+            ;;
+    esac
+}
+
+main "$@"

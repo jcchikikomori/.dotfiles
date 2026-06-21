@@ -1,0 +1,49 @@
+#compdef devtools-opencode
+
+# Zsh completion for devtools-opencode
+
+_devtools-opencode() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '(-h --help)'{-h,--help}'[Show help]' \
+    '1: :->command' \
+    '*:: :->args'
+
+  case "$state" in
+    command)
+      _values 'devtools-opencode command' \
+        'install[Install or update opencode and MCP dependencies]' \
+        'update[Alias for install]' \
+        'sync[Sync shared AI agent configs to OpenCode]' \
+        'mcp[Manage MCP dependencies]' \
+        'vscode[VSCode MCP integration]' \
+        'wizard[Launch interactive setup wizard]' \
+        'clear-cache[Clear opencode cache]' \
+        'status[Show opencode installation and config status]' \
+        'env[Show environment setup info]' \
+        'help[Show help message]'
+      ;;
+    args)
+      case "$line[1]" in
+        mcp)
+          _values 'mcp subcommand' \
+            'install[Install/check all MCP dependencies]' \
+            'list[List configured MCPs]' \
+            'status[Show MCP installation status]'
+          ;;
+        vscode)
+          _values 'vscode subcommand' \
+            'generate[Generate VSCode MCP settings JSON]' \
+            'apply[Apply MCP settings to VSCode (backs up first)]' \
+            'list[List MCPs from opencode.jsonc]' \
+            'project[Generate project-level .vscode/mcp.json]' \
+            'install[Install MCPs via VSCode CLI]'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_devtools-opencode "$@"
