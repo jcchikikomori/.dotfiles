@@ -1,0 +1,36 @@
+#compdef dotfiles-arch
+
+# Zsh completion for dotfiles-arch
+
+_dotfiles-arch() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '(-o --optional)'{-o,--optional}'[Also install optional edge packages with setup]' \
+    '(-h --help)'{-h,--help}'[Show help]' \
+    '1: :->command' \
+    '*:: :->args'
+
+  case "$state" in
+    command)
+      _values 'dotfiles-arch command' \
+        'setup[Run full setup]' \
+        'fix-keyring[Initialize or repair pacman keyring]' \
+        'setup-repositories[Add Chaotic AUR and CachyOS repositories]' \
+        'install-yay[Install yay (AUR helper)]' \
+        'install-packages[Install mandatory packages]' \
+        'install-packages-edge[Install optional edge packages]' \
+        'help[Show help]'
+      ;;
+    args)
+      case "$line[1]" in
+        setup|all)
+          _arguments '(-o --optional)'{-o,--optional}'[Also install optional edge packages]'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_dotfiles-arch "$@"
