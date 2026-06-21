@@ -13,7 +13,7 @@ setup / all              Full chain: fix-keyring → setup-repositories → inst
 fix-keyring              Initialize or repair the pacman keyring
 setup-repositories       Add Chaotic AUR and CachyOS repositories
 install-yay              Build and install yay-bin from AUR
-install-packages         Install mandatory packages (xsel, ncdu, rclone)
+install-packages         Install mandatory packages (podman-docker, xsel, ncdu, rclone)
 install-packages-edge    Install optional edge packages (dmemcg-booster, kcgroups, plasma-foreground-booster)
 help                     Show usage
 ```

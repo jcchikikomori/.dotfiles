@@ -214,7 +214,7 @@ install_packages() {
   require_writeable_rootfs
   log_info "Installing mandatory packages..."
 
-  for package_name in xsel ncdu rclone; do
+  for package_name in podman-docker xsel ncdu rclone; do
     if is_installed "$package_name"; then
       log_info "$package_name is already installed"
     else
