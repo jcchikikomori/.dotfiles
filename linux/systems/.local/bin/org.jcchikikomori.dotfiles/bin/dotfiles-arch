@@ -178,8 +178,8 @@ install_yay() {
   log_info "yay installed successfully"
 }
 
-# Install mandatory AUR packages
-install_aur_packages() {
+# Install mandatory packages
+install_packages() {
   log_info "Installing mandatory AUR packages..."
 
   for package_name in podman-docker-git xsel ncdu rclone; do
@@ -192,13 +192,13 @@ install_aur_packages() {
   done
 }
 
-# Install optional extra packages (common on SteamOS 3.8.10+)
-install_extra_packages() {
+# Install optional edge packages (common on SteamOS 3.8.10+ or other distros)
+install_packages_edge() {
   log_info "Installing optional extra packages..."
 
   for package_name in dmemcg-booster kcgroups plasma-foreground-booster; do
     if is_installed "$package_name"; then
-      log_info "$package_name is already installed (SteamOS 3.8.10+ may include this)"
+      log_info "$package_name is already installed (Your OS/Distro may include this)"
     else
       log_info "Installing $package_name..."
       pacman_install "-S --noconfirm --noprogressbar" "$package_name"
@@ -213,10 +213,10 @@ run_setup() {
   fix_keyring
   setup_repositories
   install_yay
-  install_aur_packages
+  install_packages
 
   if [ "$install_optional" = "true" ]; then
-    install_extra_packages
+    install_packages_edge
   fi
 
   log_info "Setup complete."
@@ -226,16 +226,16 @@ usage() {
   echo "Usage: dotfiles-arch {command} [options]"
   echo ""
   echo "Commands:"
-  echo "  setup                Run full setup (keyring, repos, yay, AUR packages)"
-  echo "  fix-keyring          Initialize / repair pacman keyring"
-  echo "  setup-repositories   Add Chaotic AUR and CachyOS repositories"
-  echo "  install-yay          Install yay (AUR helper)"
-  echo "  install-aur-packages Install mandatory AUR packages"
-  echo "  install-extra-packages Install optional extra packages"
-  echo "  help                 Show this help message"
+  echo "  setup                  Run full setup (keyring, repos, yay, packages)"
+  echo "  fix-keyring            Initialize / repair pacman keyring"
+  echo "  setup-repositories     Add Chaotic AUR and CachyOS repositories"
+  echo "  install-yay            Install yay (AUR helper)"
+  echo "  install-packages       Install mandatory packages"
+  echo "  install-packages-edge  Install optional edge packages"
+  echo "  help                   Show this help message"
   echo ""
   echo "Options:"
-  echo "  -o, --optional       Also install optional extra packages with 'setup'"
+  echo "  -o, --optional       Also install optional edge packages with 'setup'"
 }
 
 main() {
@@ -289,11 +289,11 @@ main() {
     install-yay)
       install_yay
       ;;
-    install-aur-packages)
-      install_aur_packages
+    install-packages)
+      install_packages
       ;;
-    install-extra-packages)
-      install_extra_packages
+    install-packages-edge)
+      install_packages_edge
       ;;
     help)
       usage
