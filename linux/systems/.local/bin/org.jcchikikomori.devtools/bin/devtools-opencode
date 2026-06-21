@@ -102,6 +102,10 @@ COMMANDS:
       list               List MCPs from opencode.jsonc
       project [path]     Generate project-level .vscode/mcp.json
       install [name]     Install MCPs via VSCode CLI
+    omo                  Oh-My-OpenCode plugin management
+      install            Install/configure oh-my-opencode
+      restore            Re-apply saved oh-my-opencode config after stow
+      status             Show oh-my-opencode status
     wizard               Launch interactive setup wizard
     clear-cache          Clear opencode cache
     status               Show opencode installation and config status
@@ -114,6 +118,8 @@ EXAMPLES:
     devtools-opencode mcp install
     devtools-opencode vscode apply
     devtools-opencode vscode project ./my-project
+    devtools-opencode omo install
+    devtools-opencode omo restore
     devtools-opencode status
 
 PATHS:
@@ -860,6 +866,235 @@ do_env() {
     echo ""
 }
 
+# ─── Oh-My-OpenCode (OMO) ────────────────────────────────────────────────────
+
+OMO_PREFS_FILE="${HOME}/.local/share/devtools-opencode/omo.prefs"
+OMO_BACKUP_DIR="${HOME}/.backups/opencode/omo"
+
+_ensure_omo_dirs() {
+    mkdir -p "$(dirname "$OMO_PREFS_FILE")"
+    mkdir -p "$OMO_BACKUP_DIR"
+}
+
+_omo_is_installed() {
+    [ -f "$HOME/.config/opencode/oh-my-openagent.json" ] || \
+    [ -f "$HOME/.config/opencode/oh-my-opencode.json" ]
+}
+
+_omo_backup_state() {
+    _ensure_omo_dirs
+    local timestamp
+    timestamp=$(date +%Y%m%d-%H%M%S)
+    local backup_subdir="$OMO_BACKUP_DIR/$timestamp"
+    mkdir -p "$backup_subdir"
+
+    # Backup oh-my-opencode real files (not symlinks)
+    for file in "$HOME/.config/opencode/oh-my-openagent.json" \
+                "$HOME/.config/opencode/oh-my-opencode.json"; do
+        if [ -f "$file" ] && [ ! -L "$file" ]; then
+            cp "$file" "$backup_subdir/"
+            _log "  Backed up $(basename "$file")"
+        fi
+    done
+
+    # Backup backup files created by oh-my-opencode
+    for backup in "$HOME/.config/opencode"/oh-my-*.json.backup-*; do
+        if [ -f "$backup" ] && [ ! -L "$backup" ]; then
+            cp "$backup" "$backup_subdir/"
+        fi
+    done
+
+    # Backup prefs if they exist
+    if [ -f "$OMO_PREFS_FILE" ]; then
+        cp "$OMO_PREFS_FILE" "$backup_subdir/omo.prefs"
+    fi
+
+    if [ -d "$backup_subdir" ] && [ "$(ls -A "$backup_subdir")" ]; then
+        _log "OMO state backed up to $backup_subdir"
+    fi
+}
+
+_omo_restore_state() {
+    if [ ! -f "$OMO_PREFS_FILE" ]; then
+        _warn "No OMO preferences found. Run 'devtools-opencode omo install' first."
+        return 1
+    fi
+
+    . "$OMO_PREFS_FILE"
+
+    if [ -z "${OMO_FLAGS:-}" ]; then
+        _warn "No saved install flags found in prefs."
+        return 1
+    fi
+
+    _log "Restoring oh-my-opencode with saved preferences..."
+    _log "  Flags: $OMO_FLAGS"
+
+    # Re-run installer with saved flags
+    if command -v bunx > /dev/null 2>&1; then
+        bunx oh-my-opencode install --no-tui $OMO_FLAGS
+    elif command -v npx > /dev/null 2>&1; then
+        npx oh-my-opencode install --no-tui $OMO_FLAGS
+    else
+        _error "Neither bunx nor npx found. Cannot restore oh-my-opencode."
+    fi
+}
+
+do_omo_install() {
+    _ensure_omo_dirs
+
+    local flags=""
+    local interactive=1
+
+    # Check for --no-tui flag
+    if [ "${1:-}" = "--no-tui" ] || [ "${2:-}" = "--no-tui" ]; then
+        interactive=0
+    fi
+
+    if [ "$interactive" -eq 1 ]; then
+        # Interactive mode: prompt for subscriptions
+        echo ""
+        echo "=== Oh-My-OpenCode Setup ==="
+        echo ""
+        echo "Answer the following questions about your subscriptions:"
+        echo ""
+
+        # Claude
+        printf "Do you have a Claude Pro/Max subscription? [y/n/max20]: "
+        read -r claude_ans
+        case "$claude_ans" in
+            [Yy]*) flags="$flags --claude=yes" ;;
+            [Mm]*) flags="$flags --claude=max20" ;;
+            *) flags="$flags --claude=no" ;;
+        esac
+
+        # OpenAI
+        printf "Do you have an OpenAI/ChatGPT Plus subscription? [y/n]: "
+        read -r openai_ans
+        case "$openai_ans" in
+            [Yy]*) flags="$flags --openai=yes" ;;
+            *) flags="$flags --openai=no" ;;
+        esac
+
+        # Gemini
+        printf "Will you integrate Gemini models? [y/n]: "
+        read -r gemini_ans
+        case "$gemini_ans" in
+            [Yy]*) flags="$flags --gemini=yes" ;;
+            *) flags="$flags --gemini=no" ;;
+        esac
+
+        # Copilot
+        printf "Do you have a GitHub Copilot subscription? [y/n]: "
+        read -r copilot_ans
+        case "$copilot_ans" in
+            [Yy]*) flags="$flags --copilot=yes" ;;
+            *) flags="$flags --copilot=no" ;;
+        esac
+
+        # OpenCode Zen
+        printf "Do you have access to OpenCode Zen models? [y/n]: "
+        read -r zen_ans
+        case "$zen_ans" in
+            [Yy]*) flags="$flags --opencode-zen=yes" ;;
+            *) flags="$flags --opencode-zen=no" ;;
+        esac
+
+        # OpenCode Go
+        printf "Do you have an OpenCode Go subscription? [y/n]: "
+        read -r go_ans
+        case "$go_ans" in
+            [Yy]*) flags="$flags --opencode-go=yes" ;;
+            *) flags="$flags --opencode-go=no" ;;
+        esac
+
+        # Z.ai
+        printf "Do you have a Z.ai Coding Plan subscription? [y/n]: "
+        read -r zai_ans
+        case "$zai_ans" in
+            [Yy]*) flags="$flags --zai-coding-plan=yes" ;;
+            *) flags="$flags --zai-coding-plan=no" ;;
+        esac
+    else
+        # Non-interactive: use provided flags or defaults
+        shift  # Remove --no-tui
+        if [ $# -gt 0 ]; then
+            flags="$*"
+        else
+            _error "Non-interactive mode requires flags. Example: devtools-opencode omo install --no-tui --claude=yes --openai=no"
+        fi
+    fi
+
+    # Save preferences
+    cat > "$OMO_PREFS_FILE" <<EOF
+# Oh-My-OpenCode preferences
+# Generated by devtools-opencode omo install
+# This file is used by 'devtools-opencode omo restore' to re-apply settings after stow.
+OMO_FLAGS="$flags"
+EOF
+
+    _log "Saved preferences to $OMO_PREFS_FILE"
+    _log "Installing oh-my-opencode..."
+    _log "  Flags: $flags"
+
+    # Run installer
+    if command -v bunx > /dev/null 2>&1; then
+        bunx oh-my-opencode install --no-tui $flags
+    elif command -v npx > /dev/null 2>&1; then
+        npx oh-my-opencode install --no-tui $flags
+    else
+        _error "Neither bunx nor npx found. Please install Bun or Node.js first."
+    fi
+
+    _log "Oh-My-OpenCode installation complete."
+    echo ""
+    echo "Next steps:"
+    echo "  1. Run 'opencode auth login' to authenticate your providers"
+    echo "  2. Run 'opencode --version' to verify the setup"
+    echo ""
+    echo "If you re-stow dotfiles later, run 'devtools-opencode omo restore' to re-apply."
+}
+
+do_omo_restore() {
+    _omo_backup_state
+    _omo_restore_state
+}
+
+do_omo_status() {
+    echo "=== Oh-My-OpenCode Status ==="
+    echo ""
+
+    if _omo_is_installed; then
+        echo "Installation:  INSTALLED"
+        for file in "$HOME/.config/opencode/oh-my-openagent.json" \
+                    "$HOME/.config/opencode/oh-my-opencode.json"; do
+            if [ -f "$file" ]; then
+                echo "Config file:   $file"
+            fi
+        done
+    else
+        echo "Installation:  NOT INSTALLED"
+    fi
+
+    if [ -f "$OMO_PREFS_FILE" ]; then
+        echo "Preferences:   $OMO_PREFS_FILE"
+        . "$OMO_PREFS_FILE"
+        echo "Saved flags:   ${OMO_FLAGS:-<none>}"
+    else
+        echo "Preferences:   NONE (run 'devtools-opencode omo install' to create)"
+    fi
+
+    # Show recent backups
+    if [ -d "$OMO_BACKUP_DIR" ]; then
+        local latest
+        latest=$(ls -t "$OMO_BACKUP_DIR" 2>/dev/null | head -1)
+        if [ -n "$latest" ]; then
+            echo "Latest backup: $OMO_BACKUP_DIR/$latest"
+        fi
+    fi
+    echo ""
+}
+
 # ─── Wizard ──────────────────────────────────────────────────────────────────
 
 do_wizard() {
@@ -911,6 +1146,22 @@ main() {
                     ;;
                 *)
                     echo "Usage: devtools-opencode vscode {list|generate|apply|project|install}"
+                    exit 1
+                    ;;
+            esac
+            ;;
+        omo)
+            case "$subcommand" in
+                install) shift 2; do_omo_install "$@" ;;
+                restore) do_omo_restore ;;
+                status) do_omo_status ;;
+                *)
+                    echo "Usage: devtools-opencode omo {install|restore|status}"
+                    echo ""
+                    echo "  install   Install/configure oh-my-opencode interactively"
+                    echo "            Or non-interactive: devtools-opencode omo install --no-tui --claude=yes ..."
+                    echo "  restore   Re-apply saved oh-my-opencode config (use after stow)"
+                    echo "  status    Show oh-my-opencode installation status"
                     exit 1
                     ;;
             esac

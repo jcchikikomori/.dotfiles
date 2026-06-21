@@ -131,10 +131,18 @@ if [ -d "$HOME/.dotfiles/opencode" ] && [ ! -f "$HOME/.dotfiles/opencode/.config
   rm -rf "$HOME/.dotfiles/opencode"
 fi
 
+# Backup oh-my-opencode state before cleanup (these are real files, not symlinks)
+mkdir -p "$HOME/.backups/opencode/omo"
+for omo_file in "$HOME/.config/opencode/oh-my-openagent.json" \
+                "$HOME/.config/opencode/oh-my-opencode.json" \
+                "$HOME/.config/opencode/oh-my-opencode-slim.json"; do
+    if [ -f "$omo_file" ] && [ ! -L "$omo_file" ]; then
+        cp "$omo_file" "$HOME/.backups/opencode/omo/"
+    fi
+done
+
 # Clean up opencode symlinks, old folders & stale files before restow
 rm -f "$HOME/.config/opencode/opencode.jsonc"
-rm -f "$HOME/.config/opencode/oh-my-opencode.json"
-rm -f "$HOME/.config/opencode/oh-my-opencode-slim.json"
 rm -f "$HOME/.config/opencode/opencode-mem.json"
 rm -f "$HOME/.config/opencode/package.json"
 rm -f "$HOME/.config/opencode/bun.lock"
