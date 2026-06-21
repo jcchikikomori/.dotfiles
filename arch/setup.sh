@@ -49,87 +49,15 @@ sudo localectl set-locale LANG=en_US.UTF-8
 # Install essentials
 pacman_install "-Syyu --noconfirm --noprogressbar" nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip
 pacman_install "-S --noconfirm --noprogressbar" base-devel python3 zip unzip vi nano fakeroot openssh stow sqlite tmux wget entr less
-# Ensure temp directory exists
-mkdir -p temp && cd temp/
-# Install yay
-git clone https://aur.archlinux.org/yay.git $HOME/yay
-cd $HOME/yay
-makepkg -si --noconfirm
-# Install AUR packages
-yay -S --noconfirm podman-docker-git
 
-# Cleanup
-cd ../..
-rm -rf temp/
-
-# Chaotic AUR
-if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
-  echo 'Importing essential keys...'
-  sudo pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keyserver.ubuntu.com:80
-  echo 'Signing keys...'
-  sudo pacman-key --lsign-key 3056513887B78AEB
-  echo 'Begin installing Chaotic AUR...'
-  sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
-  # Backup the pacman.conf file
-  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
-  # Add the Chaotic AUR repository to pacman.conf
-  echo "
-[chaotic-aur]
-Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf
-  # Synchronize and upgrade packages
-  sudo pacman -Syyu --noconfirm --noprogressbar
-else
-  echo "chaotic-aur repository is already registered. Skipping..."
-fi
-
-# CachyOS Repository
-if ! grep -q "\[cachyos-v3\]" /etc/pacman.conf; then
-  echo 'Importing CachyOS keys...'
-  sudo pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
-  echo 'Signing CachyOS keys...'
-  sudo pacman-key --lsign-key F3B607488DB35A47
-  echo 'Installing CachyOS keyring and mirrorlist...'
-  sudo pacman -U --noconfirm \
-    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
-    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-27-1-any.pkg.tar.zst' \
-    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v3-mirrorlist-27-1-any.pkg.tar.zst' \
-    'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-v4-mirrorlist-27-1-any.pkg.tar.zst'
-  sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
-  echo "
-[cachyos-v3]
-Include = /etc/pacman.d/cachyos-v3-mirrorlist
-
-[cachyos-core-v3]
-Include = /etc/pacman.d/cachyos-v3-mirrorlist
-
-[cachyos-extra-v3]
-Include = /etc/pacman.d/cachyos-v3-mirrorlist
-
-[cachyos]
-Include = /etc/pacman.d/cachyos-mirrorlist
-" | sudo tee -a /etc/pacman.conf
-  sudo pacman -Syyu --noconfirm --noprogressbar
-else
-  echo "CachyOS repository is already registered. Skipping..."
-fi
-
-# Install CachyOS packages
-pacman_install "-S --noconfirm --noprogressbar" dmemcg-booster kcgroups plasma-foreground-booster
-
-# Installing rclone
-pacman_install "-S --noconfirm --noprogressbar" rclone
+# AUR repository setup, yay installation, and AUR packages are now handled by
+# the dotfiles-arch utility. Run `dotfiles-arch setup` after this script.
 
 # Compilation Cache
 pacman_install "-S --noconfirm --noprogressbar" ccache
 
-# Programming languages
-pacman_install "-S --noconfirm --noprogressbar" chaotic-aur/nvm
-pacman_install "-S --noconfirm --noprogressbar" rbenv pyenv
-pacman_install "-S --noconfirm --noprogressbar" aur/phpenv-git
-
 # Workarounds & Misc software
-pacman_install "-S --noconfirm --noprogressbar" aur/pam_ssh_agent_auth
-pacman_install "-S --noconfirm --noprogressbar" xclip xsel ncdu
+pacman_install "-S --noconfirm --noprogressbar" xclip
 # Install mirror management tools
 pacman_install "-S --noconfirm --noprogressbar" rankmirrors reflector
 
