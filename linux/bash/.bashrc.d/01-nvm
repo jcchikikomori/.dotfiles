@@ -1,0 +1,6 @@
+# NVM via Homebrew — load early before any Homebrew node
+# This file is intentionally placed after 00-env so NVM_DIR is already set
+if command -v brew >/dev/null 2>&1; then
+  [ -s "$(brew --prefix nvm)/nvm.sh" ] && \. "$(brew --prefix nvm)/nvm.sh"
+  [ -s "$(brew --prefix nvm)/etc/bash_completion.d/nvm" ] && \. "$(brew --prefix nvm)/etc/bash_completion.d/nvm"
+fi

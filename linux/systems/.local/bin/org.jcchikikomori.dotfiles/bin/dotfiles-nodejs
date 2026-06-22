@@ -17,19 +17,61 @@ DEFAULT_NODE_VERSION="22"
 
 # ─── Helper functions ──────────────────────────────────────────────────────────
 
-# Ensure NVM is loaded in current shell
-_load_nvm() {
-    if [ -s "$NVM_DIR/nvm.sh" ]; then
-        # Temporarily disable 'set -u' to allow NVM's internal variable initialization
-        # NVM uses '_' for internal state tracking which may not be set in CI environments
-        set +u
-        . "$NVM_DIR/nvm.sh"
-        set -u
+# Try to locate brew binary and set up its environment
+_ensure_brew_env() {
+    if command -v brew >/dev/null 2>&1; then
+        return 0
+    fi
+    # Homebrew may be installed but not on PATH yet (common in CI).
+    # Check known locations and source shellenv.
+    local brew_path=""
+    for candidate in \
+        /home/linuxbrew/.linuxbrew/bin/brew \
+        "$HOME/.linuxbrew/bin/brew" \
+        /usr/local/bin/brew \
+        /opt/homebrew/bin/brew
+    do
+        if [ -x "$candidate" ]; then
+            brew_path="$candidate"
+            break
+        fi
+    done
+    if [ -n "$brew_path" ]; then
+        eval "$("$brew_path" shellenv)"
     fi
 }
 
-# Check if NVM is installed
+# Determine NVM prefix from Homebrew or fallback
+_nvm_prefix() {
+    _ensure_brew_env
+    if command -v brew >/dev/null 2>&1; then
+        brew --prefix nvm 2>/dev/null
+    fi
+}
+
+# Ensure NVM is loaded in current shell
+_load_nvm() {
+    local nvm_prefix="$(_nvm_prefix)"
+    if [ -n "$nvm_prefix" ] && [ -s "$nvm_prefix/nvm.sh" ]; then
+        # Temporarily disable 'set -e' and 'set -u' while loading NVM.
+        # NVM's internal scripts are not designed for strict mode and will
+        # abort on Fedora/RHEL CI if errexit/nounset are active.
+        set +eu
+        . "$nvm_prefix/nvm.sh"
+        set -eu
+    elif [ -s "$NVM_DIR/nvm.sh" ]; then
+        set +eu
+        . "$NVM_DIR/nvm.sh"
+        set -eu
+    fi
+}
+
+# Check if NVM is installed (via Homebrew or manual)
 _nvm_installed() {
+    local nvm_prefix="$(_nvm_prefix)"
+    if [ -n "$nvm_prefix" ] && [ -s "$nvm_prefix/nvm.sh" ]; then
+        return 0
+    fi
     [ -d "$NVM_DIR" ] && [ -s "$NVM_DIR/nvm.sh" ]
 }
 
@@ -52,29 +94,40 @@ _download_with_retry() {
 
 # ─── Actions ───────────────────────────────────────────────────────────────────
 
-# Install NVM
+# Install NVM via Homebrew (preferred) or fallback to curl install
 action_install_nvm() {
-    echo "[nodejs] Installing NVM $NVM_VERSION..."
-    
     if _nvm_installed; then
-        echo "[nodejs] NVM already installed at $NVM_DIR"
+        echo "[nodejs] NVM already installed"
         return 0
     fi
 
-    # Create NVM directory
-    mkdir -p "$NVM_DIR"
-
-    # Download and run install script using bash (NOT zsh!)
-    local install_url="https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh"
-    
-    if ! _download_with_retry "$install_url" | bash; then
-        echo "[nodejs] ERROR: NVM installation failed. Check network connectivity."
-        return 1
+    # Prefer Homebrew if available
+    _ensure_brew_env
+    if command -v brew >/dev/null 2>&1; then
+        echo "[nodejs] Installing NVM via Homebrew..."
+        if ! brew install nvm; then
+            echo "[nodejs] ERROR: Homebrew NVM installation failed."
+            return 1
+        fi
+        
+        # Ensure NVM_DIR directory exists for node installations
+        mkdir -p "$NVM_DIR"
+        
+        # NOTE: NVM initialization is already included in the tracked dotfiles
+        # (.zshrc and linux/bash/.bashrc.d/01-nvm), so no shell profile modification needed.
+    else
+        # Fallback: manual curl install
+        echo "[nodejs] Installing NVM $NVM_VERSION via install script..."
+        mkdir -p "$NVM_DIR"
+        local install_url="https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh"
+        if ! _download_with_retry "$install_url" | bash; then
+            echo "[nodejs] ERROR: NVM installation failed. Check network connectivity."
+            return 1
+        fi
     fi
 
     # Reload profile to pick up NVM initialization
     if [ -f "$HOME/.bashrc" ]; then
-        # Source bashrc but capture errors for debugging
         if ! . "$HOME/.bashrc" 2>/dev/null; then
             echo "[nodejs] WARNING: Failed to source ~/.bashrc, but NVM files may still be present"
         fi
@@ -82,7 +135,7 @@ action_install_nvm() {
 
     # Verify installation
     if _nvm_installed; then
-        echo "[nodejs] NVM installed successfully to $NVM_DIR"
+        echo "[nodejs] NVM installed successfully"
     else
         echo "[nodejs] ERROR: NVM installation verification failed."
         return 1
@@ -108,15 +161,23 @@ action_install_node() {
         return 1
     fi
 
-    # Install Node version
-    if nvm install "$version"; then
+    # Disable strict mode while running NVM commands.
+    # NVM's install/use internals are not compatible with errexit.
+    set +eu
+    local nvm_exit=0
+    if ! nvm install "$version"; then
+        nvm_exit=1
+    fi
+    if [ "$nvm_exit" -eq 0 ]; then
         echo "[nodejs] Node.js v${version} installed successfully"
         nvm use "$version" 2>/dev/null || true
+        nvm alias default "$version" 2>/dev/null || true
         echo "[nodejs] Current: $(node --version 2>/dev/null || echo 'unknown')"
     else
         echo "[nodejs] ERROR: Failed to install Node.js v${version}"
-        return 1
     fi
+    set -eu
+    return "$nvm_exit"
 }
 
 # List installed Node versions
@@ -138,17 +199,30 @@ action_uninstall_nvm() {
         return 0
     fi
 
-    printf "[nodejs] Remove NVM from %s? [y/N]: " "$NVM_DIR"
+    local nvm_prefix="$(_nvm_prefix)"
+    if [ -n "$nvm_prefix" ]; then
+        printf "[nodejs] Uninstall NVM via Homebrew? [y/N]: "
+    else
+        printf "[nodejs] Remove NVM from %s? [y/N]: " "$NVM_DIR"
+    fi
     read confirm
     if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+        if [ -n "$nvm_prefix" ]; then
+            brew uninstall nvm 2>/dev/null || true
+        fi
+        
         # Remove NVM directory
         rm -rf "$NVM_DIR"
         
-        # Remove from bashrc/zshrc if we added it
-        if [ -f "$HOME/.bashrc" ]; then
-            sed -i '/export NVM_DIR=.*\.nvm/d' "$HOME/.bashrc" 2>/dev/null || true
-            sed -i '/\..*nvm\.sh/d' "$HOME/.bashrc" 2>/dev/null || true
-        fi
+        # Remove from bashrc/zshrc
+        for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+            if [ -f "$rc" ]; then
+                sed -i '/export NVM_DIR=.*\.nvm/d' "$rc" 2>/dev/null || true
+                sed -i '/\..*nvm\.sh/d' "$rc" 2>/dev/null || true
+                sed -i '/# NVM via Homebrew/d' "$rc" 2>/dev/null || true
+                sed -i '/brew --prefix nvm/d' "$rc" 2>/dev/null || true
+            fi
+        done
         
         echo "[nodejs] NVM uninstalled."
     else
