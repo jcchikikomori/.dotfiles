@@ -751,8 +751,8 @@ do_install() {
                     _add_temp "$_install_script"
                     curl -fsSL https://opencode.ai/install -o "$_install_script"
                     chmod +x "$_install_script"
-                    _log_warn "Remote script downloaded without integrity verification."
-                    _log_warn "Review $_install_script before executing if desired."
+                    _warn "Remote script downloaded without integrity verification."
+                    _warn "Review $_install_script before executing if desired."
                     XDG_BIN_DIR="$HOME/.local/bin" bash "$_install_script"
                 fi
                 ;;
@@ -762,8 +762,8 @@ do_install() {
                 _add_temp "$_install_script"
                 curl -fsSL https://opencode.ai/install -o "$_install_script"
                 chmod +x "$_install_script"
-                _log_warn "Remote script downloaded without integrity verification."
-                _log_warn "Review $_install_script before executing if desired."
+                _warn "Remote script downloaded without integrity verification."
+                _warn "Review $_install_script before executing if desired."
                 XDG_BIN_DIR="$HOME/.local/bin" bash "$_install_script"
                 ;;
         esac
