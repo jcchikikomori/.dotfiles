@@ -66,6 +66,18 @@ VSCODE_SETTINGS_DIR="${HOME}/.config/Code/User"
 VSCODE_SETTINGS="${VSCODE_SETTINGS_DIR}/settings.json"
 VSCODE_EXTENSIONS_DIR="${HOME}/.vscode/extensions"
 
+# ─── Temp file cleanup ───────────────────────────────────────────────────────
+_TEMPS=""
+_add_temp() {
+    _TEMPS="$_TEMPS $1"
+}
+_cleanup_temps() {
+    for t in $_TEMPS; do
+        rm -f "$t"
+    done
+}
+trap '_cleanup_temps' EXIT INT TERM
+
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 _log() {
@@ -183,7 +195,10 @@ _sync_opencode() {
     # Copy skills
     if [ -d "$SHARED_SKILLS" ]; then
         if [ -d "$OPENCODE_SKILLS" ]; then
-            rm -rf "$OPENCODE_SKILLS"
+            case "$OPENCODE_SKILLS" in
+                "$HOME"/*) rm -rf "$OPENCODE_SKILLS" ;;
+                *) _warn "Refusing to remove path outside home: $OPENCODE_SKILLS" ;;
+            esac
         fi
         cp -r "$SHARED_SKILLS" "$OPENCODE_SKILLS"
         skill_count=$(find "$OPENCODE_SKILLS" -maxdepth 1 -type d | wc -l)
@@ -301,7 +316,7 @@ _report_env() {
         IFS="$old_ifs"
         [ -z "$key" ] && continue
         val=""
-        eval "val=\${${key}:-}"
+        val=$(printenv "$key" 2>/dev/null || echo "")
         if [ -z "$val" ]; then
             val=$(_env_file_get "$key")
         fi
@@ -410,6 +425,7 @@ do_mcp_install() {
         _log "Using MCP registry: $MCPS_FILE"
         echo ""
         global_parse_tmp=$(mktemp)
+        _add_temp "$global_parse_tmp"
         _parse_mcps_from_json "$MCPS_FILE" > "$global_parse_tmp"
         while IFS= read -r line; do
             [ -z "$line" ] && continue
@@ -420,6 +436,7 @@ do_mcp_install() {
         _log "Parsing $OPENCODE_CONFIG ..."
         echo ""
         global_parse_tmp=$(mktemp)
+        _add_temp "$global_parse_tmp"
         _parse_mcps "$OPENCODE_CONFIG" > "$global_parse_tmp"
         while IFS= read -r line; do
             [ -z "$line" ] && continue
@@ -433,6 +450,7 @@ do_mcp_install() {
             _log "Scanning project config: $project_config ..."
             echo ""
             project_parse_tmp=$(mktemp)
+            _add_temp "$project_parse_tmp"
             _parse_mcps "$project_config" > "$project_parse_tmp"
             while IFS= read -r pline; do
                 [ -z "$pline" ] && continue
@@ -524,6 +542,7 @@ do_mcp_status() {
         echo "Registry: $MCPS_FILE"
         echo ""
         global_parse_tmp=$(mktemp)
+        _add_temp "$global_parse_tmp"
         _parse_mcps_from_json "$MCPS_FILE" > "$global_parse_tmp"
         while IFS= read -r line; do
             [ -z "$line" ] && continue
@@ -580,6 +599,7 @@ do_vscode_generate() {
     fi
 
     mcp_tmp=$(mktemp)
+    _add_temp "$mcp_tmp"
     grep -v '^\s*//' "$OPENCODE_CONFIG" | jq '
         if .mcp then
             .mcp | to_entries |
@@ -624,6 +644,7 @@ do_vscode_apply() {
 
     if _has_jq; then
         mcp_tmp=$(mktemp)
+        _add_temp "$mcp_tmp"
         echo "$mcp_json" > "$mcp_tmp"
         echo "$existing_settings" | jq -s '.[0] * .[1]' - "$mcp_tmp" > "$VSCODE_SETTINGS"
         rm -f "$mcp_tmp"
@@ -676,6 +697,7 @@ do_vscode_project() {
     fi
 
     mcp_tmp=$(mktemp)
+    _add_temp "$mcp_tmp"
     grep -v '^\s*//' "$OPENCODE_CONFIG" | jq '
         if .mcp then
             .mcp | to_entries |
@@ -725,15 +747,35 @@ do_install() {
                     yay -S --noconfirm opencode-bin
                 else
                     _log "Installing opencode via install script..."
-                    XDG_BIN_DIR="$HOME/.local/bin" curl -fsSL https://opencode.ai/install | bash
+                    _install_script=$(mktemp)
+                    _add_temp "$_install_script"
+                    curl -fsSL https://opencode.ai/install -o "$_install_script"
+                    chmod +x "$_install_script"
+                    _log_warn "Remote script downloaded without integrity verification."
+                    _log_warn "Review $_install_script before executing if desired."
+                    XDG_BIN_DIR="$HOME/.local/bin" bash "$_install_script"
                 fi
                 ;;
             *)
                 _log "Installing opencode via install script..."
-                XDG_BIN_DIR="$HOME/.local/bin" curl -fsSL https://opencode.ai/install | bash
+                _install_script=$(mktemp)
+                _add_temp "$_install_script"
+                curl -fsSL https://opencode.ai/install -o "$_install_script"
+                chmod +x "$_install_script"
+                _log_warn "Remote script downloaded without integrity verification."
+                _log_warn "Review $_install_script before executing if desired."
+                XDG_BIN_DIR="$HOME/.local/bin" bash "$_install_script"
                 ;;
         esac
         _log "Installation complete."
+    fi
+
+    # Copy config template if missing
+    CONFIG_TEMPLATE="${OPENCODE_PACKAGE_DIR}/templates/opencode.jsonc"
+    if [ -f "$CONFIG_TEMPLATE" ] && [ ! -f "$OPENCODE_CONFIG" ]; then
+        cp "$CONFIG_TEMPLATE" "$OPENCODE_CONFIG"
+        _log "Created $OPENCODE_CONFIG from template."
+        echo "  Edit it to customize your opencode configuration."
     fi
 
     # Copy env template
@@ -776,7 +818,10 @@ do_clear_cache() {
             echo "  Current size:   $cache_size"
         fi
         echo ""
-        rm -rf "$OPENCODE_CACHE"
+        case "$OPENCODE_CACHE" in
+            "$HOME"/*) rm -rf "$OPENCODE_CACHE" ;;
+            *) _warn "Refusing to remove path outside home: $OPENCODE_CACHE" ;;
+        esac
         if [ ! -d "$OPENCODE_CACHE" ]; then
             _log "Cache cleared successfully"
         else

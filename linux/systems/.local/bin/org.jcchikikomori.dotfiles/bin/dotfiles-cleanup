@@ -142,7 +142,7 @@ for omo_file in "$HOME/.config/opencode/oh-my-openagent.json" \
 done
 
 # Clean up opencode symlinks, old folders & stale files before restow
-rm -f "$HOME/.config/opencode/opencode.jsonc"
+# NOTE: opencode.jsonc is now a real file (copied from template), not a symlink — do NOT remove it
 rm -f "$HOME/.config/opencode/opencode-mem.json"
 rm -f "$HOME/.config/opencode/package.json"
 rm -f "$HOME/.config/opencode/bun.lock"

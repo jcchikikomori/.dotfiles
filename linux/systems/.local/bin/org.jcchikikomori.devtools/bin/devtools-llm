@@ -395,9 +395,8 @@ _install_linux() {
 
 _install_official() {
     _log "Installing via official script..."
-    local install_script
     install_script=$(mktemp)
-    trap "rm -f $install_script" EXIT
+    trap 'rm -f "$install_script"' EXIT
 
     if command -v curl >/dev/null 2>&1; then
         curl -fsSL https://ollama.com/install.sh -o "$install_script"
@@ -409,6 +408,8 @@ _install_official() {
     fi
 
     chmod +x "$install_script"
+    _log_warn "Remote script downloaded without integrity verification."
+    _log_warn "Review $install_script before executing if desired."
     sh "$install_script"
 }
 
