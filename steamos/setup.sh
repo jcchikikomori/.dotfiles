@@ -120,8 +120,8 @@ else
   echo "yay is already installed"
 fi
 
-# Install AUR packages
-yay -S --noconfirm podman-docker-git
+# Installing podman-docker
+pacman_install -S --noconfirm podman-docker
 
 # Workarounds & Misc software
 pacman_install "-S --noconfirm --noprogressbar" xsel ncdu
