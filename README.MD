@@ -5,31 +5,37 @@ Based from existing [repository](https://github.com/sreerajkksd/dotfiles). Forke
 
 ## Features
 
-- Personalized features.
-- Customizations alongside the forked files.
-- Includes specific patches and workarounds for various platforms.
-- Designed to minimize the risk of system misconfiguration.
-- Added configurations that i personally use.
+- **Personalized Environment** - Custom `Zsh`, `Bash`, `Tmux`, `Vim`, and `VSCode` configurations tailored for development workflows
+- **AI Tooling Integration** - Full `opencode` and Claude Code support with custom skills for 16+ tech stacks, MCP servers, and LLM tooling
+- **Cross-Platform Support** - Works across Debian, Ubuntu, Arch Linux, Fedora, macOS, SteamOS, and WSL2
+- **SteamOS Optimized** - Special handling for SteamOS 3.5+ with `pacman` keyring fixes, `yay` workarounds, and immutable filesystem support
+- **Desktop Environment** - KDE Plasma 6 configuration support, `tmux` overhaul with SteamOS-inspired theme, and macOS integration
+- **Development Tools** - Unified `stow` script, GNU Stow conflict resolution, `dotfiles-arch` helper with `zsh` completions
+- **Language Version Managers** - Automated setup for Python (`pyenv`), Node.js (`nvm`), Ruby (`rbenv`), PHP (`phpenv`), and Java (`SDKMAN`)
+- **Cloud & Storage** - S4 bucket integration for EmuDeck save data backup, `copyparty` setup for local file sharing
+- **Immutable System Support** - `distrobox` and `podman` integration for immutable distributions like Bazzite and SteamOS
+- **Minimal Risk** - Designed to minimize the risk of system misconfiguration with safety checks and conflict resolution
 
 > [!TIP]
 > For a complete list of all stow packages, see [docs/STOW_PACKAGES.md](docs/STOW_PACKAGES.md).
 
 ## Supported Platforms
 
-- Windows Subsystem for Linux (WSL version 2)
-- macOS (Intel + Apple Silicon)
-- Ubuntu/Debian-based distributions
-- Arch Linux and its derivatives (e.g., Garuda, Manjaro, SteamOS)
-- Immutable Linux distributions (e.g., Bazzite, SteamOS, etc.)
-- Termux (Untested)
-- Fedora/RHEL-based distributions
+- **Windows Subsystem for Linux (WSL version 2)** - Full support with experimental local LLM setup
+- **macOS (Intel + Apple Silicon)** - Darwin implementation with symlink validation and Homebrew integration
+- **Ubuntu/Debian-based distributions** - Including Debian 13 support
+- **Arch Linux and its derivatives** - Garuda, Manjaro, with Chaotic-AUR and CachyOS support
+- **SteamOS** - Version 3.5+ with `pacman` keyring fixes, `yay` workarounds, and `dotfiles-arch` helper
+- **Immutable Linux distributions** - Bazzite, Fedora Silverblue via `distrobox` and `podman`
+- **Termux (Android)** - ARM support with Python (`pyenv`) officially supported
+- **Fedora/RHEL-based distributions** - Full support with python header dependencies handled
 
 ## Requirements
 
 > [!NOTE]
 >
 > - ARM support is currently on the way, after supporting Termux.
-> - We are using the forked version of dotstow to support immutable Linux distributions and Termux.
+> - We are using the forked version of `dotstow` to support immutable Linux distributions and Termux.
 
 Ensure the following prerequisites are met before running the setup:
 
@@ -97,7 +103,8 @@ For detailed guides, usage reminders, workarounds, and additional documentation,
 - [Git Cheatsheet](docs/GitCheatsheet.md)
 - [Stow Conflicts Guide](docs/STOW_CONFLICTS.md)
 - [Virtualization & Containers](docs/Virtualization.md)
-- [OpenCode Agent System](.opencode/README.md)
+- [OpenCode Agent System](linux/opencode/README.md)
+- [Claude Code Setup](linux/claude/README.md)
 
 ## Disclaimer & Legal Notices
 
