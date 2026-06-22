@@ -66,6 +66,15 @@ make_readonly() {
   fi
 }
 
+# Fix pacman keyring (SteamOS 3.5+ requires holo keyring for Valve-signed packages)
+fix_keyring() {
+  log_info "Initializing pacman keyring..."
+  sudo pacman-key --init
+  sudo pacman-key --populate archlinux
+  sudo pacman-key --populate holo 2>/dev/null || true
+  log_info "Keyring initialized"
+}
+
 # Install yay (AUR helper)
 yay_install() {
   local status
@@ -80,6 +89,9 @@ yay_install() {
     log_info "yay is already installed"
     return 0
   fi
+
+  # Ensure keyring is initialized so makepkg can install dependencies like debugedit
+  fix_keyring
 
   log_info "Installing yay..."
 
@@ -280,6 +292,7 @@ main() {
     echo "  patch-hosts      Patch /etc/hosts with game-related entries"
     echo "  writeable        Make SteamOS writeable"
     echo "  readonly         Make SteamOS read-only"
+    echo "  fix-keyring      Initialize pacman keyring (fixes 'unknown trust' errors)"
     echo ""
     echo "Package Management:"
     echo "  yay-install      Install yay (AUR helper)"
@@ -310,6 +323,9 @@ main() {
       ;;
     readonly)
       make_readonly
+      ;;
+    fix-keyring)
+      fix_keyring
       ;;
     yay-install)
       yay_install
