@@ -76,67 +76,15 @@ setup_profile_local() {
 
     # CI/Unattended mode - auto create with defaults
     if [ "$CI_MODE" = "true" ] || [ -n "$SKIP_INSTALL_PROGLANG" ]; then
-        cat > "$profile_local" << 'EOF'
-# =============================================================================
-# ~/.profile.local - Local customizations for dotfiles
-# =============================================================================
-# This file is NOT managed by dotfiles. Add your personal overrides here.
-# It is sourced at the end of ~/.profile
-#
-# Examples:
-#   export MY_CUSTOM_VAR="value"
-#   alias myalias="command"
-#
-# =============================================================================
-
-# WSL2-related workarounds
-# Render discrete GPU (NVIDIA) over integrated graphics
-# export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
-
-# Source Python environments (uncomment the one you use)
-# For uv (recommended for Steam Deck):
-# [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv
-
-# For Miniconda:
-# [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda
-
-# For pyenv:
-# [ -f ~/.config/dotfiles-python/env-pyenv ] && . ~/.config/dotfiles-python/env-pyenv
-
-# For Homebrew Python:
-# [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew
-
-# =============================================================================
-# MCP (Model Context Protocol) Server Tokens
-# =============================================================================
-# These tokens are used by AI coding agents (OpenCode, Claude Code) for MCPs.
-# Uncomment and fill in the values below. They will be automatically sourced
-# by the devtools-opencode and dotfiles-claude scripts.
-#
-# GitHub MCP - Required for GitHub operations (repos, issues, PRs)
-# export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
-#
-# Stack Overflow MCP - Required for Stack Overflow search
-# export STACK_EXCHANGE_API_KEY="your_key_here"
-#
-# Figma MCP - Required for Figma integration
-# export FIGMA_API_KEY="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-#
-# Atlassian MCPs (Jira, Confluence)
-# export JIRA_URL="https://your-domain.atlassian.net"
-# export JIRA_USERNAME="your.email@example.com"
-# export JIRA_API_TOKEN="your_token_here"
-# export CONFLUENCE_URL="https://your-domain.atlassian.net/wiki"
-# export CONFLUENCE_USERNAME="your.email@example.com"
-# export CONFLUENCE_API_TOKEN="your_token_here"
-#
-# SonarQube MCP
-# export SONARQUBE_URL="https://sonarqube.example.com"
-# export SONARQUBE_TOKEN="your_token_here"
-# =============================================================================
-
-EOF
-            echo "[INFO] Created ~/.profile.local with template (CI mode)"
+        local dotfiles_dir="${DOTFILES_PATH:-$HOME/.dotfiles}"
+        local example_file="$dotfiles_dir/.profile.local.example"
+        if [ -f "$example_file" ]; then
+            cp "$example_file" "$profile_local"
+            echo "[INFO] Created ~/.profile.local from example (CI mode)"
+        else
+            echo "[WARN] Example file not found: $example_file"
+            echo "[WARN] Skipping ~/.profile.local creation"
+        fi
         return 0
     fi
 
@@ -149,66 +97,20 @@ EOF
     read -r choice
     case "$choice" in
         [yY]|[yY][eE][sS])
-            cat > "$profile_local" << 'EOF'
-# =============================================================================
-# ~/.profile.local - Local customizations for dotfiles
-# =============================================================================
-# This file is NOT managed by dotfiles. Add your personal overrides here.
-# It is sourced at the end of ~/.profile
-#
-# Examples:
-#   export MY_CUSTOM_VAR="value"
-#   alias myalias="command"
-#
-# =============================================================================
-
-# Source Python environments (uncomment the one you use)
-# For uv (recommended for Steam Deck):
-# [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv
-
-# For Miniconda:
-# [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda
-
-# For pyenv:
-# [ -f ~/.config/dotfiles-python/env-pyenv ] && . ~/.config/dotfiles-python/env-pyenv
-
-# For Homebrew Python:
-# [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew
-
-# =============================================================================
-# MCP (Model Context Protocol) Server Tokens
-# =============================================================================
-# These tokens are used by AI coding agents (OpenCode, Claude Code) for MCPs.
-# Uncomment and fill in the values below. They will be automatically sourced
-# by the devtools-opencode and dotfiles-claude scripts.
-#
-# GitHub MCP - Required for GitHub operations (repos, issues, PRs)
-# export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
-#
-# Stack Overflow MCP - Required for Stack Overflow search
-# export STACK_EXCHANGE_API_KEY="your_key_here"
-#
-# Figma MCP - Required for Figma integration
-# export FIGMA_API_KEY="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-#
-# Atlassian MCPs (Jira, Confluence)
-# export JIRA_URL="https://your-domain.atlassian.net"
-# export JIRA_USERNAME="your.email@example.com"
-# export JIRA_API_TOKEN="your_token_here"
-# export CONFLUENCE_URL="https://your-domain.atlassian.net/wiki"
-# export CONFLUENCE_USERNAME="your.email@example.com"
-# export CONFLUENCE_API_TOKEN="your_token_here"
-#
-# SonarQube MCP
-# export SONARQUBE_URL="https://sonarqube.example.com"
-# export SONARQUBE_TOKEN="your_token_here"
-# =============================================================================
-
-EOF
-            echo "Created ~/.profile.local"
+            local dotfiles_dir="${DOTFILES_PATH:-$HOME/.dotfiles}"
+            local example_file="$dotfiles_dir/.profile.local.example"
+            if [ -f "$example_file" ]; then
+                cp "$example_file" "$profile_local"
+                echo "Created ~/.profile.local from example"
+                echo "  Edit $profile_local to add your tokens."
+            else
+                echo "Warning: Example file not found: $example_file"
+                echo "  You can create ~/.profile.local manually."
+            fi
             ;;
         *)
             echo "Skipped. You can create it manually later."
+            echo "  Example: cp ~/.dotfiles/.profile.local.example ~/.profile.local"
             ;;
     esac
 }

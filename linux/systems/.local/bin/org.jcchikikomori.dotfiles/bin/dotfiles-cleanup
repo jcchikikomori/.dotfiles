@@ -149,7 +149,7 @@ rm -f "$HOME/.config/opencode/bun.lock"
 rm -f "$HOME/.config/opencode/tui.json"
 rm -f "$HOME/.config/opencode/AGENTS.md"
 rm -f "$HOME/.config/opencode/GIT_COMMIT_GUARD.md"
-rm -f "$HOME/.config/opencode/.env.example"
+# .env.example removed — tokens now live in ~/.profile.local
 rm -f "$HOME/.zopencode"
 rm -rf "$HOME/.opencode"
 rm -rf "$HOME/.config/opencode/agent"

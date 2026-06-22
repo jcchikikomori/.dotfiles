@@ -131,7 +131,7 @@ for target in \
   "$HOME/.config/opencode" \
   "$HOME/.config/opencode/opencode.jsonc" \
   "$HOME/.config/opencode/AGENTS.md" \
-  "$HOME/.config/opencode/.env.example"
+  # "$HOME/.config/opencode/.env.example"  # removed — use ~/.profile.local
 do
   if ! status_line "$target"; then
     BLOCKING=1

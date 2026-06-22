@@ -32,7 +32,7 @@ fi
 
 OPENCODE_CONFIG="$HOME/.config/opencode/opencode.jsonc"
 OPENCODE_CONFIG_DIR="$HOME/.config/opencode"
-OPENCODE_ENV="$HOME/.config/opencode/.env"
+OPENCODE_ENV="$HOME/.profile.local"
 OPENCODE_AGENTS="$HOME/.config/opencode/AGENTS.md"
 OPENCODE_SKILLS="$HOME/.config/opencode/skills"
 
@@ -778,12 +778,12 @@ do_install() {
         echo "  Edit it to customize your opencode configuration."
     fi
 
-    # Copy env template
-    ENV_EXAMPLE="$HOME/.config/opencode/.env.example"
-    if [ -f "$ENV_EXAMPLE" ] && [ ! -f "$OPENCODE_ENV" ]; then
-        cp "$ENV_EXAMPLE" "$OPENCODE_ENV"
-        _log "Created $OPENCODE_ENV from template."
-        echo "  Edit it to add your MCP tokens."
+    # Remind about environment setup
+    if [ ! -f "$OPENCODE_ENV" ]; then
+        _log "Note: $OPENCODE_ENV not found."
+        echo "  Create it and add your MCP tokens:"
+        echo "    export GITHUB_PERSONAL_ACCESS_TOKEN='ghp_xxx'"
+        echo "    export STACK_EXCHANGE_API_KEY='your_key'"
     fi
 
     # Chain into MCP install
@@ -882,9 +882,9 @@ do_status() {
     echo ""
     echo "Environment:"
     if [ -f "$OPENCODE_ENV" ]; then
-        echo "  .env file:      $OPENCODE_ENV ✓"
+        echo "  profile.local:  $OPENCODE_ENV ✓"
     else
-        echo "  .env file:      not found"
+        echo "  profile.local:  not found"
     fi
 
     echo ""
@@ -904,9 +904,9 @@ do_env() {
     echo "MCP registry:      $MCPS_FILE"
     echo ""
     echo "To load environment variables in your current shell:"
-    echo "  set -a; . $OPENCODE_ENV; set +a"
+    echo "  . $OPENCODE_ENV"
     echo ""
-    echo "Or add to your ~/.zshrc / ~/.bashrc:"
+    echo "Or ensure it's sourced by your ~/.profile (recommended):"
     echo "  [ -f $OPENCODE_ENV ] && set -a && . $OPENCODE_ENV && set +a"
     echo ""
 }
