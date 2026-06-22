@@ -119,9 +119,8 @@ Each AI agent package includes dedicated management scripts:
 
 **OpenCode binaries** (`~/.local/bin/org.jcchikikomori.agentic.opencode/bin/`):
 
-- `dotfiles-opencode` — Main management script (install, install-mcps, uninstall, upgrade)
-- `dotfiles-opencode-env` — Environment configuration helper
-- `dotfiles-opencode-wizard` — Interactive setup wizard
+- `devtools-opencode` — Main management script (install, install-mcps, uninstall, upgrade); available on `PATH` via the `systems` stow package
+- `dotfiles-opencode-wizard` — Interactive setup wizard (delegates to `devtools-opencode`)
 
 **Claude Code binaries** (`~/.local/bin/org.jcchikikomori.agentic.claude/bin/`):
 

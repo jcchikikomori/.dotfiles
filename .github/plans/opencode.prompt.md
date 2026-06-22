@@ -42,8 +42,8 @@
 ## Phase 4: Wire Into Existing Setup
 
 6. Modify `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup`
-   - Add `dotfiles-opencode` to copied scripts list in `setup_directory()`
-   - Add `prompt_installation "opencode" "./dotfiles-opencode"` block in `main()` (Linux only, skip Termux)
+   - Add `devtools-opencode` to PATH via stow `systems` package
+   - Add `prompt_installation "opencode" "devtools-opencode install"` block in `main()` (Linux only, skip Termux)
 
 7. Modify `stowme.sh`
    - Add `opencode` to the `dotstow stow ...` package list
