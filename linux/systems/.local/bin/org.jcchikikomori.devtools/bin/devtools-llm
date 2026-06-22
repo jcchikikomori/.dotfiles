@@ -1,0 +1,978 @@
+#!/bin/sh
+# devtools-llm — Unified local LLM setup and management (Ollama)
+#
+# Usage: devtools-llm <command> [options]
+#
+# Commands:
+#   install [mode]       Install Ollama (auto-detects platform)
+#                        Modes: container, native (default: auto)
+#   uninstall            Remove Ollama and configuration
+#   start                Start Ollama service/container
+#   stop                 Stop Ollama service/container
+#   status               Show installation and service status
+#   models               List installed models
+#   pull <model>         Pull a specific model
+#   logs                 Show Ollama logs
+#   verify-gpu           Check if GPU acceleration is working
+#   thermal              Show thermal status (Steam Deck)
+#   gpu-info             Show GPU information (WSL2/NVIDIA)
+#   recommend            Show model recommendations for this platform
+#   opencode-config      Configure opencode to use Ollama
+#   help                 Show this help message
+#
+# Platform auto-detection:
+#   - Steam Deck: Uses Podman container with gfx1033 ROCM support
+#   - WSL2: Uses Docker Desktop with NVIDIA GPU support
+#   - Regular Linux: Uses official installer or Homebrew
+
+set -eu
+
+# ─── Configuration ───────────────────────────────────────────────────────────
+
+OLLAMA_HOME="${HOME}/.ollama"
+OLLAMA_MODELS="${OLLAMA_HOME}/models"
+OLLAMA_BIN="${HOME}/.local/bin/ollama"
+OLLAMA_SERVICE="ollama.service"
+OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
+
+# Container config
+DOCKER_CONTAINER="ollama-llm"
+STEAMDECK_IMAGE="sebastianlutter/ollama-for-steamdeck:0.6.3-gfx1033-rocm6.3.3-rocm"
+OLLAMA_IMAGE="ollama/ollama:0.6.3"
+
+# Steam Deck GPU settings
+export HSA_OVERRIDE_GFX_VERSION="${HSA_OVERRIDE_GFX_VERSION:-10.3.0}"
+export HIP_VISIBLE_DEVICES="${HIP_VISIBLE_DEVICES:-0}"
+
+# ─── Colors ──────────────────────────────────────────────────────────────────
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# ─── Logging ─────────────────────────────────────────────────────────────────
+
+_log() {
+    printf "${BLUE}[devtools-llm]${NC} %s\n" "$1"
+}
+
+_log_error() {
+    printf "${RED}[devtools-llm] ERROR:${NC} %s\n" "$1" >&2
+}
+
+_log_warn() {
+    printf "${YELLOW}[devtools-llm] WARNING:${NC} %s\n" "$1" >&2
+}
+
+_log_success() {
+    printf "${GREEN}[devtools-llm]${NC} %s\n" "$1"
+}
+
+# ─── Platform Detection ──────────────────────────────────────────────────────
+
+_is_steam_deck() {
+    if [ -f /etc/os-release ]; then
+        if grep -qi "steamos" /etc/os-release 2>/dev/null || \
+           grep -qi "SteamOS" /etc/os-release 2>/dev/null || \
+           command -v steamos-readonly >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+_is_wsl() {
+    [ -f /proc/version ] && grep -qi "microsoft" /proc/version
+}
+
+_is_container_mode() {
+    local cmd
+    cmd=$(_container_cmd)
+    if [ -n "$cmd" ]; then
+        if $cmd ps -a --format '{{.Names}}' 2>/dev/null | grep -q "^${DOCKER_CONTAINER}$"; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+_container_cmd() {
+    if command -v podman >/dev/null 2>&1; then
+        echo "podman"
+    elif command -v docker >/dev/null 2>&1; then
+        echo "docker"
+    else
+        echo ""
+    fi
+}
+
+_detect_platform() {
+    if _is_steam_deck; then
+        echo "steamdeck"
+    elif _is_wsl; then
+        echo "wsl"
+    else
+        echo "linux"
+    fi
+}
+
+# ─── Helpers ─────────────────────────────────────────────────────────────────
+
+_usage() {
+    cat <<EOF
+devtools-llm — Unified local LLM setup and management (Ollama)
+
+USAGE:
+    devtools-llm <command> [options]
+
+COMMANDS:
+    install [mode]       Install Ollama (auto-detects platform)
+                         Modes: container, native (default: auto)
+    uninstall            Remove Ollama and configuration
+    start                Start Ollama service/container
+    stop                 Stop Ollama service/container
+    status               Show installation and service status
+    models               List installed models
+    pull <model>         Pull a specific model
+    logs                 Show Ollama logs
+    verify-gpu           Check if GPU acceleration is working
+    thermal              Show thermal status (Steam Deck)
+    gpu-info             Show GPU information (WSL2/NVIDIA)
+    recommend            Show model recommendations for this platform
+    opencode-config      Configure opencode to use Ollama
+    help                 Show this help message
+
+EXAMPLES:
+    devtools-llm install
+    devtools-llm start
+    devtools-llm pull phi3
+    devtools-llm status
+    devtools-llm recommend
+
+PLATFORM: $(_detect_platform)
+
+EOF
+}
+
+_ollama_cmd() {
+    local cmd
+    cmd=$(_container_cmd)
+    if _is_container_mode && [ -n "$cmd" ]; then
+        echo "$cmd exec $DOCKER_CONTAINER ollama"
+    elif command -v ollama >/dev/null 2>&1; then
+        echo "ollama"
+    elif [ -x "$OLLAMA_BIN" ]; then
+        echo "$OLLAMA_BIN"
+    else
+        echo ""
+    fi
+}
+
+_check_ollama_installed() {
+    if command -v ollama >/dev/null 2>&1 || [ -x "$OLLAMA_BIN" ]; then
+        return 0
+    fi
+    if _is_container_mode; then
+        return 0
+    fi
+    return 1
+}
+
+_setup_environment() {
+    mkdir -p "$OLLAMA_HOME"
+    mkdir -p "$OLLAMA_MODELS"
+    mkdir -p "${HOME}/.config/ollama"
+
+    if _is_steam_deck; then
+        cat > "${HOME}/.config/ollama/env" << 'ENVFILE'
+# Ollama environment settings for Steam Deck
+export OLLAMA_HOST="127.0.0.1:11434"
+export OLLAMA_MODELS="$HOME/.ollama/models"
+export HSA_OVERRIDE_GFX_VERSION="10.3.0"
+export HIP_VISIBLE_DEVICES="0"
+export OLLAMA_NUM_PARALLEL="1"
+export OLLAMA_MAX_LOADED_MODELS="1"
+ENVFILE
+    elif _is_wsl; then
+        cat > "${HOME}/.config/ollama/env" << 'ENVFILE'
+# Ollama environment settings for WSL2
+export OLLAMA_HOST="127.0.0.1:11434"
+export OLLAMA_MODELS="$HOME/.ollama/models"
+export OLLAMA_NUM_PARALLEL="2"
+export OLLAMA_MAX_LOADED_MODELS="2"
+ENVFILE
+    else
+        cat > "${HOME}/.config/ollama/env" << 'ENVFILE'
+# Ollama environment settings
+export OLLAMA_HOST="127.0.0.1:11434"
+export OLLAMA_MODELS="$HOME/.ollama/models"
+ENVFILE
+    fi
+}
+
+# ─── Install ─────────────────────────────────────────────────────────────────
+
+cmd_install() {
+    local mode="${1:-auto}"
+    local platform
+    platform=$(_detect_platform)
+
+    _log "Installing Ollama for platform: $platform"
+
+    if _check_ollama_installed; then
+        _log_warn "Ollama is already installed."
+        if _is_container_mode; then
+            _log "Found existing container: $DOCKER_CONTAINER"
+        fi
+        return 1
+    fi
+
+    _setup_environment
+
+    case "$platform" in
+        steamdeck)
+            _install_steamdeck "$mode"
+            ;;
+        wsl)
+            _install_wsl
+            ;;
+        linux)
+            _install_linux "$mode"
+            ;;
+    esac
+}
+
+_install_steamdeck() {
+    local mode="${1:-container}"
+    local container_cmd
+    container_cmd=$(_container_cmd)
+
+    if [ -z "$container_cmd" ]; then
+        _log_error "Podman/Docker not found. Install Podman first."
+        return 1
+    fi
+
+    if [ "$mode" = "native" ]; then
+        _install_steamdeck_native
+        return
+    fi
+
+    _log "Pulling container image: $STEAMDECK_IMAGE"
+    $container_cmd pull "$STEAMDECK_IMAGE"
+
+    _log "Creating container with gfx1033 support..."
+    $container_cmd run -d \
+        --name "$DOCKER_CONTAINER" \
+        --replace \
+        --device /dev/kfd \
+        --device /dev/dri \
+        -p 127.0.0.1:11434:11434 \
+        -v "$OLLAMA_HOME:/root/.ollama" \
+        -e "HSA_OVERRIDE_GFX_VERSION=10.3.0" \
+        -e "HIP_VISIBLE_DEVICES=0" \
+        "$STEAMDECK_IMAGE"
+
+    sleep 3
+
+    if $container_cmd ps --format '{{.Names}}' | grep -q "^${DOCKER_CONTAINER}$"; then
+        _log_success "Container running!"
+        _pull_default_model "phi3"
+        _log_success "Installation complete!"
+        echo ""
+        echo "Quick start:"
+        echo "  $container_cmd exec -it $DOCKER_CONTAINER ollama run phi3"
+        echo "  devtools-llm thermal  # monitor temperatures"
+    else
+        _log_error "Container failed to start"
+        $container_cmd logs "$DOCKER_CONTAINER" 2>&1 | tail -20
+        return 1
+    fi
+}
+
+_install_steamdeck_native() {
+    if command -v yay >/dev/null 2>&1; then
+        _log "Installing via AUR..."
+        yay -S --noconfirm ollama-rocm 2>/dev/null || {
+            _log_warn "AUR install failed, falling back to official script"
+            _install_official
+        }
+    else
+        _install_official
+    fi
+
+    _create_systemd_service
+    systemctl --user daemon-reload
+    systemctl --user start "$OLLAMA_SERVICE"
+    systemctl --user enable "$OLLAMA_SERVICE"
+
+    sleep 3
+    if ollama list >/dev/null 2>&1; then
+        _pull_default_model "phi3"
+        _log_success "Installation complete!"
+    fi
+}
+
+_install_wsl() {
+    if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+        _log_error "Docker Desktop not available or not running"
+        echo "Install Docker Desktop with WSL2 backend first"
+        return 1
+    fi
+
+    local nvidia_runtime=false
+    if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
+        _log_success "NVIDIA GPU detected"
+        if docker run --rm --gpus all nvidia/cuda:12.0.0-devel-ubuntu22.04 nvidia-smi -L >/dev/null 2>&1; then
+            nvidia_runtime=true
+            _log_success "NVIDIA Container Toolkit configured"
+        fi
+    fi
+
+    docker pull "$OLLAMA_IMAGE"
+
+    if [ "$nvidia_runtime" = true ]; then
+        docker run -d \
+            --name "$DOCKER_CONTAINER" \
+            --gpus all \
+            -p 127.0.0.1:11434:11434 \
+            -v "$OLLAMA_HOME:/root/.ollama" \
+            -e "OLLAMA_HOST=0.0.0.0:11434" \
+            -e "OLLAMA_NUM_PARALLEL=2" \
+            -e "OLLAMA_MAX_LOADED_MODELS=2" \
+            "$OLLAMA_IMAGE"
+    else
+        docker run -d \
+            --name "$DOCKER_CONTAINER" \
+            -p 127.0.0.1:11434:11434 \
+            -v "$OLLAMA_HOME:/root/.ollama" \
+            -e "OLLAMA_HOST=0.0.0.0:11434" \
+            -e "OLLAMA_NUM_PARALLEL=1" \
+            -e "OLLAMA_MAX_LOADED_MODELS=1" \
+            "$OLLAMA_IMAGE"
+    fi
+
+    sleep 3
+    if docker ps --format '{{.Names}}' | grep -q "^${DOCKER_CONTAINER}$"; then
+        _log_success "Container running!"
+        local default_model="phi3"
+        if [ "$nvidia_runtime" = true ]; then
+            default_model="llama3.2:3b"
+        fi
+        _pull_default_model "$default_model"
+        _log_success "Installation complete!"
+        echo ""
+        echo "Quick start:"
+        echo "  docker exec -it $DOCKER_CONTAINER ollama run $default_model"
+    else
+        _log_error "Container failed to start"
+        return 1
+    fi
+}
+
+_install_linux() {
+    local mode="${1:-official}"
+
+    if [ "$mode" = "brew" ] || [ -d "/home/linuxbrew/.linuxbrew" ] || command -v brew >/dev/null 2>&1; then
+        _log "Installing via Homebrew..."
+        brew install ollama
+    else
+        _install_official
+    fi
+
+    _create_systemd_service
+    systemctl --user daemon-reload >/dev/null 2>&1 || true
+    systemctl --user start "$OLLAMA_SERVICE" >/dev/null 2>&1 || true
+    systemctl --user enable "$OLLAMA_SERVICE" >/dev/null 2>&1 || true
+
+    sleep 3
+    if ollama list >/dev/null 2>&1; then
+        _pull_default_model "phi3"
+        _log_success "Installation complete!"
+    fi
+}
+
+_install_official() {
+    _log "Installing via official script..."
+    install_script=$(mktemp)
+    trap 'rm -f "$install_script"' EXIT
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL https://ollama.com/install.sh -o "$install_script"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "https://ollama.com/install.sh" -O "$install_script"
+    else
+        _log_error "Neither curl nor wget available"
+        exit 1
+    fi
+
+    chmod +x "$install_script"
+    _log_warn "Remote script downloaded without integrity verification."
+    _log_warn "Review $install_script before executing if desired."
+    sh "$install_script"
+}
+
+_create_systemd_service() {
+    local ollama_binary=""
+
+    for path in "/usr/bin/ollama" "/usr/local/bin/ollama" "${HOME}/.ollama/bin/ollama" "${HOME}/.local/bin/ollama"; do
+        if [ -x "$path" ]; then
+            ollama_binary="$path"
+            break
+        fi
+    done
+
+    if [ -z "$ollama_binary" ]; then
+        ollama_binary=$(command -v ollama 2>/dev/null || true)
+        case "$ollama_binary" in
+            "${HOME}/"*) ollama_binary="%h${ollama_binary#$HOME}" ;;
+        esac
+    fi
+
+    if [ -z "$ollama_binary" ]; then
+        ollama_binary="/usr/local/bin/ollama"
+    fi
+
+    mkdir -p "$HOME/.config/systemd/user"
+    cat > "$HOME/.config/systemd/user/$OLLAMA_SERVICE" << EOF
+[Unit]
+Description=Ollama Service
+After=network-online.target
+
+[Service]
+Type=simple
+Environment="OLLAMA_HOST=127.0.0.1:11434"
+Environment="OLLAMA_MODELS=%h/.ollama/models"
+ExecStart=$ollama_binary serve
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
+EOF
+}
+
+_pull_default_model() {
+    local model="$1"
+    local ollama
+    ollama=$(_ollama_cmd)
+
+    if [ -n "$ollama" ]; then
+        _log "Pulling default model ($model)..."
+        $ollama pull "$model" 2>&1 | while read -r line; do
+            printf "."
+        done
+        printf "\n"
+        _log_success "Model '$model' ready"
+    fi
+}
+
+# ─── Uninstall ───────────────────────────────────────────────────────────────
+
+cmd_uninstall() {
+    _log "Uninstalling Ollama..."
+
+    local container_cmd
+    container_cmd=$(_container_cmd)
+
+    # Stop and remove container
+    if _is_container_mode && [ -n "$container_cmd" ]; then
+        $container_cmd stop "$DOCKER_CONTAINER" 2>/dev/null || true
+        $container_cmd rm "$DOCKER_CONTAINER" 2>/dev/null || true
+        _log "Container removed"
+    fi
+
+    # Stop native service
+    systemctl --user stop "$OLLAMA_SERVICE" 2>/dev/null || true
+    systemctl --user disable "$OLLAMA_SERVICE" 2>/dev/null || true
+    rm -f "$HOME/.config/systemd/user/$OLLAMA_SERVICE"
+    systemctl --user daemon-reload 2>/dev/null || true
+
+    # Remove binary
+    rm -f "$OLLAMA_BIN"
+    rm -rf "${HOME}/.ollama/bin"
+
+    _log_warn "Models preserved at: $OLLAMA_MODELS"
+    _log_warn "To remove models: rm -rf ~/.ollama"
+    _log_success "Ollama uninstalled"
+}
+
+# ─── Service Control ─────────────────────────────────────────────────────────
+
+cmd_start() {
+    local container_cmd
+    container_cmd=$(_container_cmd)
+
+    if _is_container_mode && [ -n "$container_cmd" ]; then
+        $container_cmd start "$DOCKER_CONTAINER"
+        sleep 2
+        if $container_cmd ps --format '{{.Names}}' | grep -q "^${DOCKER_CONTAINER}$"; then
+            _log_success "Container started"
+        else
+            _log_error "Failed to start container"
+            return 1
+        fi
+    else
+        if systemctl --user list-unit-files "$OLLAMA_SERVICE" >/dev/null 2>&1; then
+            systemctl --user start "$OLLAMA_SERVICE"
+            sleep 2
+            if systemctl --user is-active "$OLLAMA_SERVICE" >/dev/null 2>&1; then
+                _log_success "Service started"
+            else
+                _log_error "Failed to start service"
+                return 1
+            fi
+        else
+            ollama serve &
+            _log_success "Ollama started in background"
+        fi
+    fi
+}
+
+cmd_stop() {
+    local container_cmd
+    container_cmd=$(_container_cmd)
+
+    if _is_container_mode && [ -n "$container_cmd" ]; then
+        $container_cmd stop "$DOCKER_CONTAINER"
+        _log_success "Container stopped"
+    else
+        systemctl --user stop "$OLLAMA_SERVICE" 2>/dev/null || true
+        pkill -f "ollama serve" 2>/dev/null || true
+        _log_success "Service stopped"
+    fi
+}
+
+# ─── Status ──────────────────────────────────────────────────────────────────
+
+cmd_status() {
+    local container_cmd
+    container_cmd=$(_container_cmd)
+    local platform
+    platform=$(_detect_platform)
+
+    echo ""
+    printf "${BLUE}=== Platform ===${NC}\n"
+    echo "Platform: $platform"
+    if _is_container_mode; then
+        echo "Mode: Container"
+        echo "Container: $DOCKER_CONTAINER"
+        if [ -n "$container_cmd" ]; then
+            $container_cmd ps --filter "name=$DOCKER_CONTAINER" --format "Status: {{.Status}}" 2>/dev/null || echo "Status: Unknown"
+        fi
+    elif _check_ollama_installed; then
+        echo "Mode: Native"
+    else
+        echo "Mode: Not installed"
+    fi
+
+    echo ""
+    printf "${BLUE}=== Service ===${NC}\n"
+    if _is_container_mode; then
+        if [ -n "$container_cmd" ]; then
+            $container_cmd ps --filter "name=$DOCKER_CONTAINER"
+        fi
+    else
+        systemctl --user status "$OLLAMA_SERVICE" --no-pager 2>/dev/null || echo "Service not running"
+    fi
+
+    echo ""
+    printf "${BLUE}=== Version ===${NC}\n"
+    local ollama
+    ollama=$(_ollama_cmd)
+    if [ -n "$ollama" ]; then
+        $ollama --version 2>/dev/null || echo "Version check failed"
+    else
+        echo "Ollama not found"
+    fi
+
+    echo ""
+    printf "${BLUE}=== Models ===${NC}\n"
+    if [ -n "$ollama" ]; then
+        $ollama list 2>/dev/null || echo "No models or not running"
+    else
+        echo "Ollama not available"
+    fi
+
+    echo ""
+}
+
+# ─── Model Management ────────────────────────────────────────────────────────
+
+cmd_models() {
+    local ollama
+    ollama=$(_ollama_cmd)
+    if [ -n "$ollama" ]; then
+        $ollama list 2>/dev/null || _log_warn "Ollama not running or no models"
+    else
+        _log_error "Ollama not installed"
+        return 1
+    fi
+}
+
+cmd_pull() {
+    if [ $# -eq 0 ]; then
+        _log_error "Model name required"
+        echo "Usage: devtools-llm pull <model>"
+        return 1
+    fi
+
+    local model="$1"
+    local ollama
+    ollama=$(_ollama_cmd)
+
+    if [ -z "$ollama" ]; then
+        _log_error "Ollama not installed"
+        return 1
+    fi
+
+    _log "Pulling model: $model"
+    if $ollama pull "$model"; then
+        _log_success "Model '$model' pulled successfully"
+    else
+        _log_error "Failed to pull model '$model'"
+        return 1
+    fi
+}
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+
+cmd_logs() {
+    local container_cmd
+    container_cmd=$(_container_cmd)
+
+    if _is_container_mode && [ -n "$container_cmd" ]; then
+        $container_cmd logs --tail 50 -f "$DOCKER_CONTAINER"
+    else
+        journalctl --user -u ollama -f 2>/dev/null || _log_warn "No systemd logs available"
+    fi
+}
+
+# ─── GPU Verification ────────────────────────────────────────────────────────
+
+cmd_verify_gpu() {
+    echo ""
+    printf "${BLUE}=== GPU Acceleration Verification ===${NC}\n"
+    echo ""
+
+    local ollama
+    ollama=$(_ollama_cmd)
+
+    if _is_steam_deck; then
+        printf "${GREEN}Steam Deck GPU:${NC}\n"
+        printf "  HSA_OVERRIDE_GFX_VERSION: %s\n" "${HSA_OVERRIDE_GFX_VERSION}"
+        if command -v rocm-smi >/dev/null 2>&1; then
+            rocm-smi --showproductname 2>/dev/null || echo "  Could not query GPU"
+        fi
+    elif _is_wsl; then
+        printf "${GREEN}WSL2 GPU:${NC}\n"
+        if command -v nvidia-smi >/dev/null 2>&1; then
+            nvidia-smi --query-gpu=name,driver_version --format=csv 2>/dev/null | sed 's/^/  /'
+        else
+            echo "  No NVIDIA GPU detected"
+        fi
+    fi
+
+    if [ -n "$ollama" ]; then
+        printf "\n${GREEN}Ollama GPU Test:${NC}\n"
+        local test_model=""
+        if $ollama list 2>/dev/null | grep -q "phi3"; then
+            test_model="phi3"
+        elif $ollama list 2>/dev/null | grep -q "llama3.2"; then
+            test_model="llama3.2:3b"
+        fi
+
+        if [ -n "$test_model" ]; then
+            echo "  Testing with $test_model..."
+            local output
+            output=$($ollama run "$test_model" "Say 'GPU test'" 2>&1) || true
+            if echo "$output" | grep -qi "gpu\|rocm\|cuda\|amd"; then
+                printf "  ${GREEN}✓ GPU acceleration appears active${NC}\n"
+            else
+                printf "  ${YELLOW}GPU status unclear${NC}\n"
+            fi
+        else
+            echo "  No test model available. Pull one first:"
+            echo "    devtools-llm pull phi3"
+        fi
+    fi
+    echo ""
+}
+
+# ─── Thermal (Steam Deck) ────────────────────────────────────────────────────
+
+cmd_thermal() {
+    if ! _is_steam_deck; then
+        _log_warn "Thermal monitoring is Steam Deck-specific"
+        return 1
+    fi
+
+    echo ""
+    printf "${BLUE}=== Steam Deck Thermal Status ===${NC}\n"
+    echo ""
+
+    if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
+        printf "${GREEN}CPU Temperature:${NC}\n"
+        for zone in /sys/class/thermal/thermal_zone*/temp; do
+            if [ -f "$zone" ]; then
+                temp=$(cat "$zone" 2>/dev/null || echo 0)
+                if [ "$temp" -gt 0 ]; then
+                    temp_c=$((temp / 1000))
+                    printf "  %s: %d°C\n" "$(basename "$zone")" "$temp_c"
+                fi
+            fi
+        done
+    fi
+
+    if [ -f /sys/class/drm/card0/device/hwmon/hwmon0/temp1_input ]; then
+        printf "\n${GREEN}GPU Temperature:${NC}\n"
+        gpu_temp=$(cat /sys/class/drm/card0/device/hwmon/hwmon0/temp1_input 2>/dev/null || echo 0)
+        if [ "$gpu_temp" -gt 0 ]; then
+            gpu_temp_c=$((gpu_temp / 1000))
+            printf "  GPU: %d°C\n" "$gpu_temp_c"
+            if [ "$gpu_temp_c" -ge 85 ]; then
+                printf "  ${RED}WARNING: GPU thermally throttling${NC}\n"
+            elif [ "$gpu_temp_c" -ge 80 ]; then
+                printf "  ${YELLOW}CAUTION: Approaching thermal limits${NC}\n"
+            fi
+        fi
+    fi
+
+    if [ -f /sys/class/drm/card0/device/hwmon/hwmon0/fan1_input ]; then
+        fan_speed=$(cat /sys/class/drm/card0/device/hwmon/hwmon0/fan1_input 2>/dev/null || echo 0)
+        if [ "$fan_speed" -gt 0 ]; then
+            printf "\n${GREEN}Fan Speed:${NC} %d RPM\n" "$fan_speed"
+        fi
+    fi
+    echo ""
+}
+
+# ─── GPU Info (WSL) ──────────────────────────────────────────────────────────
+
+cmd_gpu_info() {
+    if ! _is_wsl; then
+        _log_warn "Detailed GPU info is WSL2-specific"
+        if command -v nvidia-smi >/dev/null 2>&1; then
+            nvidia-smi 2>/dev/null || true
+        fi
+        return 0
+    fi
+
+    echo ""
+    printf "${BLUE}=== WSL2 GPU Information ===${NC}\n"
+    echo ""
+
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        echo "NVIDIA GPU detected:"
+        nvidia-smi --query-gpu=name,driver_version,memory.total,memory.free --format=csv 2>/dev/null | sed 's/^/  /'
+        echo ""
+
+        if docker run --rm --gpus all nvidia/cuda:12.0.0-devel-ubuntu22.04 nvidia-smi -L >/dev/null 2>&1; then
+            printf "${GREEN}NVIDIA Container Runtime: Configured${NC}\n"
+        else
+            printf "${YELLOW}NVIDIA Container Runtime: Not configured${NC}\n"
+        fi
+    else
+        echo "No NVIDIA GPU detected"
+        echo "Mode: CPU-only"
+    fi
+    echo ""
+}
+
+# ─── Recommendations ─────────────────────────────────────────────────────────
+
+cmd_recommend() {
+    local platform
+    platform=$(_detect_platform)
+
+    echo ""
+    printf "${BLUE}=== Recommended Models for $platform ===${NC}\n"
+    echo ""
+
+    case "$platform" in
+        steamdeck)
+            printf "${GREEN}Best Balance:${NC}\n"
+            echo "  phi3              - Fast general purpose (3.8B)"
+            echo "  qwen2.5-coder:3b  - Excellent for coding (3B)"
+            echo ""
+            printf "${GREEN}Fastest/Low Power:${NC}\n"
+            echo "  deepseek-coder:1.3b - Minimal heat (1.3B)"
+            echo ""
+            printf "${YELLOW}Not Recommended:${NC}\n"
+            echo "  Models >7B — Cause thermal throttling and OOM"
+            ;;
+        wsl)
+            local has_gpu=false
+            if command -v nvidia-smi >/dev/null 2>&1 && nvidia-smi -L >/dev/null 2>&1; then
+                has_gpu=true
+            fi
+
+            if [ "$has_gpu" = true ]; then
+                printf "${GREEN}GPU Mode:${NC}\n"
+                echo "  llama3.2:3b       - Optimal balance (3B)"
+                echo "  qwen2.5:7b        - Strong coding (7B)"
+                echo "  mistral:7b        - Balanced quality (7B)"
+                echo ""
+                printf "${GREEN}GPU Mode - Larger:${NC}\n"
+                echo "  qwen2.5:14b       - Advanced reasoning (14B, needs 8GB+ VRAM)"
+            else
+                printf "${YELLOW}CPU Mode:${NC}\n"
+                echo "  phi3              - Fast and efficient (3.8B)"
+                echo "  qwen2.5-coder:3b  - Good for coding (3B)"
+                echo "  deepseek-coder:1.3b - Very fast (1.3B)"
+            fi
+            ;;
+        linux)
+            printf "${GREEN}General Purpose:${NC}\n"
+            echo "  llama3.2          - Latest Llama (3B)"
+            echo "  phi3              - Fast general purpose (3.8B)"
+            echo "  qwen2.5-coder:3b  - Coding focused (3B)"
+            echo ""
+            printf "${GREEN}Larger Models (if GPU available):${NC}\n"
+            echo "  qwen2.5:7b        - Strong capabilities (7B)"
+            echo "  mistral:7b        - High quality (7B)"
+            ;;
+    esac
+
+    echo ""
+    echo "Pull models with: devtools-llm pull <model>"
+    echo ""
+}
+
+# ─── Opencode Config ─────────────────────────────────────────────────────────
+
+cmd_opencode_config() {
+    local model="${1:-phi3}"
+    local config_file="${HOME}/.config/opencode/opencode.jsonc"
+    local backup_file="${config_file}.backup.$(date +%Y%m%d_%H%M%S)"
+
+    # Handle --status
+    if [ "$model" = "--status" ]; then
+        echo ""
+        printf "${BLUE}=== Opencode + Ollama Status ===${NC}\n"
+        echo ""
+
+        if [ ! -f "$config_file" ]; then
+            printf "  ${RED}✗ Opencode config not found${NC}\n"
+            return 1
+        fi
+
+        printf "  ${GREEN}✓ Opencode config found${NC}\n"
+        local current_model
+        current_model=$(grep -E '"model"\s*:' "$config_file" 2>/dev/null | head -1 | sed 's/.*"model"\s*:\s*"\([^"]*\)".*/\1/')
+        printf "  Current model: %s\n" "${current_model:-unknown}"
+
+        echo ""
+        printf "${BLUE}=== Ollama Status ===${NC}\n"
+        if _check_ollama_installed; then
+            printf "  ${GREEN}✓ Ollama installed${NC}\n"
+        else
+            printf "  ${RED}✗ Ollama not installed${NC}\n"
+        fi
+        return 0
+    fi
+
+    # Strip ollama/ prefix
+    model=$(echo "$model" | sed 's/^ollama\///')
+
+    if [ ! -f "$config_file" ]; then
+        _log_error "Opencode config not found at $config_file"
+        return 1
+    fi
+
+    _log "Configuring opencode to use Ollama with model: $model"
+
+    cp "$config_file" "$backup_file"
+    _log "Backup created: $backup_file"
+
+    # Update model fields with sed
+    sed -i.bak "s/\"model\":\s*\"[^\"]*\"/\"model\": \"ollama\/$model\"/" "$config_file"
+    sed -i "s/\"small_model\":\s*\"[^\"]*\"/\"small_model\": \"ollama\/$model\"/" "$config_file"
+    rm -f "${config_file}.bak"
+
+    # Basic validation
+    local open_braces close_braces
+    open_braces=$(grep -o '{' "$config_file" | wc -l)
+    close_braces=$(grep -o '}' "$config_file" | wc -l)
+    if [ "$open_braces" -eq "$close_braces" ]; then
+        _log_success "Configuration updated"
+    else
+        _log_error "Syntax error detected — restoring backup"
+        cp "$backup_file" "$config_file"
+        return 1
+    fi
+
+    echo ""
+    printf "${GREEN}✓ Configuration updated!${NC}\n"
+    printf "  Model:       ollama/%s\n" "$model"
+    printf "  Backup:      %s\n" "$backup_file"
+    echo ""
+    echo "Test: opencode ask \"Hello, are you using Ollama?\""
+    echo ""
+}
+
+# ─── Main ────────────────────────────────────────────────────────────────────
+
+main() {
+    if [ $# -eq 0 ]; then
+        _usage
+        exit 1
+    fi
+
+    case "$1" in
+        install)
+            shift
+            cmd_install "$@"
+            ;;
+        uninstall)
+            cmd_uninstall
+            ;;
+        start)
+            cmd_start
+            ;;
+        stop)
+            cmd_stop
+            ;;
+        status)
+            cmd_status
+            ;;
+        models)
+            cmd_models
+            ;;
+        pull)
+            shift
+            cmd_pull "$@"
+            ;;
+        logs)
+            cmd_logs
+            ;;
+        verify-gpu)
+            cmd_verify_gpu
+            ;;
+        thermal)
+            cmd_thermal
+            ;;
+        gpu-info)
+            cmd_gpu_info
+            ;;
+        recommend)
+            cmd_recommend
+            ;;
+        opencode-config)
+            shift
+            cmd_opencode_config "$@"
+            ;;
+        help|--help|-h)
+            _usage
+            exit 0
+            ;;
+        *)
+            _log_error "Unknown command: $1"
+            _usage
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

@@ -38,7 +38,7 @@
 }
 ```
 
-### Environment Variables (`~/.config/opencode/.env`)
+### Environment Variables (`~/.profile.local`)
 
 ```bash
 # Model Configuration
@@ -88,7 +88,7 @@ AWS_PROFILE=rdy-claude
 ```markdown
 ## Model
 
-- Uses environment variable configuration from `~/.config/opencode/.env`
+- Uses environment variable configuration from `~/.profile.local`
 - **Default:** `$OPENCODE_MODEL` (configured in .env)
 - **Small:** `$OPENCODE_SMALL_MODEL` (configured in .env)
 - This allows the same agent to work across personal and work projects with different model providers
@@ -101,7 +101,7 @@ AWS_PROFILE=rdy-claude
 ### Personal Projects (GitHub Copilot)
 
 ```bash
-# ~/.config/opencode/.env
+# ~/.profile.local
 OPENCODE_MODEL=github-copilot/claude-sonnet-4
 OPENCODE_SMALL_MODEL=github-copilot/claude-haiku-4
 ```
@@ -109,7 +109,7 @@ OPENCODE_SMALL_MODEL=github-copilot/claude-haiku-4
 ### Work Projects (AWS Bedrock)
 
 ```bash
-# ~/.config/opencode/.env
+# ~/.profile.local
 OPENCODE_MODEL=amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0
 OPENCODE_SMALL_MODEL=amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0
 AWS_REGION=ap-southeast-2
@@ -118,7 +118,7 @@ AWS_PROFILE=rdy-claude
 
 ### Switch Between Environments
 
-Just update `~/.config/opencode/.env` or use project-specific overrides in `.opencode/.env`
+Just update `~/.profile.local` or use project-specific overrides in `.opencode/.env`
 
 ---
 
@@ -157,7 +157,7 @@ For any project or agent configuration:
 - [ ] Replace `"small_model": "provider/model-name"` with `"small_model": "{env:OPENCODE_SMALL_MODEL}"`
 - [ ] Add `amazon-bedrock` provider if using AWS Bedrock
 - [ ] In agent `.md` files, document model usage but don't specify exact models
-- [ ] Set `OPENCODE_MODEL` and `OPENCODE_SMALL_MODEL` in `~/.config/opencode/.env`
+- [ ] Set `OPENCODE_MODEL` and `OPENCODE_SMALL_MODEL` in `~/.profile.local`
 - [ ] Test subagent spawning with: `task(subagent_type="explorer", prompt="test")`
 
 ---
@@ -171,7 +171,7 @@ For any project or agent configuration:
 | `.opencode/opencode.jsonc` | Uses `{env:OPENCODE_MODEL}`, added amazon-bedrock provider |
 | `~/.config/opencode/opencode.jsonc` | Uses `{env:OPENCODE_MODEL}` (symlinked from stow) |
 | `~/.config/opencode/agents/obama.md` | Documents env var usage (symlinked from stow) |
-| `~/.config/opencode/.env` | Defines `OPENCODE_MODEL` for your environment |
+| `~/.profile.local` | Defines `OPENCODE_MODEL` for your environment |
 
 ---
 

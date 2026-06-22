@@ -131,17 +131,25 @@ if [ -d "$HOME/.dotfiles/opencode" ] && [ ! -f "$HOME/.dotfiles/opencode/.config
   rm -rf "$HOME/.dotfiles/opencode"
 fi
 
+# Backup oh-my-opencode state before cleanup (these are real files, not symlinks)
+mkdir -p "$HOME/.backups/opencode/omo"
+for omo_file in "$HOME/.config/opencode/oh-my-openagent.json" \
+                "$HOME/.config/opencode/oh-my-opencode.json" \
+                "$HOME/.config/opencode/oh-my-opencode-slim.json"; do
+    if [ -f "$omo_file" ] && [ ! -L "$omo_file" ]; then
+        cp "$omo_file" "$HOME/.backups/opencode/omo/"
+    fi
+done
+
 # Clean up opencode symlinks, old folders & stale files before restow
-rm -f "$HOME/.config/opencode/opencode.jsonc"
-rm -f "$HOME/.config/opencode/oh-my-opencode.json"
-rm -f "$HOME/.config/opencode/oh-my-opencode-slim.json"
+# NOTE: opencode.jsonc is now a real file (copied from template), not a symlink — do NOT remove it
 rm -f "$HOME/.config/opencode/opencode-mem.json"
 rm -f "$HOME/.config/opencode/package.json"
 rm -f "$HOME/.config/opencode/bun.lock"
 rm -f "$HOME/.config/opencode/tui.json"
 rm -f "$HOME/.config/opencode/AGENTS.md"
 rm -f "$HOME/.config/opencode/GIT_COMMIT_GUARD.md"
-rm -f "$HOME/.config/opencode/.env.example"
+# .env.example removed — tokens now live in ~/.profile.local
 rm -f "$HOME/.zopencode"
 rm -rf "$HOME/.opencode"
 rm -rf "$HOME/.config/opencode/agent"

@@ -20,7 +20,7 @@
 
 ## Phase 2: Install Script
 
-4. Create `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode`
+4. Create `linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-opencode`
    - Follows `bin-template` POSIX sh pattern, supports `install` arg
    - Arch (with yay installed, otherwise manual AUR install) → `yay -S opencode-bin`; others → `XDG_BIN_DIR=$HOME/.local/bin curl -fsSL https://opencode.ai/install | bash`
    - Prints post-install notice: _"Run `opencode` then `/connect`, select GitHub Copilot"_
@@ -42,8 +42,8 @@
 ## Phase 4: Wire Into Existing Setup
 
 6. Modify `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup`
-   - Add `dotfiles-opencode` to copied scripts list in `setup_directory()`
-   - Add `prompt_installation "opencode" "./dotfiles-opencode"` block in `main()` (Linux only, skip Termux)
+   - Add `devtools-opencode` to PATH via stow `systems` package
+   - Add `prompt_installation "opencode" "devtools-opencode install"` block in `main()` (Linux only, skip Termux)
 
 7. Modify `stowme.sh`
    - Add `opencode` to the `dotstow stow ...` package list
@@ -60,15 +60,15 @@
 
 - `opencode/.config/opencode/opencode.jsonc`
 - `opencode/.config/opencode/AGENTS.md`
-- `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode`
-- `linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-opencode-wizard`
+- `linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-opencode`
+- `linux/opencode/.local/bin/org.jcchikikomori.agentic.opencode/bin/dotfiles-opencode-wizard`
 
 ---
 
 ## Verification
 
 1. Run `stowme.sh` → `~/.config/opencode/opencode.jsonc` and `AGENTS.md` are symlinked
-2. Run `dotfiles-opencode install` → `opencode` binary exists in PATH
+2. Run `devtools-opencode install` → `opencode` binary exists in PATH
 3. Run `opencode --version` → confirms install
 4. Run `dotfiles-opencode-wizard` → test each menu option
 5. Launch `opencode` → config + MCPs load correctly
