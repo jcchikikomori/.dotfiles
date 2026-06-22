@@ -27,63 +27,49 @@ else
   "$DOTSTOW_BIN" unstow flatpak systems wireplumber
 fi
 
+# Backup helper: copies file/dir to $HOME/.backups if it exists and is not a symlink
+backup_item() {
+  local src="$1"
+  local label="${2:-$(basename "$src")}"
+  if [ -e "$src" ] && [ ! -L "$src" ]; then
+    mkdir -p "$HOME/.backups"
+    cp -a "$src" "$HOME/.backups/"
+    echo "  backed up $label"
+  fi
+}
+
 echo 'Backing up...'
 mkdir -p "$HOME/.backups"
 mkdir -p "$HOME/.backups/opencode"
 mkdir -p "$HOME/.binbackups"
 
-if [ -d "$HOME/.ssh" ]; then
-  cp -rf "$HOME/.ssh" "$HOME/.backups"
-fi
-
-if [ -d "$HOME/.zsh" ]; then
-  cp -rf "$HOME/.zsh" "$HOME/.backups"
-fi
-
-if [ -f "$HOME/.zshrc" ]; then
-  cp -f "$HOME/.zshrc" "$HOME/.backups"
-fi
-
-if [ -f "$HOME/.zprofile" ]; then
-  cp -f "$HOME/.zprofile" "$HOME/.backups"
-fi
-
-if [ -f "$HOME/.profile" ]; then
-  cp -f "$HOME/.profile" "$HOME/.backups"
-fi
-
-if [ -f "$HOME/.zshrc.pre-oh-my-zsh" ]; then
-  cp -f "$HOME/.zshrc.pre-oh-my-zsh" "$HOME/.backups"
-fi
-
-if [ -d "$HOME/.git" ]; then
-  cp -rf "$HOME/.git" "$HOME/.backups"
-fi
-
-if [ -d "$HOME/.config/opencode/memory_data" ]; then
-  cp -rf "$HOME/.config/opencode/memory_data" "$HOME/.backups/opencode"
-fi
-
-if [ -d "$HOME/.opencode" ]; then
-  cp -rf "$HOME/.opencode" "$HOME/.backups/opencode"
-fi
-
-if [ -d "$HOME/.claude" ]; then
-  cp -rf "$HOME/.claude" "$HOME/.backups"
-fi
-
-if [ -d "$HOME/.agents" ]; then
-  cp -rf "$HOME/.agents" "$HOME/.backups"
-fi
+backup_item "$HOME/.ssh"
+backup_item "$HOME/.zsh"
+backup_item "$HOME/.zshrc"
+backup_item "$HOME/.zprofile"
+backup_item "$HOME/.profile"
+backup_item "$HOME/.zshrc.pre-oh-my-zsh"
+backup_item "$HOME/.git"
+backup_item "$HOME/.config/opencode/memory_data"
+backup_item "$HOME/.opencode"
+backup_item "$HOME/.claude"
+backup_item "$HOME/.agents"
 
 echo 'Cleaning up tmux...'
 rm -f "$HOME/.tmux.conf.local"
 rm -rf "$HOME/.config/tmux-powerline"
 
 echo 'Cleaning up VSCode...'
+backup_item "$HOME/.vscode-server/extensions/extensions.json"
 rm -rf "$HOME/.vscode"
 rm -rf "$HOME/.vscode-server"
 rm -rf "$HOME/.config/Code/User/prompts"
+# Restore extensions.json as a real file (not stowed)
+if [ -f "$HOME/.backups/extensions.json" ]; then
+  mkdir -p "$HOME/.vscode-server/extensions"
+  cp -f "$HOME/.backups/extensions.json" "$HOME/.vscode-server/extensions/extensions.json"
+  echo "  restored extensions.json as real file"
+fi
 
 echo 'Cleaning up other files...'
 rm -f "$HOME/.gitconfig"
