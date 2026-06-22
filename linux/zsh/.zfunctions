@@ -1,18 +1,3 @@
-# opencode() shell wrapper — per-project env loading
-# When OPENCODE_ENV_DEBUG=1, prints which env files were loaded.
-# Env precedence:
-#   1. ~/.config/opencode/.env          (global)
-#   2. nearest $PWD ancestor .opencode/.env  (project, overrides global)
-opencode() {
-    # Recursion guard: already inside the env-loader, go straight to real binary
-    if [ "${_DOTFILES_OPENCODE_ENV_LOADED:-0}" = "1" ]; then
-        command opencode "$@"
-        return $?
-    fi
-    # Delegate to the helper script which loads env files then exec's opencode
-    dotfiles-opencode-env "$@"
-}
-
 remlower() {
   local dry=0
   [[ $1 == --dry-run ]] && { dry=1; shift; }
