@@ -1,0 +1,61 @@
+#compdef devtools-llm
+
+# Zsh completion for devtools-llm
+
+_devtools-llm() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '(-h --help)'{-h,--help}'[Show help]' \
+    '1: :->command' \
+    '*:: :->args'
+
+  case "$state" in
+    command)
+      _values 'devtools-llm command' \
+        'install[Install Ollama (auto-detects platform)]' \
+        'uninstall[Remove Ollama and configuration]' \
+        'start[Start Ollama service/container]' \
+        'stop[Stop Ollama service/container]' \
+        'status[Show installation and service status]' \
+        'models[List installed models]' \
+        'pull[Pull a specific model]' \
+        'logs[Show Ollama logs]' \
+        'verify-gpu[Check if GPU acceleration is working]' \
+        'thermal[Show thermal status (Steam Deck)]' \
+        'gpu-info[Show GPU information (WSL2/NVIDIA)]' \
+        'recommend[Show model recommendations for this platform]' \
+        'opencode-config[Configure opencode to use Ollama]' \
+        'help[Show help message]'
+      ;;
+    args)
+      case "$line[1]" in
+        install)
+          _values 'install mode' \
+            'container[Use container (Podman/Docker)]' \
+            'native[Native installation]' \
+            'brew[Install via Homebrew]'
+          ;;
+        pull)
+          _values 'common models' \
+            'phi3' \
+            'llama3.2' \
+            'llama3.2:3b' \
+            'qwen2.5-coder:3b' \
+            'qwen2.5:7b' \
+            'deepseek-coder:1.3b' \
+            'mistral:7b'
+          ;;
+        opencode-config)
+          _values 'common models' \
+            'phi3' \
+            'llama3.2:3b' \
+            'qwen2.5-coder:3b'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_devtools-llm "$@"

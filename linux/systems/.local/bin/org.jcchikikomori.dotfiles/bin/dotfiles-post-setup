@@ -19,7 +19,6 @@ setup_directory() {
     cp -r "dotfiles-vim" "$WORKDIR"
     cp -r "dotfiles-git" "$WORKDIR"
     cp -r "dotfiles-nerf" "$WORKDIR"
-    cp -r "dotfiles-opencode" "$WORKDIR"
     echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
@@ -63,6 +62,57 @@ prompt_installation() {
     else
         echo "Skipped. You can install $name later."
     fi
+}
+
+# Setup ~/.profile.local for user customizations
+setup_profile_local() {
+    local profile_local="$HOME/.profile.local"
+
+    # Check if already exists
+    if [ -f "$profile_local" ]; then
+        echo "[INFO] ~/.profile.local already exists, skipping"
+        return 0
+    fi
+
+    # CI/Unattended mode - auto create with defaults
+    if [ "$CI_MODE" = "true" ] || [ -n "$SKIP_INSTALL_PROGLANG" ]; then
+        local dotfiles_dir="${DOTFILES_PATH:-$HOME/.dotfiles}"
+        local example_file="$dotfiles_dir/.profile.local.example"
+        if [ -f "$example_file" ]; then
+            cp "$example_file" "$profile_local"
+            echo "[INFO] Created ~/.profile.local from example (CI mode)"
+        else
+            echo "[WARN] Example file not found: $example_file"
+            echo "[WARN] Skipping ~/.profile.local creation"
+        fi
+        return 0
+    fi
+
+    # Interactive mode - ask user
+    echo ""
+    echo "Would you like to create ~/.profile.local for your customizations?"
+    echo "This file will NOT be managed by dotfiles and persists across updates."
+    echo "Your ~/.profile will source it automatically."
+    printf "%s [y/N] " "Create ~/.profile.local?"
+    read -r choice
+    case "$choice" in
+        [yY]|[yY][eE][sS])
+            local dotfiles_dir="${DOTFILES_PATH:-$HOME/.dotfiles}"
+            local example_file="$dotfiles_dir/.profile.local.example"
+            if [ -f "$example_file" ]; then
+                cp "$example_file" "$profile_local"
+                echo "Created ~/.profile.local from example"
+                echo "  Edit $profile_local to add your tokens."
+            else
+                echo "Warning: Example file not found: $example_file"
+                echo "  You can create ~/.profile.local manually."
+            fi
+            ;;
+        *)
+            echo "Skipped. You can create it manually later."
+            echo "  Example: cp ~/.dotfiles/.profile.local.example ~/.profile.local"
+            ;;
+    esac
 }
 
 main() {
@@ -132,7 +182,13 @@ main() {
     fi
 
     if [ -z "$PREFIX" ] || ! echo "$PREFIX" | grep -q "com.termux"; then
-        prompt_installation "opencode AI coding agent" "dotfiles-opencode"
+        DOTFILES_DIR="${DOTFILES_PATH:-$HOME/.dotfiles}"
+        if command -v devtools-opencode > /dev/null 2>&1; then
+            prompt_installation "opencode AI coding agent" "devtools-opencode install"
+        else
+            echo "Warning: devtools-opencode not found on PATH. Skipping."
+            echo "  Make sure the systems stow package is installed."
+        fi
     fi
 
     echo 'Setting up oh-my-zsh...'
@@ -146,6 +202,9 @@ main() {
     git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting
     git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete
     git clone https://github.com/larkery/zsh-histdb.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb
+
+    echo 'Setting up ~/.profile.local for user customizations...'
+    setup_profile_local
 
     cd "$ORIGINAL_DIR"
     rm -rf "$WORKDIR"

@@ -26,7 +26,6 @@ linux/vscode/.vscode/argv.json
 **/vscode/.vscode-server/bin/*
 **/vscode/.vscode-server/data/*
 **/vscode/.vscode-server/extensions/
-!**/vscode/.vscode-server/extensions/extensions.json
 !**/vscode/.vscode-server/data/Machine/*
 !**/vscode/.vscode-server/data/User/*
 **/vscode/.vscode/extensions/
@@ -60,6 +59,22 @@ linux/dxvk/.dxvk/log/
 .currentdir
 .currentuser
 linux/systems/.dotfiles-python-version
+
+# opencode
+.opencode
+linux/opencode/.config/opencode/node_modules
+linux/opencode/.config/opencode/.env
+linux/opencode/.config/opencode/memory_data
+linux/opencode/.config/opencode/oh-my-opencode-slim.json
+
+# oh-my-opencode
+.omo/
+
+# opencode-redactor
+linux/opencode/.config/opencode/opencode-redactor.audit.jsonl
+
+# Claude Code
+.claude/
 
 # EmuDeck
 linux/zsh/.config/systemd/user/EmuDeckCloudSync.service

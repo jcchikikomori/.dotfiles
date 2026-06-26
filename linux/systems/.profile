@@ -48,6 +48,8 @@ fi
 export EDITOR=vim
 export PATH="${HOME}/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.dotfiles/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.agentic.claude/bin:${PATH}"
+export PATH="${HOME}/.local/bin/org.jcchikikomori.agentic.opencode/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.devtools/bin:${PATH}"
 export PATH="${HOME}/.local/bin/org.jcchikikomori.emudecktools/bin:${PATH}"
 
@@ -140,8 +142,9 @@ if [ -d "$RBENV_ROOT" ]; then
     eval "$(rbenv init -)"
 fi
 
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    . "$NVM_DIR/nvm.sh"
+if [ -d "$NVM_DIR" ]; then
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 fi
 
 if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
@@ -157,7 +160,18 @@ if [ -f "$HOME/.config/opencode/.env" ]; then
     set +a
 fi
 
+if [ -f "$HOME/.zopencode" ]; then
+    . "$HOME/.zopencode"
+fi
+
 # Start TMUX if not already running
 if [ -z "$TMUX" ] && [ -z "$TMUX_DISABLE_AT_BOOT" ]; then
     tmux attach || tmux new
+fi
+
+# =============================================================================
+# Local customizations (NOT managed by dotfiles)
+# =============================================================================
+if [ -f "$HOME/.profile.local" ]; then
+    . "$HOME/.profile.local"
 fi

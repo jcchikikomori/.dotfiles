@@ -1,3 +1,10 @@
+# NVM via Homebrew — load early before any Homebrew node
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if command -v brew >/dev/null 2>&1; then
+  [ -s "$(brew --prefix nvm)/nvm.sh" ] && \. "$(brew --prefix nvm)/nvm.sh"
+  [ -s "$(brew --prefix nvm)/etc/bash_completion.d/nvm" ] && \. "$(brew --prefix nvm)/etc/bash_completion.d/nvm"
+fi
+
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -120,9 +127,9 @@ source $ZSH/oh-my-zsh.sh
 
 ## Path section
 # Default
-export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:$PATH
+# export PATH=$HOME/.local/bin/org.jcchikikomori.dotfiles/bin:$PATH
 # Dev tools
-export PATH=$HOME/.local/bin/org.jcchikikomori.devtools/bin:$PATH
+# export PATH=$HOME/.local/bin/org.jcchikikomori.devtools/bin:$PATH
 
 # SonarQube Scanner
 export SONAR_SCANNER_VERSION="5.0.1.3006"
@@ -143,18 +150,20 @@ function set_win_title(){
 }
 precmd_functions+=(set_win_title)
 
-# Autoload Python venv if .venv exists
+# Autoload Python venv if .venv or .venv/global exists
 function auto_load_venv() {
-    if [[ -d "$PWD/.venv" ]]; then
-        if [[ -z "$VIRTUAL_ENV" ]] || [[ "$VIRTUAL_ENV" != "$PWD/.venv" ]]; then
-            source "$PWD/.venv/bin/activate"
-        fi
-    else
-        if [[ -n "$VIRTUAL_ENV" ]]; then
-            deactivate
+    local venv_path="$PWD/.venv"
+    # Support both .venv and .venv/global (from dotfiles-python)
+    if [[ -d "$PWD/.venv/global" ]]; then
+        venv_path="$PWD/.venv/global"
+    fi
+    if [[ -d "$venv_path" ]]; then
+        if [[ -z "$VIRTUAL_ENV" ]] || [[ "$VIRTUAL_ENV" != "$venv_path" ]]; then
+            source "$venv_path/bin/activate"
         fi
     fi
 }
+
 add-zsh-hook chpwd auto_load_venv
 auto_load_venv  # Run on shell initialization too
 
@@ -177,6 +186,7 @@ setopt pushd_ignore_dups
 setopt pushdminus
 
 # Completion.
+fpath+=($HOME/.zsh/completions)
 autoload -Uz compinit
 compinit
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'       # Case insensitive tab completion

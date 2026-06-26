@@ -1,0 +1,260 @@
+#!/bin/sh
+#
+# dotfiles-windows — Windows/WSL2-specific utility for managing LLM and development tools
+#
+# Usage: dotfiles-windows {llm-setup|llm-status|gpu-info|docker-check|help}
+#
+# Commands:
+#   llm-setup       Setup local LLM with Ollama (Docker Desktop + NVIDIA GPU support)
+#   llm-status      Check LLM service status
+#   gpu-info        Show NVIDIA GPU information and driver status
+#   docker-check    Verify Docker Desktop is installed and configured
+#   help            Show this help message
+#
+# Windows/WSL2 Configuration:
+#   - Designed for systems with NVIDIA RTX GPUs (RTX Ada 500 or better recommended)
+#   - Requires Docker Desktop with WSL2 backend
+#   - GPU acceleration via NVIDIA Container Toolkit (automatic with Docker Desktop WSL2)
+#   - CPU-only mode supported for systems without NVIDIA GPU
+#
+# POSIX sh — no bashisms.
+
+set -eu
+
+# Color output for messages
+log_info() {
+  echo "[dotfiles-windows] $1"
+}
+
+log_error() {
+  echo "[dotfiles-windows] ERROR: $1" >&2
+}
+
+log_warn() {
+  echo "[dotfiles-windows] WARNING: $1" >&2
+}
+
+log_success() {
+  echo "[dotfiles-windows] $1"
+}
+
+# Check if running in WSL
+check_wsl() {
+  if [ -f /proc/version ]; then
+    if grep -qi microsoft /proc/version 2>/dev/null; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+# Check Docker Desktop availability
+check_docker() {
+  if command -v docker >/dev/null 2>&1; then
+    if docker info >/dev/null 2>&1; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+# Check NVIDIA GPU
+check_nvidia() {
+  if command -v nvidia-smi >/dev/null 2>&1; then
+    if nvidia-smi -L >/dev/null 2>&1; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+# Check Docker Desktop WSL2 integration
+check_wsl_integration() {
+  if ! check_docker; then
+    return 1
+  fi
+  
+  # Check if docker daemon is accessible (indicates WSL2 integration is working)
+  if docker version >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+# Setup local LLM support with Ollama
+llm_setup() {
+  log_info "Setting up local LLM support on Windows/WSL2..."
+  
+  if ! check_wsl; then
+    log_warn "This does not appear to be a WSL2 environment"
+    echo "This script is designed for Windows Subsystem for Linux (WSL2)"
+    return 1
+  fi
+  
+  if command -v devtools-windows-llm >/dev/null 2>&1; then
+    devtools-windows-llm install
+  else
+    log_error "devtools-windows-llm not found in PATH"
+    log_info "Make sure ~/.local/bin is in your PATH"
+    return 1
+  fi
+}
+
+# Check LLM status
+llm_status() {
+  if command -v devtools-windows-llm >/dev/null 2>&1; then
+    devtools-windows-llm status
+  else
+    log_error "devtools-windows-llm not found in PATH"
+    return 1
+  fi
+}
+
+# Show GPU information
+gpu_info() {
+  if command -v devtools-windows-llm >/dev/null 2>&1; then
+    devtools-windows-llm gpu-info
+  else
+    # Fallback if devtools-windows-llm is not available
+    echo ""
+    echo "=== GPU Information ==="
+    echo ""
+    
+    if check_nvidia; then
+      echo "NVIDIA GPU: Detected"
+      echo ""
+      nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv 2>/dev/null || echo "  nvidia-smi failed"
+    else
+      echo "NVIDIA GPU: Not detected"
+      echo ""
+      echo "No NVIDIA GPU found. Ensure you have:"
+      echo "  - NVIDIA drivers installed on Windows host"
+      echo "  - WSL2 with Docker Desktop"
+    fi
+  fi
+}
+
+# Check Docker Desktop installation and configuration
+docker_check() {
+  echo ""
+  echo "=== Docker Desktop Check ==="
+  echo ""
+  
+  if ! check_wsl; then
+    log_warn "Not running in WSL2 environment"
+    echo "This check is designed for Windows Subsystem for Linux"
+    return 1
+  fi
+  
+  echo "WSL2 Environment: Detected"
+  if [ -f /proc/version ]; then
+    echo "Kernel:"
+    grep 'Linux version' /proc/version 2>/dev/null | head -1 | sed 's/^/  /'
+  fi
+  echo ""
+  
+  echo "Docker Installation:"
+  if command -v docker >/dev/null 2>&1; then
+    echo "  Docker CLI: Available"
+    docker --version | sed 's/^/  /'
+    
+    echo ""
+    echo "Docker Daemon:"
+    if docker info >/dev/null 2>&1; then
+      echo "  Status: Running"
+      echo "  Server Version:"
+      docker version --format '{{.Server.Version}}' 2>/dev/null | sed 's/^/    /'
+      
+      echo ""
+      echo "WSL2 Integration:"
+      if check_wsl_integration; then
+        echo "  Status: Configured"
+      else
+        echo "  Status: Not working properly"
+        echo ""
+        echo "Troubleshooting:"
+        echo "  1. Ensure Docker Desktop is running"
+        echo "  2. Enable 'Use the WSL 2 based engine' in Docker Desktop settings"
+        echo "  3. Enable WSL integration for your distro in Docker Desktop"
+      fi
+    else
+      echo "  Status: Not running"
+      echo ""
+      echo "Troubleshooting:"
+      echo "  1. Start Docker Desktop from Windows"
+      echo "  2. Wait for Docker Desktop to fully initialize"
+      echo "  3. If issues persist, restart Docker Desktop"
+    fi
+  else
+    echo "  Docker CLI: Not found"
+    echo ""
+    echo "Installation required:"
+    echo "  1. Install Docker Desktop: https://docs.docker.com/desktop/install/windows-install/"
+    echo "  2. Enable WSL2 backend during installation"
+    echo "  3. Restart your WSL2 instance: wsl --shutdown"
+  fi
+  
+  echo ""
+  echo "NVIDIA GPU Support:"
+  if check_nvidia; then
+    echo "  GPU: Detected"
+    nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 | sed 's/^/  Model: /'
+    echo ""
+    echo "  Note: NVIDIA Container Toolkit is automatically configured"
+    echo "        when using Docker Desktop with WSL2 backend."
+  else
+    echo "  GPU: Not detected"
+    echo "  CPU-only mode will be used for Ollama"
+  fi
+}
+
+# Show help
+show_help() {
+  echo "dotfiles-windows — Windows/WSL2 Utility"
+  echo ""
+  echo "Usage: dotfiles-windows {command}"
+  echo ""
+  echo "LLM Commands:"
+  echo "  llm-setup       Setup local LLM with Ollama (Docker + NVIDIA GPU support)"
+  echo "  llm-status      Check LLM service status"
+  echo ""
+  echo "System Commands:"
+  echo "  gpu-info        Show NVIDIA GPU information and driver status"
+  echo "  docker-check    Verify Docker Desktop is installed and configured"
+  echo ""
+  echo "For detailed LLM management, use: devtools-windows-llm --help"
+}
+
+# Main command dispatcher
+main() {
+  if [ $# -eq 0 ]; then
+    show_help
+    exit 1
+  fi
+
+  case "$1" in
+    llm-setup)
+      llm_setup
+      ;;
+    llm-status)
+      llm_status
+      ;;
+    gpu-info)
+      gpu_info
+      ;;
+    docker-check)
+      docker_check
+      ;;
+    help|-h|--help)
+      show_help
+      exit 0
+      ;;
+    *)
+      log_error "Unknown command: $1"
+      show_help
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

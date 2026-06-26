@@ -1,0 +1,505 @@
+#!/bin/sh
+# devtools-clean-branch — Rebuild a polluted PR branch from a target branch
+# by cherry-picking selected commits on top of a clean base.
+#
+# Usage:
+#   devtools-clean-branch [OPTIONS] TARGET_BRANCH WORK_BRANCH
+#
+# Options:
+#   -r REMOTE        Remote name (default: origin)
+#   -c COMMITS       Comma- or space-separated list of commit hashes/ranges to
+#                    cherry-pick instead of interactive selection.
+#                    Range format: HASH1..HASH2  (all between, exclusive of HASH1)
+#   -C               Create commits (opt-in). By default only staged changes are
+#                    produced (no-commit mode). Pass -C to create actual commits.
+#   -n               Dry-run: print what would be done, no mutations.
+#   -f               Enable force-push prompt after rebuild. Requires explicit
+#                    confirmation at runtime even when this flag is set.
+#                    NOTE: force-push is only applicable when -C is also used;
+#                    in no-commit mode you must commit manually before pushing.
+#   -h               Show this help and exit.
+#
+# Description:
+#   1. Lists commits unique to WORK_BRANCH (not on TARGET_BRANCH).
+#   2. Lets you select which commits to carry over (interactive or -c).
+#   3. Creates a safety backup branch: WORK_BRANCH-backup-<timestamp>.
+#   4. Resets WORK_BRANCH to TARGET_BRANCH.
+#   5. Cherry-picks the selected commits in original chronological order.
+#      DEFAULT (no-commit mode): changes are applied and staged but NO commits
+#      are created — equivalent to `git cherry-pick -n`. You review and commit
+#      manually.
+#      With -C (create-commit mode): each cherry-pick creates a commit as usual.
+#   6. Optionally force-pushes with --force-with-lease (requires confirmation).
+#      Only relevant when -C is also used.
+#
+# Requirements: git
+# POSIX sh — no bashisms.
+
+set -eu
+
+# ── defaults ────────────────────────────────────────────────────────────────
+REMOTE="origin"
+DRY_RUN=0
+FORCE_PUSH=0
+CREATE_COMMITS=0      # default: no-commit mode (cherry-pick -n style)
+EXPLICIT_COMMITS=""   # set via -c
+
+# ── helpers ─────────────────────────────────────────────────────────────────
+die() {
+  printf 'ERROR: %s\n' "$*" >&2
+  exit 1
+}
+
+info() {
+  printf '  %s\n' "$*"
+}
+
+warn() {
+  printf 'WARNING: %s\n' "$*" >&2
+}
+
+confirm() {
+  # $1 = prompt text; echoes "y" or "n" depending on user answer.
+  printf '%s [y/N] ' "$1" >&2
+  read -r _answer </dev/tty
+  case "$_answer" in
+    [yY]|[yY][eE][sS]) printf 'y' ;;
+    *) printf 'n' ;;
+  esac
+}
+
+require_git() {
+  command -v git >/dev/null 2>&1 || die "git is not installed or not in PATH."
+}
+
+assert_in_git_repo() {
+  git rev-parse --git-dir >/dev/null 2>&1 || die "Not inside a git repository."
+}
+
+# Print list of commits unique to WORK_BRANCH vs TARGET_BRANCH (oldest first).
+list_unique_commits() {
+  # Prints: <hash> <subject>
+  git log --reverse --oneline "${TARGET_BRANCH}..${WORK_BRANCH}"
+}
+
+# ── conflict prompt ──────────────────────────────────────────────────────────
+# Prompt user on a cherry-pick conflict.
+# Prints one of: continue / skip / abort
+prompt_conflict_action() {
+  _hash="$1"
+  _subj="$2"
+  _mode="$3"   # "commit" or "no-commit"
+
+  printf '\n'
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  printf 'CONFLICT while cherry-picking: %s\n' "$_subj"
+  printf '\n'
+  if [ "$_mode" = "commit" ]; then
+    printf 'The cherry-pick is paused. To resolve:\n'
+    printf '  1. Open a NEW terminal and check out this branch.\n'
+    printf '  2. Edit the conflicted files (look for <<<<<<< markers).\n'
+    printf '  3. Stage your resolutions:  git add <files>\n'
+    printf '  4. Return here and choose [c]ontinue.\n'
+    printf '     The script will run: git cherry-pick --continue\n'
+  else
+    printf 'The cherry-pick -n failed (index may be partially applied).\n'
+    printf 'To resolve:\n'
+    printf '  1. Open a NEW terminal and check out this branch.\n'
+    printf '  2. Edit the conflicted files (look for <<<<<<< markers).\n'
+    printf '  3. Stage your resolutions:  git add <files>\n'
+    printf '  4. Return here and choose [c]ontinue.\n'
+    printf '     The script will proceed to the next commit.\n'
+    printf '  Note: In no-commit mode, git cherry-pick --continue is NOT\n'
+    printf '  used; you stage manually and the script moves on.\n'
+  fi
+  printf '\n'
+  printf 'Choices:\n'
+  printf '  [c] continue — conflicts resolved & staged, proceed\n'
+  printf '  [s] skip     — discard this commit and continue with the rest\n'
+  printf '  [a] abort    — abort the entire operation and exit\n'
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  printf 'Action [c/s/a]: ' >&2
+
+  while true; do
+    read -r _choice </dev/tty
+    case "$_choice" in
+      [cC]) printf 'continue'; return ;;
+      [sS]) printf 'skip';    return ;;
+      [aA]) printf 'abort';   return ;;
+      *) printf 'Please enter c, s, or a: ' >&2 ;;
+    esac
+  done
+}
+
+# ── usage ────────────────────────────────────────────────────────────────────
+usage() {
+  sed -n '/^# Usage:/,/^[^#]/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
+  printf '\n'
+  sed -n '/^# Options:/,/^# Description:/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
+  printf '\n'
+  sed -n '/^# Description:/,/^# Requirements:/p' "$0" | grep '^#' | sed 's/^# \{0,1\}//'
+}
+
+# ── argument parsing ─────────────────────────────────────────────────────────
+while getopts ":r:c:Cnfh" OPT; do
+  case "$OPT" in
+    r) REMOTE="$OPTARG" ;;
+    c) EXPLICIT_COMMITS="$OPTARG" ;;
+    C) CREATE_COMMITS=1 ;;
+    n) DRY_RUN=1 ;;
+    f) FORCE_PUSH=1 ;;
+    h) usage; exit 0 ;;
+    :) die "Option -$OPTARG requires an argument." ;;
+    \?) die "Unknown option: -$OPTARG" ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+[ $# -ge 2 ] || { usage; exit 1; }
+
+TARGET_BRANCH="$1"
+WORK_BRANCH="$2"
+
+# ── sanity checks ────────────────────────────────────────────────────────────
+require_git
+assert_in_git_repo
+
+# Resolve branch refs (fail fast if branch doesn't exist).
+TARGET_REF=$(git rev-parse --verify "$TARGET_BRANCH" 2>/dev/null) \
+  || die "Branch '$TARGET_BRANCH' not found."
+WORK_REF=$(git rev-parse --verify "$WORK_BRANCH" 2>/dev/null) \
+  || die "Branch '$WORK_BRANCH' not found."
+
+# Disallow operating on the currently checked-out branch to avoid confusion
+# between index/worktree state and the branch ref we're rewriting.
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+if [ "$CURRENT_BRANCH" = "$WORK_BRANCH" ]; then
+  die "WORK_BRANCH '$WORK_BRANCH' is currently checked out. \
+Please switch to another branch before running this tool."
+fi
+
+# Warn if -f is given without -C (force-push has no effect in no-commit mode).
+if [ "$FORCE_PUSH" = "1" ] && [ "$CREATE_COMMITS" = "0" ]; then
+  warn "-f (force-push) has no effect in no-commit mode (default)."
+  warn "Use -C to create commits before pushing."
+fi
+
+if [ "$CREATE_COMMITS" = "1" ]; then
+  COMMIT_MODE_LABEL="create-commit mode (commits will be created)"
+else
+  COMMIT_MODE_LABEL="no-commit mode (staged changes only — default)"
+fi
+
+info "Target  : $TARGET_BRANCH ($TARGET_REF)"
+info "Working : $WORK_BRANCH  ($WORK_REF)"
+info "Remote  : $REMOTE"
+info "Mode    : $COMMIT_MODE_LABEL"
+[ "$DRY_RUN" = "1" ] && info "[DRY-RUN mode — no mutations will be made]"
+printf '\n'
+
+# ── discover unique commits ───────────────────────────────────────────────────
+UNIQUE_COMMITS=$(list_unique_commits)
+
+if [ -z "$UNIQUE_COMMITS" ]; then
+  info "No commits unique to '$WORK_BRANCH' vs '$TARGET_BRANCH'. Nothing to do."
+  exit 0
+fi
+
+info "Commits unique to '$WORK_BRANCH' (oldest → newest):"
+printf '\n'
+NUM=0
+printf '%s\n' "$UNIQUE_COMMITS" | while IFS= read -r LINE; do
+  NUM=$((NUM + 1))
+  printf '  [%d] %s\n' "$NUM" "$LINE"
+done
+printf '\n'
+
+# ── commit selection ──────────────────────────────────────────────────────────
+# Build a space-separated list of hashes to cherry-pick (chronological order).
+if [ -n "$EXPLICIT_COMMITS" ]; then
+  # User supplied -c: expand each token (hash or HASH1..HASH2 range).
+  SELECTED_HASHES=""
+  # Normalize commas to spaces.
+  NORMALIZED=$(printf '%s' "$EXPLICIT_COMMITS" | tr ',' ' ')
+  for TOKEN in $NORMALIZED; do
+    if printf '%s' "$TOKEN" | grep -q '\.\.'; then
+      # It's a range — expand it oldest first.
+      RANGE_HASHES=$(git log --reverse --pretty=format:"%H" "$TOKEN" 2>/dev/null) \
+        || die "Invalid range: $TOKEN"
+      SELECTED_HASHES="$SELECTED_HASHES $RANGE_HASHES"
+    else
+      # Single hash — resolve it.
+      FULL_HASH=$(git rev-parse --verify "$TOKEN" 2>/dev/null) \
+        || die "Commit '$TOKEN' not found."
+      SELECTED_HASHES="$SELECTED_HASHES $FULL_HASH"
+    fi
+  done
+  # Strip leading whitespace.
+  SELECTED_HASHES=$(printf '%s' "$SELECTED_HASHES" | sed 's/^ *//')
+else
+  # Interactive selection.
+  info "Enter commits to cherry-pick. Accepted formats:"
+  info "  • 'all'         — all unique commits"
+  info "  • '1,3,5'       — specific numbers (comma-separated)"
+  info "  • '1-4'         — range of numbers (inclusive)"
+  info "  • '1-3,5,7-9'   — mix of numbers and ranges"
+  printf '\n'
+  printf 'Your selection: ' >&2
+  read -r SELECTION </dev/tty
+
+  # Build indexed list of full hashes.
+  ALL_HASHES=""
+  IDX=0
+  printf '%s\n' "$UNIQUE_COMMITS" | while IFS= read -r LINE; do
+    IDX=$((IDX + 1))
+    HASH=$(printf '%s' "$LINE" | awk '{print $1}')
+    FULL_HASH=$(git rev-parse --verify "$HASH")
+    printf '%d %s\n' "$IDX" "$FULL_HASH"
+  done >/tmp/devtools-clean-branch-idx.$$
+
+  TOTAL=$(wc -l </tmp/devtools-clean-branch-idx.$$ | tr -d ' ')
+
+  if [ "$SELECTION" = "all" ]; then
+    SELECTED_HASHES=$(awk '{print $2}' /tmp/devtools-clean-branch-idx.$$)
+    SELECTED_HASHES=$(printf '%s' "$SELECTED_HASHES" | tr '\n' ' ' | sed 's/ $//')
+  else
+    SELECTED_HASHES=""
+    # Normalize: replace commas with spaces.
+    NORMALIZED=$(printf '%s' "$SELECTION" | tr ',' ' ')
+    for TOKEN in $NORMALIZED; do
+      if printf '%s' "$TOKEN" | grep -q '-'; then
+        # Number range.
+        RANGE_START=$(printf '%s' "$TOKEN" | cut -d'-' -f1)
+        RANGE_END=$(printf '%s' "$TOKEN" | cut -d'-' -f2)
+        IDX="$RANGE_START"
+        while [ "$IDX" -le "$RANGE_END" ]; do
+          [ "$IDX" -ge 1 ] && [ "$IDX" -le "$TOTAL" ] \
+            || die "Index $IDX out of range (1..$TOTAL)."
+          HASH=$(awk -v n="$IDX" '$1==n{print $2}' /tmp/devtools-clean-branch-idx.$$)
+          SELECTED_HASHES="$SELECTED_HASHES $HASH"
+          IDX=$((IDX + 1))
+        done
+      else
+        # Single number.
+        [ "$TOKEN" -ge 1 ] && [ "$TOKEN" -le "$TOTAL" ] \
+          || die "Index $TOKEN out of range (1..$TOTAL)."
+        HASH=$(awk -v n="$TOKEN" '$1==n{print $2}' /tmp/devtools-clean-branch-idx.$$)
+        SELECTED_HASHES="$SELECTED_HASHES $HASH"
+      fi
+    done
+    SELECTED_HASHES=$(printf '%s' "$SELECTED_HASHES" | sed 's/^ *//')
+  fi
+
+  rm -f /tmp/devtools-clean-branch-idx.$$
+fi
+
+if [ -z "$SELECTED_HASHES" ]; then
+  info "No commits selected. Exiting without changes."
+  exit 0
+fi
+
+printf '\n'
+info "Selected commits to cherry-pick (in order):"
+for H in $SELECTED_HASHES; do
+  SUBJ=$(git log -1 --pretty=format:"%h %s" "$H" 2>/dev/null || printf '%s' "$H")
+  printf '    %s\n' "$SUBJ"
+done
+printf '\n'
+
+# ── destructive-action warning ────────────────────────────────────────────────
+printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+printf 'WARNING: This will REWRITE the history of branch:\n'
+printf '    %s\n' "$WORK_BRANCH"
+printf '\n'
+printf 'History rewrite is DESTRUCTIVE. Commits on the current\n'
+printf 'branch that are NOT in your selection will be LOST.\n'
+printf '\n'
+printf 'A safety backup will be created before any changes:\n'
+printf '    %s-backup-<timestamp>\n' "$WORK_BRANCH"
+printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+printf '\n'
+
+if [ "$DRY_RUN" = "1" ]; then
+  info "[DRY-RUN] Would create backup branch: ${WORK_BRANCH}-backup-$(date +%Y%m%d%H%M%S)"
+  info "[DRY-RUN] Would reset '$WORK_BRANCH' to '$TARGET_BRANCH'"
+  if [ "$CREATE_COMMITS" = "1" ]; then
+    info "[DRY-RUN] Would cherry-pick (with commits):"
+  else
+    info "[DRY-RUN] Would cherry-pick -n (staged changes only, no commits):"
+  fi
+  for H in $SELECTED_HASHES; do
+    SUBJ=$(git log -1 --pretty=format:"%h %s" "$H" 2>/dev/null || printf '%s' "$H")
+    printf '    %s\n' "$SUBJ"
+  done
+  if [ "$CREATE_COMMITS" = "1" ] && [ "$FORCE_PUSH" = "1" ]; then
+    info "[DRY-RUN] Would offer force-push with --force-with-lease to $REMOTE/$WORK_BRANCH"
+  elif [ "$CREATE_COMMITS" = "0" ]; then
+    info "[DRY-RUN] No-commit mode: after real run, review staged changes then:"
+    info "[DRY-RUN]   git commit  (or git commit --amend, etc.)"
+    info "[DRY-RUN]   git push --force-with-lease $REMOTE $WORK_BRANCH"
+  fi
+  info "Dry-run complete. No changes made."
+  exit 0
+fi
+
+PROCEED=$(confirm "Proceed with history rewrite?")
+if [ "$PROCEED" != "y" ]; then
+  info "Aborted by user. No changes made."
+  exit 0
+fi
+
+# ── create backup branch ──────────────────────────────────────────────────────
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+BACKUP_BRANCH="${WORK_BRANCH}-backup-${TIMESTAMP}"
+info "Creating safety backup: $BACKUP_BRANCH"
+git branch "$BACKUP_BRANCH" "$WORK_BRANCH"
+info "Backup created: $BACKUP_BRANCH"
+printf '\n'
+
+# ── reset working branch to target ───────────────────────────────────────────
+info "Resetting '$WORK_BRANCH' to '$TARGET_BRANCH' ..."
+git branch -f "$WORK_BRANCH" "$TARGET_BRANCH"
+info "Done."
+printf '\n'
+
+# ── cherry-pick selected commits ─────────────────────────────────────────────
+# Temporarily switch to WORK_BRANCH, cherry-pick, then return.
+info "Checking out '$WORK_BRANCH' to apply cherry-picks ..."
+git checkout "$WORK_BRANCH"
+
+CHERRY_ABORTED=0
+for H in $SELECTED_HASHES; do
+  SUBJ=$(git log -1 --pretty=format:"%h %s" "$H" 2>/dev/null || printf '%s' "$H")
+
+  if [ "$CREATE_COMMITS" = "1" ]; then
+    # ── commit mode ────────────────────────────────────────────────────────
+    info "Cherry-picking (commit): $SUBJ"
+    if git cherry-pick "$H"; then
+      # Success — continue to next commit.
+      continue
+    fi
+
+    # Conflict: prompt user.
+    ACTION=$(prompt_conflict_action "$H" "$SUBJ" "commit")
+    case "$ACTION" in
+      continue)
+        info "Continuing cherry-pick after conflict resolution ..."
+        # Honour GIT_EDITOR=true so cherry-pick --continue doesn't open editor.
+        if GIT_EDITOR=true git cherry-pick --continue; then
+          info "Cherry-pick continued successfully."
+        else
+          warn "git cherry-pick --continue failed. Aborting sequence."
+          git cherry-pick --abort 2>/dev/null || true
+          CHERRY_ABORTED=1
+          break
+        fi
+        ;;
+      skip)
+        info "Skipping commit $SUBJ ..."
+        git cherry-pick --skip 2>/dev/null || git cherry-pick --abort 2>/dev/null || true
+        info "Skipped."
+        ;;
+      abort)
+        info "Aborting cherry-pick sequence ..."
+        git cherry-pick --abort 2>/dev/null || true
+        CHERRY_ABORTED=1
+        break
+        ;;
+    esac
+
+  else
+    # ── no-commit mode ─────────────────────────────────────────────────────
+    info "Cherry-picking (no-commit / stage only): $SUBJ"
+    if git cherry-pick -n "$H"; then
+      # Success — continue to next commit.
+      continue
+    fi
+
+    # cherry-pick -n on conflict: git does NOT leave a cherry-pick session in
+    # progress (there is no CHERRY_PICK_HEAD). The conflicting files are left
+    # in the worktree with conflict markers; the index is partially applied.
+    # User must resolve manually and stage; we then move on.
+    ACTION=$(prompt_conflict_action "$H" "$SUBJ" "no-commit")
+    case "$ACTION" in
+      continue)
+        info "Proceeding to next commit (assuming conflicts resolved & staged)."
+        ;;
+      skip)
+        info "Skipping commit $SUBJ — resetting conflicted changes ..."
+        # Reset any partially applied / conflicted state back to HEAD.
+        git checkout -- . 2>/dev/null || true
+        git reset HEAD 2>/dev/null || true
+        info "Skipped."
+        ;;
+      abort)
+        info "Aborting cherry-pick sequence — resetting index and worktree ..."
+        git checkout -- . 2>/dev/null || true
+        git reset HEAD 2>/dev/null || true
+        CHERRY_ABORTED=1
+        break
+        ;;
+    esac
+  fi
+done
+
+if [ "$CHERRY_ABORTED" = "1" ]; then
+  printf '\n'
+  warn "Cherry-pick sequence aborted."
+  warn "Branch '$WORK_BRANCH' may be in a partially-applied state."
+  warn "Your original commits are safe in backup branch: $BACKUP_BRANCH"
+  warn "To restore the original branch:"
+  warn "  git checkout $WORK_BRANCH"
+  warn "  git reset --hard $BACKUP_BRANCH"
+  warn "  # or: git branch -f $WORK_BRANCH $BACKUP_BRANCH"
+  git checkout - 2>/dev/null || true
+  exit 1
+fi
+
+# Return to the branch we were on before.
+git checkout - 2>/dev/null || true
+
+printf '\n'
+info "Branch '$WORK_BRANCH' successfully rebuilt."
+info "Backup of original: $BACKUP_BRANCH"
+printf '\n'
+
+# ── post-apply guidance ───────────────────────────────────────────────────────
+if [ "$CREATE_COMMITS" = "0" ]; then
+  # No-commit mode: changes are staged, user must commit manually.
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  printf 'NO-COMMIT MODE: Changes are staged on %s.\n' "$WORK_BRANCH"
+  printf 'Review with:\n'
+  printf '    git checkout %s\n' "$WORK_BRANCH"
+  printf '    git diff --staged\n'
+  printf '\n'
+  printf 'Then commit and push when satisfied:\n'
+  printf '    git commit -m "your message"\n'
+  printf '    git push --force-with-lease %s %s\n' "$REMOTE" "$WORK_BRANCH"
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  exit 0
+fi
+
+# ── optional force-push (create-commit mode only) ────────────────────────────
+if [ "$FORCE_PUSH" = "1" ]; then
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  printf 'FORCE-PUSH WARNING\n'
+  printf 'This will rewrite the remote history of:\n'
+  printf '    %s/%s\n' "$REMOTE" "$WORK_BRANCH"
+  printf 'Using --force-with-lease to avoid overwriting unexpected remote changes.\n'
+  printf '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+  printf '\n'
+  PUSH_OK=$(confirm "Force-push '$WORK_BRANCH' to '$REMOTE' now?")
+  if [ "$PUSH_OK" = "y" ]; then
+    info "Force-pushing with --force-with-lease ..."
+    git push --force-with-lease "$REMOTE" "$WORK_BRANCH"
+    info "Force-push complete."
+  else
+    info "Force-push skipped. Push manually when ready:"
+    info "  git push --force-with-lease $REMOTE $WORK_BRANCH"
+  fi
+else
+  info "To push your rebuilt branch, run:"
+  info "  git push --force-with-lease $REMOTE $WORK_BRANCH"
+fi
+
+exit 0

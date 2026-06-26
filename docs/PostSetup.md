@@ -6,7 +6,7 @@ Here's some items below:
 
 |Command|Description|Remarks|
 |----|-----|-------|
-|dotfiles-homebrew|Homebrew installer ([brew.sh](https://brew.sh))||
+|dotfiles-homebrew|Homebrew installer ([brew.sh](https://brew.sh))|
 |dotfiles-ruby|Ruby version Manager using `rbenv`|Currently unstable; Requires more testing on some devices & Linux distros|
 |dotfiles-python|Python version Manager using `pyenv`||
 |dotfiles-nodejs|NodeJS version Manager using `nvm`||
@@ -40,4 +40,4 @@ Under Construction
 ### Steam Deck
 
 - [Awesome Steam Deck](https://gist.github.com/jcchikikomori/9f2bdb2bec0c30f3a822212c1b303da4)
-- [Steam Deck Resources](https://sdeck.wiki/)
+- [Steam Deck Resources](https://www.sdeck.wiki/)

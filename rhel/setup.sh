@@ -13,6 +13,7 @@ sudo dnf install -y rclone
 
 # Python
 sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel tk-devel tc-devel
+sudo dnf install -y bzip2-devel ncurses-devel libffi-devel readline-devel openssl-devel xz-devel libuuid-devel gdbm-libs libnsl2
 sudo dnf install -y python3-tmuxp python3-packaging python3-pip python3-virtualenv
 
 # PHP

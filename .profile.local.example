@@ -1,0 +1,74 @@
+# =============================================================================
+# ~/.profile.local - Local customizations for dotfiles
+# =============================================================================
+# This file is NOT managed by dotfiles. Add your personal overrides here.
+# It is sourced at the end of ~/.profile
+#
+# Examples:
+#   export MY_CUSTOM_VAR="value"
+#   alias myalias="command"
+#
+# =============================================================================
+
+# WSL2-related workarounds
+# Render discrete GPU (NVIDIA) over integrated graphics
+# export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
+
+# Source Python environments (uncomment the one you use)
+# For uv (recommended for Steam Deck):
+# [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv
+
+# For Miniconda:
+# [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda
+
+# For pyenv:
+# [ -f ~/.config/dotfiles-python/env-pyenv ] && . ~/.config/dotfiles-python/env-pyenv
+
+# For Homebrew Python:
+# [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew
+
+# =============================================================================
+# MCP (Model Context Protocol) Server Tokens
+# =============================================================================
+# These tokens are used by AI coding agents (OpenCode, Claude Code) for MCPs.
+# Uncomment and fill in the values below. They will be automatically sourced
+# by the devtools-opencode and dotfiles-claude scripts.
+#
+# GitHub MCP - Required for GitHub operations (repos, issues, PRs)
+# export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_your_token_here"
+#
+# Stack Overflow MCP - Required for Stack Overflow search
+# export STACK_EXCHANGE_API_KEY="your_key_here"
+#
+# Figma MCP - Required for Figma integration
+# export FIGMA_API_KEY="figd_your_key_here"
+#
+# Atlassian MCPs (Jira, Confluence)
+# export JIRA_URL="https://your-domain.atlassian.net"
+# export JIRA_USERNAME="your-email@example.com"
+# export JIRA_API_TOKEN="your_token_here"
+# export CONFLUENCE_URL="https://your-domain.atlassian.net/wiki"
+# export CONFLUENCE_USERNAME="your-email@example.com"
+# export CONFLUENCE_API_TOKEN="your_token_here"
+#
+# SonarQube MCP
+# export SONARQUBE_URL="https://sonarqube.example.com"
+# export SONARQUBE_TOKEN="your_token_here"
+#
+# =============================================================================
+# Model Configuration (OpenCode)
+# =============================================================================
+# Default model for OpenCode (must be in format: provider/model-id)
+# Examples:
+#   - amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0
+#   - openai/gpt-4o
+#   - ollama/qwen2.5-coder:7b-instruct
+# export OPENCODE_MODEL="amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0"
+# export OPENCODE_SMALL_MODEL="amazon-bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0"
+#
+# =============================================================================
+# AWS Bedrock Provider
+# =============================================================================
+# export AWS_REGION="ap-southeast-2"
+# export AWS_PROFILE="your-aws-profile"
+# =============================================================================

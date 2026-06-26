@@ -1,20 +1,363 @@
 #!/bin/sh
+# vim: set noexpandtab:
 
-# Unset NVM_DIR if ~/.nvm doesn't exist.
-if [ ! -d "$HOME/.nvm" ]; then
-  unset NVM_DIR
-fi
+# dotfiles-nodejs — NVM/Node.js management for dotfiles
+# Usage: dotfiles-nodejs [command]
+#   install        - Install NVM + latest LTS Node (default)
+#   version <ver>  - Install specific Node version
+#   ls             - List installed Node versions
+#   (no args)      - Launch interactive wizard menu
 
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | zsh
+set -eu
 
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+# Configuration
+NVM_VERSION="v0.40.3"
+NVM_DIR="${NVM_DIR:-$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")}"
+DEFAULT_NODE_VERSION="22"
 
-if [ -d "$HOME/.nvm" ]; then
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
-    nvm install 22 --lts
-else
-    echo "NVM installation failed. Skipping Node.js installation."
-    exit 0
-fi
+# ─── Helper functions ──────────────────────────────────────────────────────────
+
+# Ensure Homebrew is on PATH (mirrors dotfiles-php pattern)
+_ensure_brew() {
+  if command -v brew >/dev/null 2>&1; then
+    return 0
+  fi
+  for brew_bin in \
+    "${HOMEBREW_PREFIX:-}/bin/brew" \
+    "${HOME}/.linuxbrew/bin/brew" \
+    "/home/linuxbrew/.linuxbrew/bin/brew" \
+    "/usr/local/bin/brew" \
+    "/opt/homebrew/bin/brew"
+  do
+    if [ -x "$brew_bin" ]; then
+      eval "$("$brew_bin" shellenv)"
+      break
+    fi
+  done
+}
+
+# Load NVM into current shell
+_load_nvm() {
+  set +eu
+  if command -v brew >/dev/null 2>&1; then
+    local nvm_prefix
+    nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
+    if [ -n "$nvm_prefix" ] && [ -s "$nvm_prefix/nvm.sh" ]; then
+      . "$nvm_prefix/nvm.sh"
+      set -eu
+      return 0
+    fi
+  fi
+  if [ -s "$NVM_DIR/nvm.sh" ]; then
+    . "$NVM_DIR/nvm.sh"
+  fi
+  set -eu
+}
+
+# Check if NVM is installed
+_nvm_installed() {
+  if command -v brew >/dev/null 2>&1; then
+    local nvm_prefix
+    nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
+    if [ -n "$nvm_prefix" ] && [ -s "$nvm_prefix/nvm.sh" ]; then
+      return 0
+    fi
+  fi
+  [ -d "$NVM_DIR" ] && [ -s "$NVM_DIR/nvm.sh" ]
+}
+
+# Download with retry logic
+_download_with_retry() {
+    local url="$1"
+    local max_retries=3
+    local retry=0
+
+    while [ "$retry" -lt "$max_retries" ]; do
+        if curl -fsSL --connect-timeout 30 --max-time 120 "$url" 2>/dev/null; then
+            return 0
+        fi
+        retry=$((retry + 1))
+        echo "[nodejs] Download failed (attempt $retry/$max_retries). Retrying..."
+        sleep 2
+    done
+    return 1
+}
+
+# ─── Actions ───────────────────────────────────────────────────────────────────
+
+# Install NVM
+action_install_nvm() {
+    if _nvm_installed; then
+        echo "[nodejs] NVM already installed"
+        return 0
+    fi
+
+    _ensure_brew
+    if command -v brew >/dev/null 2>&1; then
+        echo "[nodejs] Installing NVM via Homebrew..."
+        brew install nvm
+        mkdir -p "$NVM_DIR"
+    else
+        echo "[nodejs] Installing NVM $NVM_VERSION via install script..."
+        mkdir -p "$NVM_DIR"
+        local install_url="https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh"
+        if ! _download_with_retry "$install_url" | bash; then
+            echo "[nodejs] ERROR: NVM installation failed. Check network connectivity."
+            return 1
+        fi
+    fi
+
+    # Verify installation
+    if _nvm_installed; then
+        echo "[nodejs] NVM installed successfully"
+    else
+        echo "[nodejs] ERROR: NVM installation verification failed."
+        return 1
+    fi
+}
+
+# Install Node.js version (default: LTS)
+action_install_node() {
+    local version="${1:-$DEFAULT_NODE_VERSION}"
+
+    echo "[nodejs] Installing Node.js v${version}..."
+
+    if ! _nvm_installed; then
+        echo "[nodejs] NVM not found. Installing NVM first..."
+        action_install_nvm || return 1
+    fi
+
+    _load_nvm
+
+    # Verify nvm function is available
+    if ! command -v nvm >/dev/null 2>&1 && ! type nvm >/dev/null 2>&1; then
+        echo "[nodejs] ERROR: 'nvm' command not available after loading. Check NVM installation."
+        return 1
+    fi
+
+    # Disable strict mode while running NVM commands
+    set +eu
+    local nvm_exit=0
+    if ! nvm install "$version"; then
+        nvm_exit=1
+    fi
+    if [ "$nvm_exit" -eq 0 ]; then
+        echo "[nodejs] Node.js v${version} installed successfully"
+        nvm use "$version" 2>/dev/null || true
+        nvm alias default "$version" 2>/dev/null || true
+        echo "[nodejs] Current: $(node --version 2>/dev/null || echo 'unknown')"
+    else
+        echo "[nodejs] ERROR: Failed to install Node.js v${version}"
+    fi
+    set -eu
+    return "$nvm_exit"
+}
+
+# List installed Node versions
+action_list_versions() {
+    if ! _nvm_installed; then
+        echo "[nodejs] NVM not installed. Run 'install' first."
+        return 1
+    fi
+
+    _load_nvm
+    echo "[nodejs] Installed Node versions:"
+    nvm ls 2>/dev/null || echo "  (none)"
+}
+
+# Uninstall NVM
+action_uninstall_nvm() {
+    if ! _nvm_installed; then
+        echo "[nodejs] NVM not installed."
+        return 0
+    fi
+
+    local via_brew=""
+    _ensure_brew
+    if command -v brew >/dev/null 2>&1; then
+      local nvm_prefix
+      nvm_prefix="$(brew --prefix nvm 2>/dev/null || true)"
+      if [ -n "$nvm_prefix" ] && [ -s "$nvm_prefix/nvm.sh" ]; then
+        via_brew=1
+      fi
+    fi
+
+    if [ -n "$via_brew" ]; then
+        printf "[nodejs] Uninstall NVM via Homebrew? [y/N]: "
+    else
+        printf "[nodejs] Remove NVM from %s? [y/N]: " "$NVM_DIR"
+    fi
+    read confirm
+    if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+        if [ -n "$via_brew" ]; then
+            brew uninstall nvm 2>/dev/null || true
+        fi
+
+        # Remove NVM directory
+        rm -rf "$NVM_DIR"
+
+        # Remove from bashrc/zshrc
+        for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+            if [ -f "$rc" ]; then
+                sed -i '/export NVM_DIR=.*\.nvm/d' "$rc" 2>/dev/null || true
+                sed -i '/\..*nvm\.sh/d' "$rc" 2>/dev/null || true
+                sed -i '/# NVM via Homebrew/d' "$rc" 2>/dev/null || true
+                sed -i '/brew --prefix nvm/d' "$rc" 2>/dev/null || true
+            fi
+        done
+
+        echo "[nodejs] NVM uninstalled."
+    else
+        echo "[nodejs] Cancelled."
+    fi
+}
+
+# Update NVM to latest version
+action_update_nvm() {
+    if ! _nvm_installed; then
+        echo "[nodejs] NVM not installed. Run 'install' first."
+        return 1
+    fi
+
+    _load_nvm
+
+    local latest
+    latest=$(nvm --version 2>/dev/null || echo "unknown")
+    echo "[nodejs] Current NVM version: $latest"
+    echo "[nodejs] Fetching latest version info..."
+
+    # Get latest tag from GitHub
+    local latest_tag
+    latest_tag=$(curl -fsSL "https://api.github.com/repos/nvm-sh/nvm/releases/latest" 2>/dev/null | \
+        grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/' || echo "")
+
+    if [ -z "$latest_tag" ]; then
+        echo "[nodejs] ERROR: Could not fetch latest NVM version."
+        return 1
+    fi
+
+    echo "[nodejs] Latest version: $latest_tag"
+
+    if [ "$latest" = "${latest_tag#v}" ]; then
+        echo "[nodejs] Already up to date."
+        return 0
+    fi
+
+    printf "[nodejs] Update to %s? [y/N]: " "$latest_tag"
+    read confirm
+    if [ "$confirm" = "y" ] || [ "$confirm" = "Y" ]; then
+        # Re-run install script with new version
+        local install_url="https://raw.githubusercontent.com/nvm-sh/nvm/${latest_tag}/install.sh"
+
+        if ! _download_with_retry "$install_url" | bash; then
+            echo "[nodejs] ERROR: NVM update failed."
+            return 1
+        fi
+
+        echo "[nodejs] NVM updated to $latest_tag"
+    else
+        echo "[nodejs] Cancelled."
+    fi
+}
+
+# ─── Wizard menu ──────────────────────────────────────────────────────────────
+
+run_wizard() {
+    while true; do
+        echo ""
+        echo "===================================="
+        echo "  dotfiles-nodejs Wizard"
+        echo "===================================="
+        echo "  1) Install NVM + Node (LTS)"
+        echo "  2) Install specific Node version"
+        echo "  3) List installed Node versions"
+        echo "  4) Uninstall NVM"
+        echo "  5) Update NVM to latest"
+        echo "  ────────────────────────────────"
+        echo "  q) Quit"
+        echo "===================================="
+        printf "Choice: "
+        read choice
+
+        case "$choice" in
+            1)
+                action_install_nvm
+                action_install_node "$DEFAULT_NODE_VERSION"
+                ;;
+            2)
+                printf "Enter Node version (e.g. 20, 22, 23): "
+                read ver
+                if [ -n "$ver" ]; then
+                    action_install_node "$ver"
+                else
+                    echo "[nodejs] No version entered."
+                fi
+                ;;
+            3)
+                action_list_versions
+                ;;
+            4)
+                action_uninstall_nvm
+                ;;
+            5)
+                action_update_nvm
+                ;;
+            q | Q)
+                echo "Bye!"
+                exit 0
+                ;;
+            *)
+                echo "[nodejs] Unknown option: $choice"
+                ;;
+        esac
+
+        # Pause before redrawing
+        if [ "$choice" != "q" ] && [ "$choice" != "Q" ]; then
+            printf "\nPress Enter to continue..."
+            read _ || true
+        fi
+    done
+}
+
+# ─── Main entry point ─────────────────────────────────────────────────────────
+
+main() {
+    local cmd="${1:-}"
+
+    case "$cmd" in
+        install)
+            action_install_nvm
+            action_install_node "$DEFAULT_NODE_VERSION"
+            ;;
+        version)
+            if [ -z "${2:-}" ]; then
+                echo "Usage: dotfiles-nodejs version <version>"
+                echo "  Example: dotfiles-nodejs version 20"
+                exit 1
+            fi
+            action_install_node "$2"
+            ;;
+        ls)
+            action_list_versions
+            ;;
+        "")
+            run_wizard
+            ;;
+        -h|--help|help)
+            echo "dotfiles-nodejs — NVM/Node.js management"
+            echo ""
+            echo "Usage:"
+            echo "  dotfiles-nodejs              # Interactive wizard"
+            echo "  dotfiles-nodejs install      # Install NVM + Node LTS"
+            echo "  dotfiles-nodejs version <ver> # Install specific version"
+            echo "  dotfiles-nodejs ls           # List installed versions"
+            ;;
+        *)
+            echo "Unknown command: $cmd"
+            echo "Run 'dotfiles-nodejs help' for usage."
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
