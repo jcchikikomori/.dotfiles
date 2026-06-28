@@ -76,7 +76,6 @@
       </region>
     </roms>
   </game>
-
   <game name="getbassdx" parent="bassdx">
     <identity>
       <title>Get Bass: Sega Bass Fishing</title>
@@ -102,7 +101,6 @@
       </region>
     </roms>
   </game>
-
   <game name="getbassur" parent="bassdx">
     <identity>
       <title>Get Bass: Sega Bass Fishing</title>
@@ -128,11 +126,10 @@
       </region>
     </roms>
   </game>
-
   <game name="getbass" parent="bassdx">
     <identity>
       <title>Get Bass: Sega Bass Fishing</title>
-	  <version>Japan, Standard</version>
+      <version>Japan, Standard</version>
       <manufacturer>Sega</manufacturer>
       <year>1997</year>
     </identity>
@@ -159,7 +156,6 @@
       -->
     </roms>
   </game>
-
   <game name="daytona2">
     <identity>
       <title>Daytona USA 2 - Battle on the Edge</title>
@@ -173,7 +169,7 @@
       <mpeg_board>DSB2</mpeg_board>
       <drive_board>Wheel</drive_board>
       <netboard>true</netboard>
-	  <audio>QuadFrontRear</audio>
+      <audio>QuadFrontRear</audio>
       <inputs>
         <input type="common" />
         <input type="vehicle" />
@@ -252,11 +248,10 @@
       </region>
     </roms>
   </game>
-
   <game name="dayto2pe" parent="daytona2">
     <identity>
       <title>Daytona USA 2 - Power Edition</title>
-	  <version>Japan</version>
+      <version>Japan</version>
       <manufacturer>Sega</manufacturer>
       <year>1998</year>
     </identity>
@@ -333,7 +328,6 @@
       </region>
     </roms>
   </game>
-
   <game name="dirtdvls">
     <identity>
       <title>Dirt Devils</title>
@@ -407,7 +401,6 @@
       </region>
     </roms>
   </game>
-
   <game name="dirtdvlsu" parent="dirtdvls">
     <identity>
       <title>Dirt Devils</title>
@@ -415,7 +408,7 @@
       <manufacturer>Sega</manufacturer>
       <year>1998</year>
     </identity>
-  <hardware>
+    <hardware>
       <platform>Sega Model 3</platform>
       <stepping>2.1</stepping>
       <mpeg_board>DSB2</mpeg_board>
@@ -439,7 +432,6 @@
       </region>
     </roms>
   </game>
-
   <game name="dirtdvlsau" parent="dirtdvls">
     <identity>
       <title>Dirt Devils</title>
@@ -447,7 +439,7 @@
       <manufacturer>Sega</manufacturer>
       <year>1998</year>
     </identity>
-  <hardware>
+    <hardware>
       <platform>Sega Model 3</platform>
       <stepping>2.1</stepping>
       <mpeg_board>DSB2</mpeg_board>
@@ -471,7 +463,6 @@
       </region>
     </roms>
   </game>
-
   <game name="dirtdvlsj" parent="dirtdvls">
     <identity>
       <title>Dirt Devils</title>
@@ -503,7 +494,6 @@
       </region>
     </roms>
   </game>
-
   <game name="dirtdvlsg" parent="dirtdvls">
     <identity>
       <title>Dirt Devils</title>
@@ -535,7 +525,6 @@
       </region>
     </roms>
   </game>
-
   <game name="eca">
     <identity>
       <title>Emergency Call Ambulance</title>
@@ -617,7 +606,6 @@
       </region>
     </roms>
   </game>
-
   <game name="ecap" parent="eca">
     <identity>
       <title>Emergency Call Ambulance</title>
@@ -639,7 +627,7 @@
       <encryption_key>0x2923aa91</encryption_key>
     </hardware>
     <roms>
-    	<patches>
+      <patches>
         <!-- Skips over cabinet network error -->
         <patch region="crom" bits="32" offset="0x4a2b7c" value="0x60000000" />
       </patches>
@@ -664,7 +652,6 @@
       </region>
     </roms>
   </game>
-
   <game name="ecau" parent="eca">
     <identity>
       <title>Emergency Call Ambulance</title>
@@ -698,7 +685,6 @@
       </region>
     </roms>
   </game>
-
   <game name="ecaj" parent="eca">
     <identity>
       <title>Emergency Call Ambulance</title>
@@ -732,7 +718,6 @@
       </region>
     </roms>
   </game>
-
   <game name="fvipers2">
     <identity>
       <title>Fighting Vipers 2</title>
@@ -813,7 +798,6 @@
       </region>
     </roms>
   </game>
-
   <game name="fvipers2o" parent="fvipers2">
     <identity>
       <title>Fighting Vipers 2</title>
@@ -841,7 +825,6 @@
       </region>
     </roms>
   </game>
-
   <game name="harley">
     <identity>
       <title>Harley-Davidson and L.A. Riders</title>
@@ -914,7 +897,6 @@
       </region>
     </roms>
   </game>
-
   <game name="harleya" parent="harley">
     <identity>
       <title>Harley-Davidson and L.A. Riders</title>
@@ -943,7 +925,6 @@
       </region>
     </roms>
   </game>
-
   <game name="lamachin">
     <identity>
       <title>L.A. Machineguns: Rage of the Machines</title>
@@ -1015,7 +996,6 @@
       </region>
     </roms>
   </game>
-
   <game name="lemans24">
     <identity>
       <title>Le Mans 24</title>
@@ -1039,8 +1019,10 @@
     <roms>
       <patches>
         <!-- Base offset of program in CROM space: 0x6473c0 (0x473c0 in the ROM) -->
-        <patch region="crom" bits="32" offset="0x0D8C4C" value="0x00000002" />  <!-- comm. mode: 00=master, 01=slave, 02=satellite -->
-        <patch region="crom" bits="32" offset="0x13FE38" value="0x38840004" />  <!-- an actual bug in the game code -->
+        <patch region="crom" bits="32" offset="0x0D8C4C" value="0x00000002" />
+        <!-- comm. mode: 00=master, 01=slave, 02=satellite -->
+        <patch region="crom" bits="32" offset="0x13FE38" value="0x38840004" />
+        <!-- an actual bug in the game code -->
       </patches>
       <region name="crom" stride="8" chunk_size="2" byte_swap="true">
         <file offset="0" name="epr-19890b.20" crc32="0x9C16C3CC" />
@@ -1094,17 +1076,16 @@
       <!-- Not working ATM - Commands don't correspond -->
       <region name="driveboard_program" stride="1" chunk_size="1" required="false">
         <file offset="0" name="epr-18261.ic9" crc32="0x0C7FAC58" />
-      <!-- Driveboard program from scud - Can be a replacement from original model2 z80 program -->
-      <!-- I think Model3 driveboard hardware acts exactly like Model2 driveboard hardware (same irq, same memory mapping, same commands etc...)  -->
-      <!-- This is why we can exchange micro program (rom) in Supermodel to have ffb in lemans24 -->
-      <!-- Simply comment and uncomment - for test purpose only -->
-      <!--
+        <!-- Driveboard program from scud - Can be a replacement from original model2 z80 program -->
+        <!-- I think Model3 driveboard hardware acts exactly like Model2 driveboard hardware (same irq, same memory mapping, same commands etc...)  -->
+        <!-- This is why we can exchange micro program (rom) in Supermodel to have ffb in lemans24 -->
+        <!-- Simply comment and uncomment - for test purpose only -->
+        <!--
         <file offset="0" name="epr-19338a.bin" crc32="0xC9FAC464" />
       -->
       </region>
     </roms>
   </game>
-
   <game name="lostwsga">
     <identity>
       <title>The Lost World</title>
@@ -1115,7 +1096,7 @@
     <hardware>
       <platform>Sega Model 3</platform>
       <stepping>1.5</stepping>
-	  <audio>QuadFrontRear</audio>
+      <audio>QuadFrontRear</audio>
       <inputs>
         <input type="common" />
         <input type="analog_gun1" />
@@ -1178,7 +1159,6 @@
       </region>
     </roms>
   </game>
-
   <game name="lostwsgp" parent="lostwsga">
     <identity>
       <title>The Lost World</title>
@@ -1198,7 +1178,7 @@
       </inputs>
     </hardware>
     <roms>
-     <region name="crom" stride="8" chunk_size="2" byte_swap="true">
+      <region name="crom" stride="8" chunk_size="2" byte_swap="true">
         <file offset="0" name="ic20.20" crc32="0x50A5FD1D" />
         <file offset="2" name="ic19.19" crc32="0xACF71D38" />
         <file offset="4" name="ic18.18" crc32="0xA62DF14C" />
@@ -1209,7 +1189,6 @@
       </region>
     </roms>
   </game>
-
   <game name="magtruck">
     <!-- Correct dump of Magical Truck Adventure, redumped September 2022. -->
     <identity>
@@ -1230,7 +1209,7 @@
     </hardware>
     <roms>
       <patches>
-	    <!-- Enable Region change (remove the patch to return to Japan region) -->
+        <!-- Enable Region change (remove the patch to return to Japan region) -->
         <patch region="crom" bits="32" offset="0x14B25C" value="0x38600001" />
       </patches>
       <region name="crom" stride="8" chunk_size="2" byte_swap="true">
@@ -1275,7 +1254,6 @@
       </region>
     </roms>
   </game>
-
   <game name="mgtrkbad" parent="magtruck">
     <!--
       Original bad ROM set. EPROMs 18 and 20 are corrupted, causing attract
@@ -1301,7 +1279,7 @@
     </hardware>
     <roms>
       <patches>
-	    <!-- Fixing bad ROM dump which causes attract mode to stop rendering -->
+        <!-- Fixing bad ROM dump which causes attract mode to stop rendering -->
         <patch region="crom" bits="32" offset="0x091A34" value="0x917F0068" />
         <!-- Enable Region change (remove the patch to return to Japan region) -->
         <patch region="crom" bits="32" offset="0x14B25C" value="0x38600001" />
@@ -1314,11 +1292,10 @@
       </region>
     </roms>
   </game>
-
   <game name="oceanhun">
     <identity>
       <title>The Ocean Hunter</title>
-	  <version>Japan, Revision A</version>
+      <version>Japan, Revision A</version>
       <manufacturer>Sega</manufacturer>
       <year>1998</year>
     </identity>
@@ -1385,11 +1362,10 @@
       </region>
     </roms>
   </game>
-
   <game name="oceanhuna" parent="oceanhun">
     <identity>
       <title>The Ocean Hunter</title>
-	    <version>Japan</version>
+      <version>Japan</version>
       <manufacturer>Sega</manufacturer>
       <year>1998</year>
     </identity>
@@ -1412,7 +1388,6 @@
       </region>
     </roms>
   </game>
-
   <game name="scud">
     <identity>
       <title>Scud Race</title>
@@ -1497,7 +1472,6 @@
       </region>
     </roms>
   </game>
-
   <game name="scudau" parent="scud">
     <identity>
       <title>Scud Race</title>
@@ -1532,7 +1506,6 @@
       </region>
     </roms>
   </game>
-
   <game name="scuddx" parent="scud">
     <identity>
       <title>Scud Race</title>
@@ -1605,7 +1578,6 @@
       </region>
     </roms>
   </game>
-
   <game name="scuddxo" parent="scud">
     <identity>
       <title>Scud Race</title>
@@ -1618,7 +1590,7 @@
       <stepping>1.5</stepping>
       <mpeg_board>DSB1</mpeg_board>
       <drive_board>Wheel</drive_board>
-	    <netboard>false</netboard>
+      <netboard>false</netboard>
       <audio>QuadFrontRear</audio>
       <inputs>
         <input type="common" />
@@ -1678,7 +1650,6 @@
       </region>
     </roms>
   </game>
-
   <game name="scudplus" parent="scud">
     <identity>
       <title>Scud Race Plus</title>
@@ -1708,7 +1679,7 @@
         <file offset="6" name="epr-20092a.17" crc32="0xA94EC57E" />
       </region>
       <region name="banked_crom" stride="8" chunk_size="2" byte_swap="true">
-       <!-- CROM3 -->
+        <!-- CROM3 -->
         <file offset="0x3000000" name="mpr-20100.16" crc32="0xC99E2C01" />
         <file offset="0x3000002" name="mpr-20099.15" crc32="0xFC9BD7D9" />
         <file offset="0x3000004" name="mpr-20098.14" crc32="0x8355FA41" />
@@ -1725,11 +1696,10 @@
       </region>
     </roms>
   </game>
-
   <game name="scudplusa" parent="scud">
     <identity>
       <title>Scud Race Plus</title>
-	  <version>Export, Twin/DX</version>
+      <version>Export, Twin/DX</version>
       <manufacturer>Sega</manufacturer>
       <year>1997</year>
     </identity>
@@ -1756,7 +1726,7 @@
         <file offset="6" name="epr-20092.17" crc32="0x6F9161C1" />
       </region>
       <region name="banked_crom" stride="8" chunk_size="2" byte_swap="true">
-       <!-- CROM3 -->
+        <!-- CROM3 -->
         <file offset="0x3000000" name="mpr-20100.16" crc32="0xC99E2C01" />
         <file offset="0x3000002" name="mpr-20099.15" crc32="0xFC9BD7D9" />
         <file offset="0x3000004" name="mpr-20098.14" crc32="0x8355FA41" />
@@ -1773,7 +1743,6 @@
       </region>
     </roms>
   </game>
-
   <game name="skichamp">
     <identity>
       <title>Ski Champ</title>
@@ -1847,11 +1816,10 @@
       </region>
     </roms>
   </game>
-
   <game name="spikeofe">
     <identity>
       <title>Spikeout Final Edition</title>
-	  <version>Export</version>
+      <version>Export</version>
       <manufacturer>Sega</manufacturer>
       <year>1999</year>
     </identity>
@@ -1934,7 +1902,6 @@
       </region>
     </roms>
   </game>
-
   <game name="spikeout">
     <identity>
       <title>Spikeout</title>
@@ -2021,11 +1988,10 @@
       </region>
     </roms>
   </game>
-
   <game name="srally2">
     <identity>
       <title>Sega Rally 2</title>
-	  <version>Export</version>
+      <version>Export</version>
       <manufacturer>Sega</manufacturer>
       <year>1998</year>
     </identity>
@@ -2107,7 +2073,6 @@
       </region>
     </roms>
   </game>
-
   <game name="srally2p" parent="srally2">
     <identity>
       <title>Sega Rally 2</title>
@@ -2144,7 +2109,6 @@
       </region>
     </roms>
   </game>
-
   <game name="srally2pa" parent="srally2">
     <identity>
       <title>Sega Rally 2</title>
@@ -2180,7 +2144,6 @@
       </region>
     </roms>
   </game>
-
   <game name="srally2dx" parent="srally2">
     <identity>
       <title>Sega Rally 2</title>
@@ -2257,7 +2220,6 @@
       </region>
     </roms>
   </game>
-
   <game name="swtrilgy">
     <identity>
       <title>Star Wars Trilogy Arcade</title>
@@ -2340,11 +2302,10 @@
       </region>
     </roms>
   </game>
-
   <game name="swtrilgya" parent="swtrilgy">
     <identity>
       <title>Star Wars Trilogy Arcade</title>
-	  <version>Export</version>
+      <version>Export</version>
       <manufacturer>Sega, LucasArts</manufacturer>
       <year>1998</year>
     </identity>
@@ -2368,11 +2329,10 @@
       </region>
     </roms>
   </game>
-
   <game name="swtrilgyp" parent="swtrilgy">
     <identity>
       <title>Star Wars Trilogy Arcade</title>
-	  <version>Location Test, 16.09.98</version>
+      <version>Location Test, 16.09.98</version>
       <manufacturer>Sega, LucasArts</manufacturer>
       <year>1998</year>
     </identity>
@@ -2433,7 +2393,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vf3">
     <identity>
       <title>Virtua Fighter 3</title>
@@ -2511,7 +2470,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vf3a" parent="vf3">
     <identity>
       <title>Virtua Fighter 3</title>
@@ -2539,7 +2497,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vf3c" parent="vf3">
     <identity>
       <title>Virtua Fighter 3</title>
@@ -2567,11 +2524,10 @@
       </region>
     </roms>
   </game>
-
   <game name="vf3tb" parent="vf3">
     <identity>
       <title>Virtua Fighter 3 Team Battle</title>
-	  <version>Japan</version>
+      <version>Japan</version>
       <manufacturer>Sega</manufacturer>
       <year>1996</year>
     </identity>
@@ -2602,7 +2558,6 @@
       </region>
     </roms>
   </game>
-
   <game name="von2">
     <identity>
       <title>Cyber Troopers Virtual-On Oratorio Tangram</title>
@@ -2683,7 +2638,6 @@
       </region>
     </roms>
   </game>
-
   <game name="von254g" parent="von2">
     <identity>
       <title>Cyber Troopers Virtual-On Oratorio Tangram</title>
@@ -2712,7 +2666,6 @@
       </region>
     </roms>
   </game>
-
   <game name="von2a" parent="von2">
     <identity>
       <title>Cyber Troopers Virtual-On Oratorio Tangram</title>
@@ -2741,7 +2694,6 @@
       </region>
     </roms>
   </game>
-
   <game name="von2o" parent="von2">
     <identity>
       <title>Cyber Troopers Virtual-On Oratorio Tangram</title>
@@ -2770,7 +2722,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs2">
     <identity>
       <title>Virtua Striker 2</title>
@@ -2848,7 +2799,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs215" parent="vs2">
     <identity>
       <title>Virtua Striker 2</title>
@@ -2877,7 +2827,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs215o" parent="vs2">
     <!-- locked to Japan, test or debug version with render/CPU data displayed on screen -->
     <identity>
@@ -2907,7 +2856,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs298">
     <identity>
       <title>Virtua Striker 2 '98</title>
@@ -2928,7 +2876,7 @@
       <encryption_key>0x29234e96</encryption_key>
     </hardware>
     <roms>
-    	<patches>
+      <patches>
         <!--
           Offset of program relative to CROM base: 0x600000 (0x200000 in the
           ROM itself). Inexplicably, at PC=AFC1C, a call is made to FC78, which
@@ -2938,7 +2886,8 @@
           not? Or, 300138 needs to be written with a non-zero value, it is
           loaded from EEPROM but is 0.
         -->
-        <patch region="crom" bits="32" offset="0x2afc1c" value="0x60000000" />  <!-- 0x6afc1c from base of CROM -->
+        <patch region="crom" bits="32" offset="0x2afc1c" value="0x60000000" />
+        <!-- 0x6afc1c from base of CROM -->
       </patches>
       <region name="crom" stride="8" chunk_size="2" byte_swap="true">
         <file offset="0" name="epr-20920.20" crc32="0x428D05FC" />
@@ -2998,7 +2947,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs29815" parent="vs298">
     <identity>
       <title>Virtua Striker 2 '98</title>
@@ -3027,7 +2975,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs2v991">
     <identity>
       <title>Virtua Striker 2 '99.1</title>
@@ -3106,7 +3053,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs299a" parent="vs2v991">
     <identity>
       <title>Virtua Striker 2 '99</title>
@@ -3135,11 +3081,10 @@
       </region>
     </roms>
   </game>
-
   <game name="vs299" parent="vs2v991">
     <identity>
       <title>Virtua Striker 2 '99</title>
-	  <version>Export, USA</version>
+      <version>Export, USA</version>
       <manufacturer>Sega</manufacturer>
       <year>1999</year>
     </identity>
@@ -3164,7 +3109,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs299j" parent="vs2v991">
     <identity>
       <title>Virtua Striker 2 '99.1</title>
@@ -3193,7 +3137,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs29915" parent="vs2v991">
     <identity>
       <title>Virtua Striker 2 '99.1</title>
@@ -3222,7 +3165,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs29915a" parent="vs2v991">
     <identity>
       <title>Virtua Striker 2 '99</title>
@@ -3251,7 +3193,6 @@
       </region>
     </roms>
   </game>
-
   <game name="vs29915j" parent="vs2v991">
     <identity>
       <title>Virtua Striker 2 '99.1</title>
