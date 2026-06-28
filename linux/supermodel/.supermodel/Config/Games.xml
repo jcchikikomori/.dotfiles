@@ -1484,7 +1484,7 @@
       <stepping>1.5</stepping>
       <mpeg_board>DSB1</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <netboard>false</netboard>
+      <netboard>true</netboard>
       <audio>QuadFrontRear</audio>
       <inputs>
         <input type="common" />
@@ -1518,7 +1518,7 @@
       <stepping>1.5</stepping>
       <mpeg_board>DSB1</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <netboard>false</netboard>
+      <netboard>true</netboard>
       <audio>QuadFrontRear</audio>
       <inputs>
         <input type="common" />
@@ -1590,7 +1590,7 @@
       <stepping>1.5</stepping>
       <mpeg_board>DSB1</mpeg_board>
       <drive_board>Wheel</drive_board>
-      <netboard>false</netboard>
+      <netboard>true</netboard>
       <audio>QuadFrontRear</audio>
       <inputs>
         <input type="common" />
