@@ -229,6 +229,25 @@ package_install() {
     return 1
   fi
 
+  # Skip confirmation in CI/unattended mode
+  if [ -z "$CI" ] && [ -z "$SKIP_INSTALL_PROGLANG" ]; then
+    echo ""
+    echo "WARNING: Installing AUR package: $package_name"
+    echo "Source: AUR (Arch User Repository)"
+    echo "Supply chain risk: AUR packages are maintained by volunteers and may become"
+    echo "orphaned, compromised, or contain malicious code. See:"
+    echo "  https://archlinux.org/news/active-aur-malicious-packages-incident/"
+    echo ""
+    printf "Continue with installation? [Y/n] "
+    read -r confirm
+    case "$confirm" in
+      [nN]|[nN][oO])
+        log_info "Skipping $package_name (user declined)"
+        return 0
+        ;;
+    esac
+  fi
+
   # Try yay first, then fall back to pacman
   if command -v yay >/dev/null 2>&1; then
     log_info "Installing $package_name via yay..."
