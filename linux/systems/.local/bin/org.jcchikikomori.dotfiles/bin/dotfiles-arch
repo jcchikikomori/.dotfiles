@@ -183,7 +183,7 @@ install_packages() {
       log_info "$package_name is already installed"
     else
       # Skip confirmation in CI/unattended mode
-      if [ -z "$CI" ] && [ -z "$SKIP_INSTALL_PROGLANG" ]; then
+      if [ -z "${CI:-}" ] && [ -z "${SKIP_INSTALL_PROGLANG:-}" ]; then
         echo ""
         echo "WARNING: Installing AUR package: $package_name"
         echo "Source: AUR (Arch User Repository)"

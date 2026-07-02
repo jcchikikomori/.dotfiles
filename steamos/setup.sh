@@ -24,7 +24,12 @@ sudo pacman-key --populate holo 2>/dev/null || true
 # Setup third-party repositories (Chaotic AUR + CachyOS)
 "$DOTFILES_BIN/dotfiles-arch" setup-repositories
 
-# Install essentials
+# Install essential packages from standard pacman repos
+pacman_install "-Syy --noconfirm --noprogressbar" \
+  nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib \
+  git zsh unzip python3 zip vi fakeroot openssh stow sqlite tmux wget entr less
+
+# Install AUR helper and AUR packages
 "$DOTFILES_BIN/dotfiles-arch" install-yay
 "$DOTFILES_BIN/dotfiles-arch" install-packages
 
