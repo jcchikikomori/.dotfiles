@@ -1,0 +1,22 @@
+#!/bin/sh
+# Launch the commitizen wizard on plain `git commit`.
+# Installed per-repo by `dotfiles-git-repo` (initialize|precommit|czhook).
+# Bypass with SKIP_CZ=1 git commit
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# Skip: message already provided (-m/-F/-c/-C/--amend/merge/squash/rebase/template)
+[ -n "$COMMIT_SOURCE" ] && exit 0
+# Skip: explicit opt-out
+[ -n "$SKIP_CZ" ] && exit 0
+# Skip: commitizen not installed
+command -v cz >/dev/null 2>&1 || exit 0
+# Skip: no controlling tty (IDEs, CI) -> fall back to normal editor
+{ true < /dev/tty; } 2>/dev/null || exit 0
+
+exec < /dev/tty
+cz commit --dry-run --write-message-to-file "$COMMIT_MSG_FILE" || {
+  echo "[prepare-commit-msg] commitizen aborted; cancelling commit" >&2
+  exit 1
+}
