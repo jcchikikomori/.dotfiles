@@ -1,5 +1,14 @@
 # AI Coding Agent Instructions for .dotfiles
 
+## Companion Instruction Files
+
+Before starting any task, also read the `CLAUDE.md`/`AGENTS.md` files in this repository for reference or additional information:
+
+- `CLAUDE.md` (repo root) — condensed commands, architecture, and conventions
+- `linux/systems/.local/bin/org.jcchikikomori.dotfiles/CLAUDE.md` — agent notes for the utility-script directory (e.g. `dotfiles-arch` reference, AUR safety-research requirement)
+- `.github/agents/dotfiles-maintainer.agent.md` — cross-platform maintenance agent workflow
+- Any other `CLAUDE.md`/`AGENTS.md` found in a directory you are working in takes precedence for that directory
+
 ## Project Overview
 
 This is a cross-platform dotfiles management system that automates shell and development environment setup across multiple Linux distributions (Debian/Ubuntu, Arch, RHEL/Fedora, SteamOS). It uses **GNU Stow** via the [dotstow](https://github.com/jcchikikomori/dotstow) wrapper to symlink configuration files from `linux/*/` directories to `$HOME`.
