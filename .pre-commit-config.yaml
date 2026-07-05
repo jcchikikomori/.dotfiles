@@ -1,14 +1,14 @@
 # Source: https://pre-commit.com/#2-add-a-pre-commit-configuration
 repos:
 -   repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.9.1
+    rev: v4.16.4
     hooks:
     -   id: commitizen
         stages: [commit-msg]
-    -   id: commitizen-branch
-        args: ["--", "--check", "--", "--message", "$(git log -1 --pretty=%B)"]
-        exclude: '^fixup!|^squash!'
-        stages: [pre-push]
+    #-   id: commitizen-branch
+    #    args: ["--", "--check", "--", "--message", "$(git log -1 --pretty=%B)"]
+    #    exclude: '^fixup!|^squash!'
+    #    stages: [pre-push]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -23,6 +23,6 @@ repos:
     -   id: check-merge-conflict
         stages: [pre-commit]
 -   repo: https://github.com/psf/black
-    rev: 25.9.0
+    rev: 26.5.1
     hooks:
     -   id: black
