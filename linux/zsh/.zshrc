@@ -209,9 +209,6 @@ HISTFILE=~/.zhistory
 HISTSIZE=50000
 SAVEHIST=10000
 
-## custom aliases
-source $HOME/.zalias
-
 ## emacs
 source $HOME/.emacsbinding
 
@@ -220,6 +217,10 @@ source $HOME/.profile
 
 ## antigen
 source $HOME/.antigenrc
+
+## custom aliases
+# Note: must load after antigen so overrides beat oh-my-zsh plugin aliases (e.g. gc)
+source $HOME/.zalias
 
 # Specific homebrew profiles
 # Note: Ensure to execute this to the last order/sequence of the .zshrc

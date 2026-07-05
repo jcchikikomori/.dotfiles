@@ -15,9 +15,10 @@ linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/starship
 # Ignore all files and directories within ~/.gnupg
 linux/gpg/.gnupg/*
 
-# But track gpg.conf and gpg-agent.conf
+# But track gpg.conf, gpg-agent.conf, and agent notes
 !linux/gpg/.gnupg/gpg.conf
 !linux/gpg/.gnupg/gpg-agent.conf
+!linux/gpg/.gnupg/CLAUDE.md
 
 # VSCode
 /.vscode
