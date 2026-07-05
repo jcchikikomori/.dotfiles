@@ -51,9 +51,9 @@ dotfiles-arch install-packages
 ### Notes for agents
 
 - All steps are idempotent: they check whether repositories/packages already exist before acting.
-- This script is **not** invoked by `start.sh`; it is intended to be run manually when AUR setup is needed.
+- `dotfiles-arch` subcommands (`setup-repositories`, `install-yay`, `install-packages`, `install-packages-edge`) are invoked by `steamos/setup.sh` (which `start.sh` runs on SteamOS). SteamOS keyring repair goes through `dotfiles-steamdeck fix-keyring` instead of `dotfiles-arch fix-keyring`, since the Arch version's early-return-on-existing-keys logic doesn't fit SteamOS's pre-populated holo keyring. `dotfiles-arch` remains runnable standalone/manually on any Arch-based system.
 - SteamOS-specific handling (e.g. `steamos-readonly`, `holo` keyring) is kept in `dotfiles-steamdeck` and `steamos/setup.sh`, not here.
 - `arch/setup.sh` has been stripped of AUR-related logic; use `dotfiles-arch` for that instead.
 - On SteamOS, any command that modifies the system checks `steamos-readonly status` first. If the rootfs is read-only, the script exits with instructions to run `dotfiles-steamdeck writeable` or `sudo steamos-readonly disable`.
 - `install-yay` installs `debugedit` and `fakeroot` if missing, since SteamOS 3.8.10+ removed them but `makepkg` requires them to build `yay-bin`.
-- Zsh tab completion is available for `dotfiles-arch` via `~/.zsh/completions/_dotfiles-arch` after stowing the `zsh` package.
+- Zsh tab completion is available for `dotfiles-arch` via `~/.zsh/completions/_dotfiles-arch`, and for `dotfiles-steamdeck` via `~/.zsh/completions/_dotfiles-steamdeck`, after stowing the `zsh` package.

@@ -1,0 +1,41 @@
+#compdef dotfiles-steamdeck
+
+# Zsh completion for dotfiles-steamdeck
+
+_dotfiles-steamdeck() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1: :->command' \
+    '*:: :->args'
+
+  case "$state" in
+    command)
+      _values 'dotfiles-steamdeck command' \
+        'reset-audio[Delete WirePlumber settings to fix corrupt audio]' \
+        'patch-hosts[Patch /etc/hosts with game-related entries]' \
+        'writeable[Make SteamOS writeable]' \
+        'readonly[Make SteamOS read-only]' \
+        'fix-keyring[Initialize pacman keyring (fixes unknown trust errors)]' \
+        'yay-install[Install yay (AUR helper)]' \
+        'yay-remove[Remove yay]' \
+        'package-install[Install a package (uses yay or pacman)]' \
+        'podman-install[Install Podman (recommended, rootless)]' \
+        'podman-remove[Remove Podman]' \
+        'docker-install[Deprecated: use podman-install]' \
+        'docker-remove[Remove Docker (if installed)]' \
+        'llm-setup[Setup local LLM support with Ollama (ROCM)]' \
+        'llm-status[Check LLM service status]'
+      ;;
+    args)
+      case "$line[1]" in
+        package-install)
+          _arguments '1:package name:'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_dotfiles-steamdeck "$@"

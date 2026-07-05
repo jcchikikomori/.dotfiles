@@ -70,6 +70,7 @@ fix_keyring() {
 
   # Set SigLevel = TrustAll to install keyring packages
   sudo cp -f /etc/pacman.conf /etc/pacman.conf.bak
+  trap '[ -f /etc/pacman.conf.bak ] && sudo mv -f /etc/pacman.conf.bak /etc/pacman.conf || true' EXIT
   sudo awk '$1 == "SigLevel" {print "SigLevel = TrustAll"; next} {print}' /etc/pacman.conf > /tmp/pacman.conf.new
   sudo mv /tmp/pacman.conf.new /etc/pacman.conf
 
@@ -81,6 +82,7 @@ fix_keyring() {
 
   # Restore original pacman.conf
   sudo mv -f /etc/pacman.conf.bak /etc/pacman.conf
+  trap - EXIT
 
   log_info "Keyring fix complete."
 }
@@ -89,6 +91,8 @@ fix_keyring() {
 setup_repositories() {
   require_writeable_rootfs
   log_info "Setting up third-party repositories..."
+
+  repos_changed=0
 
   # Chaotic AUR
   if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
@@ -104,7 +108,7 @@ setup_repositories() {
     echo "
 [chaotic-aur]
 Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf >/dev/null
-    sudo pacman -Syy --noconfirm --noprogressbar
+    repos_changed=1
   else
     log_info "Chaotic AUR repository is already registered. Skipping..."
   fi
@@ -135,9 +139,14 @@ Include = /etc/pacman.d/cachyos-v3-mirrorlist
 [cachyos]
 Include = /etc/pacman.d/cachyos-mirrorlist
 " | sudo tee -a /etc/pacman.conf >/dev/null
-    sudo pacman -Syy --noconfirm --noprogressbar
+    repos_changed=1
   else
     log_info "CachyOS repository is already registered. Skipping..."
+  fi
+
+  if [ "$repos_changed" -eq 1 ]; then
+    log_info "Refreshing package databases..."
+    sudo pacman -Syy --noconfirm --noprogressbar
   fi
 }
 
@@ -182,24 +191,7 @@ install_packages() {
     if is_installed "$package_name"; then
       log_info "$package_name is already installed"
     else
-      # Skip confirmation in CI/unattended mode
-      if [ -z "${CI:-}" ] && [ -z "${SKIP_INSTALL_PROGLANG:-}" ]; then
-        echo ""
-        echo "WARNING: Installing AUR package: $package_name"
-        echo "Source: AUR (Arch User Repository)"
-        echo "Supply chain risk: AUR packages are maintained by volunteers and may become"
-        echo "orphaned, compromised, or contain malicious code. See:"
-        echo "  https://archlinux.org/news/active-aur-malicious-packages-incident/"
-        echo ""
-        printf "Continue with installation? [Y/n] "
-        read -r confirm
-        case "$confirm" in
-          [nN]|[nN][oO])
-            log_info "Skipping $package_name (user declined)"
-            continue
-            ;;
-        esac
-      fi
+      confirm_aur_install "$package_name" || continue
 
       log_info "Installing $package_name via yay..."
       yay -S --noconfirm "$package_name"

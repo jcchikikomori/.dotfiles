@@ -1,7 +1,9 @@
 #!/bin/sh
 
 # Shared pacman install helper for Arch-based systems.
-# Source this file to get is_forced_package() and pacman_install() functions.
+# Source this file to get is_forced_package(), pacman_install(), and
+# confirm_aur_install() functions. The sourcing script must define log_info()
+# before calling confirm_aur_install().
 
 # Space-separated package list to force install on file conflicts.
 # Example: PACMAN_FORCE_CONFLICT_PACKAGES="python3 openssh" dotfiles-arch setup
@@ -41,4 +43,31 @@ pacman_install() {
     echo "Installing forced packages with overwrite glob: $PACMAN_OVERWRITE_GLOB"
     sudo pacman $pacman_args --overwrite "$PACMAN_OVERWRITE_GLOB" $forced_packages || return 1
   fi
+}
+
+# Prompt to confirm installing an AUR package. Returns 0 to proceed, 1 to skip.
+# Skips the prompt entirely in CI or when SKIP_INSTALL_PROGLANG is set.
+confirm_aur_install() {
+  package_name="$1"
+
+  CI_MODE="${CI:-false}"
+  if [ "$CI_MODE" = "true" ] || [ -n "${SKIP_INSTALL_PROGLANG:-}" ]; then
+    return 0
+  fi
+
+  echo ""
+  echo "WARNING: Installing AUR package: $package_name"
+  echo "Source: AUR (Arch User Repository)"
+  echo "Supply chain risk: AUR packages are maintained by volunteers and may become"
+  echo "orphaned, compromised, or contain malicious code. See:"
+  echo "  https://archlinux.org/news/active-aur-malicious-packages-incident/"
+  echo ""
+  printf "Continue with installation? [Y/n] "
+  read -r confirm || confirm=n
+  case "$confirm" in
+    [nN]|[nN][oO])
+      log_info "Skipping $package_name (user declined)"
+      return 1
+      ;;
+  esac
 }

@@ -1,14 +1,5 @@
 #!/bin/sh
 
-# Clean up temp files on exit
-CLEANUP_DIRS="/tmp/dotfiles-* /tmp/yay-*"
-cleanup() {
-  for dir in $CLEANUP_DIRS; do
-    [ -d "$dir" ] && sudo rm -rf "$dir" 2>/dev/null || true
-  done
-}
-trap cleanup EXIT
-
 # Source shared pacman install helper
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 DOTFILES_BIN="$SCRIPT_DIR/../linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
@@ -17,21 +8,26 @@ DOTFILES_BIN="$SCRIPT_DIR/../linux/systems/.local/bin/org.jcchikikomori.dotfiles
 # Unlocking SteamOS rootfs...
 sudo steamos-readonly disable
 
-# Initialize pacman keyring (SteamOS 3.5+ requires holo keyring for Valve-signed packages)
-"$DOTFILES_BIN/dotfiles-arch" fix-keyring
-sudo pacman-key --populate holo 2>/dev/null || true
+# Initialize pacman keyring (SteamOS 3.5+ requires holo keyring for Valve-signed
+# packages). Use dotfiles-steamdeck's fix-keyring, not dotfiles-arch's: the Arch
+# version early-returns whenever any key already exists (true on SteamOS, which
+# ships with holo keys pre-populated) and never runs --populate archlinux.
+"$DOTFILES_BIN/dotfiles-steamdeck" fix-keyring
 
 # Setup third-party repositories (Chaotic AUR + CachyOS)
 "$DOTFILES_BIN/dotfiles-arch" setup-repositories
 
-# Install essential packages from standard pacman repos
-pacman_install "-Syy --noconfirm --noprogressbar" \
+# Install essential packages from standard pacman repos (needed before
+# install-yay, which requires git + base-devel). Repos were just refreshed
+# above, so -S --needed is enough here.
+pacman_install "-S --needed --noconfirm --noprogressbar" \
   nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib \
   git zsh unzip python3 zip vi fakeroot openssh stow sqlite tmux wget entr less
 
-# Install AUR helper and AUR packages
+# Install AUR helper, then mandatory + optional edge packages
 "$DOTFILES_BIN/dotfiles-arch" install-yay
 "$DOTFILES_BIN/dotfiles-arch" install-packages
+"$DOTFILES_BIN/dotfiles-arch" install-packages-edge
 
 # Locking SteamOS rootfs...
 sudo steamos-readonly enable
