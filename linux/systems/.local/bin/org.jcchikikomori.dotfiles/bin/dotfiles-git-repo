@@ -20,7 +20,7 @@ precommit() {
 }
 
 # TODO: Check if .git folder/directory exists
-initial() {  
+initial() {
   if [ -d ".git" ]; then
     echo "[dotfiles-git-repo] .git already exists. Skipping..."
   else
@@ -29,27 +29,41 @@ initial() {
   fi
 }
 
-if [ "$1" = "initialize" ]; then
-  echo "[dotfiles-git-repo] Initializing..."
-  initial
-  precommit
-  exit 0
-elif [ "$1" = "precommit" ]; then
-  echo "[dotfiles-git-repo] Initializing..."
-  precommit
-  exit 0
-elif [ "$1" = "czhook" ]; then
-  echo "[dotfiles-git-repo] Initializing..."
-  czhook
-  exit 0
-elif [ "$1" = "validate" ]; then
-  echo "[dotfiles-git-repo] Under construction! Exiting..."
-  exit 1
-else
+usage() {
   echo "Usage: $0 {initialize|precommit|czhook|validate}"
   echo "  initialize: Initialize Git with pre-commit support."
   echo "  precommit: Initialize pre-commit support (without git init)."
   echo "  czhook: Install the commitizen wizard hook (prepare-commit-msg) only."
   echo "  validate: Validates the repository if it's being initialized or not."
-  exit 1
-fi
+}
+
+case "${1:---help}" in
+  initialize)
+    echo "[dotfiles-git-repo] Initializing..."
+    initial
+    precommit
+    exit 0
+    ;;
+  precommit)
+    echo "[dotfiles-git-repo] Initializing..."
+    precommit
+    exit 0
+    ;;
+  czhook)
+    echo "[dotfiles-git-repo] Initializing..."
+    czhook
+    exit 0
+    ;;
+  validate)
+    echo "[dotfiles-git-repo] Under construction! Exiting..."
+    exit 1
+    ;;
+  help|-h|--help)
+    usage
+    exit 0
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
