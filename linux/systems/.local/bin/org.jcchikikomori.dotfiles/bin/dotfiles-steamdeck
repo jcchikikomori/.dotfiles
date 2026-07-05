@@ -4,6 +4,10 @@ set -eu
 
 # SteamOS-specific utility for managing system state and services
 
+# Source shared pacman install helper
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+. "$SCRIPT_DIR/dotfiles-pacman-install"
+
 # Color output for messages
 log_info() {
   echo "[dotfiles-steamdeck] $1"
@@ -228,6 +232,8 @@ package_install() {
     log_error "SteamOS is read-only. Run 'dotfiles-steamdeck writeable' first"
     return 1
   fi
+
+  confirm_aur_install "$package_name" || return 0
 
   # Try yay first, then fall back to pacman
   if command -v yay >/dev/null 2>&1; then
