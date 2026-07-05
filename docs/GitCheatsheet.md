@@ -93,6 +93,32 @@ git shortlog -sn
 git clean -fdn    # dry-run for untracked cleanup
 ```
 
+## Conventional Commits (Commitizen)
+
+Per-repo setup — installs pre-commit hooks (validation) plus the interactive
+commitizen wizard (`prepare-commit-msg` hook):
+
+```bash
+dotfiles-python--commitizen   # one-time: install the cz binary
+cd <your-repo>
+dotfiles-git-repo precommit   # or `initialize` for a new repo
+dotfiles-git-repo czhook      # wizard hook only (no pre-commit)
+```
+
+Usage:
+
+```bash
+git commit            # launches the cz wizard (pick type, write message)
+gc                    # same wizard (alias override of oh-my-zsh's gc)
+gcz                   # explicit wizard alias
+git commit -m "..."   # skips wizard; message still validated by commit-msg hook
+SKIP_CZ=1 git commit  # bypass the wizard, use the normal editor
+```
+
+The wizard auto-skips on `--amend`, merges, rebases, and non-interactive
+contexts (IDEs, CI). Message validation via the commitizen pre-commit hook
+remains active as a safety net.
+
 ## Zsh and Bash Aliases (Repo Context)
 
 ### Existing Custom Alias in This Repo
@@ -102,6 +128,8 @@ Defined in `linux/zsh/.zalias`:
 ```bash
 alias hackerman="tmuxp load default"
 alias gpall="git remote | xargs -I {} git push {}"
+alias gcz="cz commit"   # only when cz is installed
+alias gc="cz commit"    # only when cz is installed
 ```
 
 ### Where to Add New Aliases

@@ -1,11 +1,21 @@
 #!/bin/sh
 set -eu
 
+czhook() {
+  echo "[dotfiles-git-repo] Installing prepare-commit-msg hook (commitizen wizard)..."
+  HOOK_DIR=$(git rev-parse --git-path hooks)
+  mkdir -p "$HOOK_DIR"
+  cp -f "$HOME/.dotfiles/linux/git/.config/git/hooks/prepare-commit-msg" "$HOOK_DIR/prepare-commit-msg"
+  chmod +x "$HOOK_DIR/prepare-commit-msg"
+  command -v cz >/dev/null 2>&1 || echo "  Note: 'cz' not found; run dotfiles-python--commitizen to enable the wizard."
+}
+
 precommit() {
   echo "[dotfiles-git-repo] Setting up pre-commit..."
   cp -f $HOME/.dotfiles/linux/git/.pre-commit-config.yaml .
   pre-commit autoupdate
   pre-commit install --hook-type pre-commit --hook-type commit-msg --hook-type pre-push --allow-missing-config
+  czhook
   exit 0
 }
 
@@ -28,13 +38,18 @@ elif [ "$1" = "precommit" ]; then
   echo "[dotfiles-git-repo] Initializing..."
   precommit
   exit 0
+elif [ "$1" = "czhook" ]; then
+  echo "[dotfiles-git-repo] Initializing..."
+  czhook
+  exit 0
 elif [ "$1" = "validate" ]; then
   echo "[dotfiles-git-repo] Under construction! Exiting..."
   exit 1
 else
-  echo "Usage: $0 {initialize|precommit|validate}"
+  echo "Usage: $0 {initialize|precommit|czhook|validate}"
   echo "  initialize: Initialize Git with pre-commit support."
   echo "  precommit: Initialize pre-commit support (without git init)."
+  echo "  czhook: Install the commitizen wizard hook (prepare-commit-msg) only."
   echo "  validate: Validates the repository if it's being initialized or not."
   exit 1
 fi

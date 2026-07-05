@@ -2,3 +2,8 @@
 alias hackerman="tmuxp load default"
 # Push all remote names into a single repository
 alias gpall="git remote | xargs -I {} git push {}"
+# Conventional commits (commitizen wizard)
+if command -v cz >/dev/null 2>&1; then
+  alias gcz="cz commit"
+  alias gc="cz commit"  # override oh-my-zsh git plugin's `git commit --verbose`
+fi
