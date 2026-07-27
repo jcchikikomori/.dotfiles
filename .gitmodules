@@ -7,3 +7,6 @@
 [submodule "linux/claude"]
 	path = linux/claude
 	url = https://github.com/jcchikikomori/dotfiles-claude.git
+[submodule "linux/mpv/.config/mpv"]
+	path = linux/mpv/.config/mpv
+	url = https://github.com/jcchikikomori/mpv-config.git
