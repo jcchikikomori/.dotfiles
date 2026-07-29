@@ -45,7 +45,7 @@ Commit messages must be conventional-commit format (commitizen enforces via `com
 
 **Stow packages** map 1:1 to `linux/{name}/` directories whose internal layout mirrors `$HOME` (e.g. `linux/zsh/.zshrc`). Adding a config: create `linux/{package}/`, add the package name to root `stowme.sh`. Full list in `docs/STOW_PACKAGES.md`.
 
-**Git submodules** (init required before stowing): `linux/opencode`, `linux/claude`, `linux/vscode/.config/Code/User/prompts`.
+**Git submodules** (init required before stowing): `linux/opencode`, `linux/claude`, `linux/vscode/.config/Code/User/prompts`, `linux/mpv/.config/mpv`.
 
 **Distro family propagation:** changes to setup logic usually need mirroring across families — Debian (`debian/`, `ubuntu/`), Arch (`arch/`, `steamos/`), RHEL (`rhel/`), macOS (`darwin/`), Termux (`termux/`). `archbtw` (barebones Arch) additionally runs `arch/init.sh` first (locale, base-devel, yay, Chaotic-AUR).
 
