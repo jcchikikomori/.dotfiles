@@ -14,3 +14,39 @@ remlower() {
     done
   done
 }
+
+# Insert current git branch at cursor (bound to a key in .zshrc)
+insert-current-branch() {
+  LBUFFER+="$(git_current_branch 2>/dev/null)"
+  zle redisplay
+}
+zle -N insert-current-branch
+
+# zsh-autosuggestions strategy: after a commit, ghost-suggest a push
+_zsh_autosuggest_strategy_git_next_action() {
+  local last_cmd="$(fc -ln -1 2>/dev/null)"
+  if [[ $last_cmd == (git commit|gc|gcz|cz commit)* ]]; then
+    typeset -g suggestion="gpsup"
+  fi
+}
+
+# Reminder when the long-form push is typed out instead of gpsup/ggpush.
+# zsh-you-should-use can't catch these: its matcher compares against the
+# alias's raw text, and gpsup/ggpush embed $(git_current_branch) — a
+# command substitution zsh never expands in preexec, so it can never equal
+# a typed line containing the real branch name. This hook evaluates the
+# branch itself instead, so it can actually match.
+_check_push_alias_usage() {
+  local typed="$1"
+  local branch
+  branch="$(git_current_branch 2>/dev/null)"
+  [[ -z $branch ]] && return
+  case "$typed" in
+    "git push --set-upstream origin $branch"|"git push -u origin $branch")
+      print -P "%F{yellow}Tip: %F{magenta}gpsup%f does that in one step.%f" >&2
+      ;;
+    "git push origin $branch"|"git push origin \"$branch\"")
+      print -P "%F{yellow}Tip: %F{magenta}ggpush%f does that in one step.%f" >&2
+      ;;
+  esac
+}

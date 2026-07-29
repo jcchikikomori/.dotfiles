@@ -75,7 +75,7 @@ COMPLETION_WAITING_DOTS="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 # Note: Ensure to execute ~/.dotfiles/git-flow.sh before using other plugins
-plugins=(brew git globalias gradle grails git-flow-completion zsh-autosuggestions fast-syntax-highlighting)
+plugins=(brew git globalias gradle grails git-flow-completion zsh-autosuggestions fast-syntax-highlighting zsh-you-should-use)
 
 
 # User configuration
@@ -170,6 +170,13 @@ auto_load_venv  # Run on shell initialization too
 # Set other functions
 source $HOME/.zfunctions
 
+# zsh-autosuggestions: try our git-commit->push strategy first, fall back to history
+ZSH_AUTOSUGGEST_STRATEGY=(git_next_action history)
+
+# Remind about gpsup/ggpush when the long-form push is typed out instead
+# (see _check_push_alias_usage in .zfunctions for why zsh-you-should-use can't)
+add-zsh-hook preexec _check_push_alias_usage
+
 ## Options section
 setopt correct                                                  # Auto correct mistakes
 setopt extendedglob                                             # Extended globbing. Allows using regular expressions with *
@@ -204,6 +211,12 @@ zstyle ':completion:*' cache-path ~/.cache/zcache
 
 # automatically load bash completion functions
 autoload -U +X bashcompinit && bashcompinit
+
+# opencode ships its own zsh completion generator
+command -v opencode >/dev/null 2>&1 && eval "$(opencode completion zsh)"
+
+# Insert current git branch at cursor (see insert-current-branch in .zfunctions)
+bindkey '^Xb' insert-current-branch
 
 HISTFILE=~/.zhistory
 HISTSIZE=50000
