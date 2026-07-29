@@ -14,3 +14,18 @@ remlower() {
     done
   done
 }
+
+# Insert current git branch at cursor (bound to a key in .zshrc)
+insert-current-branch() {
+  LBUFFER+="$(git_current_branch 2>/dev/null)"
+  zle redisplay
+}
+zle -N insert-current-branch
+
+# zsh-autosuggestions strategy: after a commit, ghost-suggest a push
+_zsh_autosuggest_strategy_git_next_action() {
+  local last_cmd="$(fc -ln -1 2>/dev/null)"
+  if [[ $last_cmd == (git commit|gc|gcz|cz commit)* ]]; then
+    typeset -g suggestion="gpsup"
+  fi
+}

@@ -7,3 +7,7 @@ if command -v cz >/dev/null 2>&1; then
   alias gcz="cz commit"
   alias gc="cz commit"  # override oh-my-zsh git plugin's `git commit --verbose`
 fi
+
+# Push current branch (from oh-my-zsh git plugin, see `alias | grep git_current_branch`):
+#   gpsup  - push + set upstream to origin/<current-branch> (first push of a new branch)
+#   ggpush - push already-tracked current branch

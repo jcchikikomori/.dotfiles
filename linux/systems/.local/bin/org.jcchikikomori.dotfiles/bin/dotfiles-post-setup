@@ -205,6 +205,7 @@ main() {
     git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting
     git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete
     git clone https://github.com/larkery/zsh-histdb.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb
+    git clone https://github.com/MichaelAquilina/zsh-you-should-use.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-you-should-use
 
     echo 'Setting up ~/.profile.local for user customizations...'
     setup_profile_local
@@ -222,4 +223,3 @@ fi
 
 echo 'Executing post-setup...'
 main
-
