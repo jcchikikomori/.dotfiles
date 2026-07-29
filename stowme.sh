@@ -257,7 +257,7 @@ handle_profile_conflict
 if [ "$DETECTED_DISTRO" = "darwin" ]; then
   STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode claude"
 else
-  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode claude"
+  STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak mpv alacritty wireplumber flags lindbergh supermodel starship opencode claude"
 fi
 if ! "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
   log_error "Error: dotstow stow failed."

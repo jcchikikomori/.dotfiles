@@ -5,7 +5,7 @@ This document lists all stow packages managed by this dotfiles repository.
 ## All Packages
 
 | Package | Description | Platforms |
-|---------|-------------|-----------|
+| --------- | ------------- | ----------- |
 | `alacritty` | GPU-accelerated terminal emulator | Linux, macOS (limited) |
 | `antigen` | Zsh plugin manager | All |
 | `bash` | Bash shell configuration | Linux |
@@ -15,6 +15,7 @@ This document lists all stow packages managed by this dotfiles repository.
 | `flatpak` | Flatpak configuration | Linux |
 | `git` | Git configuration | All |
 | `lindbergh` | Sega Lindbergh arcade emulator loader | Linux |
+| `mpv` | mpv media player configuration (native + Flatpak paths) | Linux |
 | `opencode` | OpenCode agent configuration | All |
 | `python` | Python environment setup | All |
 | `starship` | Cross-shell prompt | All |
@@ -36,7 +37,7 @@ All packages listed above except `bash`.
 ### macOS
 
 | Package | Description | Notes |
-|---------|-------------|-------|
+| --------- | ------------- | ------- |
 | `zsh` | Zsh shell configuration | Default shell on macOS |
 | `git` | Git configuration | Pre-installed via Xcode |
 | `antigen` | Zsh plugin manager | |
@@ -53,7 +54,7 @@ All packages listed above except `bash`.
 | `opencode` | OpenCode agent configuration | |
 | `claude` | Claude Code agent configuration | |
 
-**Note:** `flatpak`, `wireplumber`, `lindbergh`, and `dxvk` are not available on macOS.
+**Note:** `flatpak`, `wireplumber`, `lindbergh`, `dxvk`, and `mpv` are not available on macOS.
 
 ## Package Details
 
@@ -101,6 +102,15 @@ All packages listed above except `bash`.
 
 - **flatpak** - Flatpak package manager configuration
 - **wireplumber** - PipeWire session and policy manager configuration
+
+### Media
+
+- **mpv** - mpv media player configuration, sourced from the `jcchikikomori/mpv-config`
+  git submodule at `linux/mpv/.config/mpv`. A relative symlink at
+  `linux/mpv/.var/app/io.mpv.Mpv/config/mpv` points back into the same submodule so the
+  Flatpak build of mpv (`io.mpv.Mpv`) shares identical config with the native install.
+  Installed via `dotfiles-mpv install` (AppImage -> native package manager -> Flatpak
+  fallback chain).
 
 ### CLI Tools
 
@@ -168,7 +178,7 @@ To add or remove packages, edit the `STOW_PACKAGES` variable in `stowme.sh`:
 
 ```sh
 # Linux
-STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak alacritty wireplumber flags lindbergh supermodel starship opencode claude"
+STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak mpv alacritty wireplumber flags lindbergh supermodel starship opencode claude"
 
 # macOS
 STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode claude"
