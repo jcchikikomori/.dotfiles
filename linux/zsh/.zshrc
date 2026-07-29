@@ -173,6 +173,10 @@ source $HOME/.zfunctions
 # zsh-autosuggestions: try our git-commit->push strategy first, fall back to history
 ZSH_AUTOSUGGEST_STRATEGY=(git_next_action history)
 
+# Remind about gpsup/ggpush when the long-form push is typed out instead
+# (see _check_push_alias_usage in .zfunctions for why zsh-you-should-use can't)
+add-zsh-hook preexec _check_push_alias_usage
+
 ## Options section
 setopt correct                                                  # Auto correct mistakes
 setopt extendedglob                                             # Extended globbing. Allows using regular expressions with *
