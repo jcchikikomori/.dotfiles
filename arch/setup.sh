@@ -25,6 +25,16 @@ pacman_install "-S --noconfirm --noprogressbar" xclip
 # Install mirror management tools
 pacman_install "-S --noconfirm --noprogressbar" rankmirrors reflector
 
+# Rust toolchain (bundles cargo) + exiftool
+pacman_install "-S --noconfirm --noprogressbar" rust perl-image-exiftool
+
+# Install xdvdfs-cli via cargo
+if command -v cargo >/dev/null 2>&1; then
+  cargo install xdvdfs-cli || echo "Warning: xdvdfs-cli install via cargo failed/skipped."
+else
+  echo "Warning: cargo not found, skipping xdvdfs-cli install."
+fi
+
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
   zenity --info --title="Setup Completed" --text="Please install dependencies into your home directory (Execute: dotfiles-post-setup)."

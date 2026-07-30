@@ -28,7 +28,14 @@ export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_NO_ENV_HINTS=1
 
 brew update
-brew install stow git zsh tmux wget coreutils rclone
+brew install stow git zsh tmux wget coreutils rclone rust exiftool
+
+# Install xdvdfs-cli via cargo
+if command -v cargo >/dev/null 2>&1; then
+  cargo install xdvdfs-cli || echo "Warning: xdvdfs-cli install via cargo failed/skipped."
+else
+  echo "Warning: cargo not found, skipping xdvdfs-cli install."
+fi
 
 if ! xcode-select -p >/dev/null 2>&1; then
   if [ -n "$CI" ]; then

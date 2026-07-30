@@ -13,6 +13,14 @@ pkg update
 pkg install -y apt ca-certificates curl
 pkg install -y stow vim nano htop git zsh build-essential which
 pkg install -y python zip openssh ncdu wget tmux unzip rclone
+pkg install -y rust exiftool
+
+# Install xdvdfs-cli via cargo
+if command -v cargo >/dev/null 2>&1; then
+  cargo install xdvdfs-cli || echo "Warning: xdvdfs-cli install via cargo failed/skipped."
+else
+  echo "Warning: cargo not found, skipping xdvdfs-cli install."
+fi
 
 # Setting default locale
 # Termux does not use loadkeys or localectl, locale settings are managed differently

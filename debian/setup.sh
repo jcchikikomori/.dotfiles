@@ -34,6 +34,21 @@ $SUDO apt install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3
 # Installing rclone
 $SUDO apt install -y rclone
 
+# Rust toolchain via rustup (apt's rustc/cargo on Debian is too old to build
+# current crates - xdvdfs-cli requires Rust edition 2024, rustc >= 1.85) + exiftool
+$SUDO apt install -y libimage-exiftool-perl
+if ! command -v cargo >/dev/null 2>&1; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+fi
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Install xdvdfs-cli via cargo
+if command -v cargo >/dev/null 2>&1; then
+  cargo install xdvdfs-cli || echo "Warning: xdvdfs-cli install via cargo failed/skipped."
+else
+  echo "Warning: cargo not found, skipping xdvdfs-cli install."
+fi
+
 # Setting default locale (skip loadkeys on WSL as it doesn't support console keymaps)
 if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
   echo "WSL detected: Skipping loadkeys (not supported in WSL)."
