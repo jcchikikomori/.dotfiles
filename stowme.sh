@@ -112,6 +112,31 @@ check_submodules() {
   return 0
 }
 
+# Guard: purge a stale vscode extensions.json leftover from the package source tree.
+# GitHub #229: linux/vscode/.vscode-server/extensions/extensions.json used to be
+# tracked in git until PR #211 removed it (dotfiles-cleanup now restores it as a
+# real, non-stowed file on the $HOME side, since VS Code Server rewrites it
+# constantly and it's machine-specific). Clones that had a locally-modified copy
+# of the file at the time PR #211 landed keep a stray, gitignored copy behind in
+# the package source tree. That stray file collides with the real file
+# dotfiles-cleanup restores at $HOME/.vscode-server/extensions/extensions.json and
+# makes `stow` abort the entire run with:
+#   "existing target is neither a link nor a directory: .vscode-server/extensions/extensions.json"
+cleanup_stray_vscode_extensions() {
+  stray_extensions_dir="$DOTFILES_PATH/linux/vscode/.vscode-server/extensions"
+
+  if [ ! -e "$stray_extensions_dir" ]; then
+    return 0
+  fi
+
+  backup_dir="$HOME/.backups"
+  mkdir -p "$backup_dir"
+  timestamp=$(date +%Y%m%d-%H%M%S)
+  cp -a "$stray_extensions_dir" "$backup_dir/vscode-extensions-stray.$timestamp"
+  rm -rf "$stray_extensions_dir"
+  log_positive "Removed stray $stray_extensions_dir (backed up to $backup_dir/vscode-extensions-stray.$timestamp)"
+}
+
 resolve_dotstow() {
   if command -v dotstow >/dev/null 2>&1; then
     command -v dotstow
@@ -179,6 +204,9 @@ if ! check_submodules; then
   log_error "Run: git submodule update --init --recursive"
   exit 1
 fi
+
+# Guard: remove stale vscode extensions.json leftover from the package source (#229)
+cleanup_stray_vscode_extensions
 
 # Handle ~/.profile conflict before stowing
 # If ~/.profile exists as a real file (not symlink), back it up
