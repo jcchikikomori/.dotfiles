@@ -20,8 +20,13 @@ sudo apt-get install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqli
 # Installing rclone
 sudo apt-get install -y rclone
 
-# Rust toolchain + cargo + exiftool
-sudo apt-get install -y rustc cargo libimage-exiftool-perl
+# Rust toolchain via rustup (apt's rustc/cargo on Ubuntu is too old to build
+# current crates - xdvdfs-cli requires Rust edition 2024, rustc >= 1.85) + exiftool
+sudo apt-get install -y libimage-exiftool-perl
+if ! command -v cargo >/dev/null 2>&1; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+fi
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # Install xdvdfs-cli via cargo
 if command -v cargo >/dev/null 2>&1; then
