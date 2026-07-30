@@ -15,8 +15,7 @@
 # export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
 
 # Source Python environments (uncomment the one you use)
-# For uv (recommended for Steam Deck):
-# [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv
+# uv is auto-loaded already via ~/.profile / ~/.bashrc.d/03-dev - no entry needed here.
 
 # For Miniconda:
 # [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda

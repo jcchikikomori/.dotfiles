@@ -1,3 +1,8 @@
+## profile
+# Load first so PATH/dev-tool setup (pyenv, rbenv, cargo, nvm, sdkman, uv, ...)
+# exists before oh-my-zsh, compinit, and antigen start doing command lookups.
+source $HOME/.profile
+
 # NVM via Homebrew — load early before any Homebrew node
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 if command -v brew >/dev/null 2>&1; then
@@ -224,9 +229,6 @@ SAVEHIST=10000
 
 ## emacs
 source $HOME/.emacsbinding
-
-## profile
-source $HOME/.profile
 
 ## antigen
 source $HOME/.antigenrc
