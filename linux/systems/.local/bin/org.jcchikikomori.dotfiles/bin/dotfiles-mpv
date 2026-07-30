@@ -1,0 +1,318 @@
+#!/bin/sh
+
+set -eu
+
+APPIMAGE_API_URL="${MPV_APPIMAGE_RELEASE_API:-https://api.github.com/repos/pkgforge-dev/mpv-AppImage/releases/latest}"
+APPIMAGE_INSTALL_PATH="${HOME}/.local/bin/mpv"
+DISTRO_FILE="${HOME}/.dotfiles-distro"
+
+log() {
+  printf '[dotfiles-mpv] %s\n' "$*"
+}
+
+err() {
+  log "Error: $*"
+  exit 1
+}
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+require_cmd() {
+  command_exists "$1" || err "'$1' is required but not installed"
+}
+
+script_dir() {
+  script="$0"
+  case "$script" in
+    */*)
+      path="$script"
+      ;;
+    *)
+      path=$(command -v "$script" 2>/dev/null || printf '%s' "$script")
+      ;;
+  esac
+  dir=$(dirname "$path")
+  (CDPATH=; cd "$dir" 2>/dev/null && pwd) || pwd
+}
+
+SCRIPT_DIR=$(script_dir)
+
+run_sudo() {
+  if command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    "$@"
+  fi
+}
+
+ensure_homebrew() {
+  if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+    return 0
+  fi
+
+  for brew_bin in \
+    "${HOMEBREW_PREFIX:-}/bin/brew" \
+    "${HOME}/.linuxbrew/bin/brew" \
+    "/home/linuxbrew/.linuxbrew/bin/brew"; do
+    if [ -x "$brew_bin" ]; then
+      log "Using Homebrew at $brew_bin"
+      eval "$("$brew_bin" shellenv)"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+ensure_distro_file() {
+  if [ -r "$DISTRO_FILE" ]; then
+    return 0
+  fi
+
+  if [ -x "${SCRIPT_DIR}/dotfiles-distro" ]; then
+    "${SCRIPT_DIR}/dotfiles-distro" install >/dev/null 2>&1 || "${SCRIPT_DIR}/dotfiles-distro" install
+  elif command -v dotfiles-distro >/dev/null 2>&1; then
+    dotfiles-distro install >/dev/null 2>&1 || dotfiles-distro install
+  else
+    log "dotfiles-distro helper not found; assuming unknown distribution."
+    return 1
+  fi
+}
+
+read_distro() {
+  ensure_distro_file || true
+  if [ -r "$DISTRO_FILE" ]; then
+    distro=$(sed -n '1p' "$DISTRO_FILE" | tr '[:upper:]' '[:lower:]')
+    if [ -n "$distro" ]; then
+      printf '%s\n' "$distro"
+      return 0
+    fi
+  fi
+  printf 'unknown\n'
+}
+
+is_termux() {
+  [ -n "${PREFIX:-}" ] && printf '%s' "$PREFIX" | grep -q 'com\.termux'
+}
+
+# --- Tier 1: AppImage (unofficial pkgforge-dev/mpv-AppImage build) ---
+
+map_arch() {
+  case "$(uname -m)" in
+    x86_64 | amd64)
+      printf 'x86_64\n'
+      ;;
+    aarch64 | arm64)
+      printf 'aarch64\n'
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+compute_sha256() {
+  if command_exists sha256sum; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command_exists shasum; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    err "Neither sha256sum nor shasum is available to verify the AppImage checksum"
+  fi
+}
+
+install_appimage_tier() {
+  arch=$(map_arch) || {
+    log "Unsupported architecture $(uname -m) for AppImage; skipping tier"
+    return 1
+  }
+  command_exists curl || {
+    log "curl not found; skipping AppImage tier"
+    return 1
+  }
+
+  log "Fetching mpv-AppImage release metadata..."
+  release_json=$(curl -fsSL "$APPIMAGE_API_URL") || {
+    log "Failed to fetch AppImage release metadata"
+    return 1
+  }
+
+  parsed=$(printf '%s' "$release_json" | awk -v pat="anylinux-${arch}\\\\.AppImage\$" '
+    BEGIN { FS = "\""; in_asset = 0 }
+    $2 == "name" {
+      in_asset = ($4 ~ pat) ? 1 : 0
+      next
+    }
+    in_asset && $2 == "browser_download_url" { url = $4 }
+    in_asset && $2 == "digest" { digest = $4 }
+    END { print url "|" digest }
+  ')
+  url=${parsed%%|*}
+  digest=${parsed#*|}
+  if [ -z "$url" ] || [ -z "$digest" ]; then
+    log "Could not locate an mpv AppImage asset for arch $arch"
+    return 1
+  fi
+
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' EXIT
+  tmpfile="$tmpdir/mpv.AppImage"
+
+  log "Downloading $url"
+  curl -fL "$url" -o "$tmpfile" || {
+    log "AppImage download failed"
+    return 1
+  }
+
+  expected=${digest#sha256:}
+  actual=$(compute_sha256 "$tmpfile")
+  if [ "$expected" != "$actual" ]; then
+    log "Checksum mismatch for downloaded AppImage (expected $expected, got $actual); aborting AppImage tier"
+    return 1
+  fi
+
+  mkdir -p "${HOME}/.local/bin"
+  install -m 755 "$tmpfile" "$APPIMAGE_INSTALL_PATH"
+  trap - EXIT
+  rm -rf "$tmpdir"
+
+  if "$APPIMAGE_INSTALL_PATH" --version >/dev/null 2>&1; then
+    log "mpv AppImage installed and verified at $APPIMAGE_INSTALL_PATH"
+    return 0
+  fi
+
+  if APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGE_INSTALL_PATH" --version >/dev/null 2>&1; then
+    log "mpv AppImage requires APPIMAGE_EXTRACT_AND_RUN=1 (no FUSE available); installed OK"
+    return 0
+  fi
+
+  log "AppImage smoke test failed; removing $APPIMAGE_INSTALL_PATH to avoid shadowing a working install"
+  rm -f "$APPIMAGE_INSTALL_PATH"
+  return 1
+}
+
+# --- Tier 2: native distro package manager ---
+
+install_native_termux() {
+  command_exists pkg || return 1
+  pkg install -y mpv || return 1
+}
+
+install_native_debian() {
+  run_sudo apt-get update
+  run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y mpv
+}
+
+install_native_fedora() {
+  installer="dnf"
+  command_exists dnf || installer="yum"
+  run_sudo "$installer" -y install mpv
+}
+
+install_native_arch() {
+  run_sudo pacman -Sy --needed --noconfirm mpv
+}
+
+install_native_darwin() {
+  if ! ensure_homebrew; then
+    log "Homebrew not available"
+    return 1
+  fi
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  brew install mpv
+}
+
+install_native_tier() {
+  if is_termux; then
+    log "Termux detected; installing mpv via pkg..."
+    install_native_termux || return 1
+  else
+    distro=$(read_distro)
+    log "Detected distribution: $distro"
+    case "$distro" in
+      debian | ubuntu | linuxmint | pop | neon | zorin | kali | raspbian)
+        install_native_debian || return 1
+        ;;
+      fedora | centos | rhel)
+        install_native_fedora || return 1
+        ;;
+      arch | archbtw | manjaro | endeavouros | garuda | arcolinux | steamos)
+        install_native_arch || return 1
+        ;;
+      darwin)
+        install_native_darwin || return 1
+        ;;
+      unknown | *)
+        log "No native package manager mapping for distro '$distro'"
+        return 1
+        ;;
+    esac
+  fi
+  command_exists mpv
+}
+
+# --- Tier 3: Flatpak ---
+
+install_flatpak_tier() {
+  command_exists flatpak || {
+    log "flatpak not found; skipping Flatpak tier"
+    return 1
+  }
+  log "Installing io.mpv.Mpv via Flatpak..."
+  flatpak install -y flathub io.mpv.Mpv || return 1
+  log "mpv installed via Flatpak; run with: flatpak run io.mpv.Mpv"
+}
+
+install_action() {
+  if install_appimage_tier; then
+    log "mpv ready via AppImage."
+    return 0
+  fi
+  log "AppImage tier unavailable/failed; trying native package manager..."
+  if install_native_tier; then
+    log "mpv ready via native package manager."
+    return 0
+  fi
+  log "Native package manager tier unavailable/failed; trying Flatpak..."
+  if install_flatpak_tier; then
+    return 0
+  fi
+  err "All installation methods failed (AppImage, native package manager, Flatpak)."
+}
+
+update_action() {
+  log "Re-running install fallback chain for update..."
+  install_action
+}
+
+usage() {
+  echo "Usage: $0 {install|update}"
+  echo "  install: Install mpv via AppImage -> native package manager -> Flatpak"
+  echo "  update: Re-run the same fallback chain (idempotent)"
+}
+
+main() {
+  if [ $# -eq 0 ]; then
+    usage
+    exit 1
+  fi
+
+  case "$1" in
+    install)
+      install_action
+      ;;
+    update)
+      update_action
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

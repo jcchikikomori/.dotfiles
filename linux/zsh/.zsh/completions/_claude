@@ -1,0 +1,100 @@
+#compdef claude
+
+# Zsh completion for the `claude` CLI (Claude Code).
+# Hand-maintained snapshot (claude has no built-in completion generator,
+# unlike opencode) — re-sync against `claude --help` / `claude <cmd> --help`
+# if this drifts.
+
+_claude() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '(-h --help)'{-h,--help}'[Show help]' \
+    '(-v --version)'{-v,--version}'[Output the version number]' \
+    '(-p --print)'{-p,--print}'[Non-interactive output]' \
+    '--agent[Agent for the current session]:agent name' \
+    '--model[Model to use for the session]:model' \
+    '--add-dir[Additional directories to allow tool access to]:directory:_files -/' \
+    '(-c --continue)'{-c,--continue}'[Continue the most recent conversation]' \
+    '(-r --resume)'{-r,--resume}'[Resume a conversation]:session id' \
+    '--permission-mode[Permission mode for the session]:mode' \
+    '1: :->command' \
+    '*:: :->args'
+
+  case "$state" in
+    command)
+      _values 'claude command' \
+        'agents[Manage background agents]' \
+        'auth[Manage authentication]' \
+        'auto-mode[Inspect or reset auto mode classifier configuration]' \
+        'doctor[Check the health of your Claude Code installation]' \
+        'gateway[Run the enterprise auth/telemetry gateway]' \
+        'install[Install Claude Code native build]' \
+        'mcp[Configure and manage MCP servers]' \
+        'plugin[Manage Claude Code plugins]' \
+        'plugins[Manage Claude Code plugins]' \
+        'project[Manage Claude Code project state]' \
+        'setup-token[Set up a long-lived authentication token]' \
+        'ultrareview[Run a cloud-hosted multi-agent code review]' \
+        'update[Check for updates and install if available]' \
+        'upgrade[Check for updates and install if available]'
+      ;;
+    args)
+      case "$line[1]" in
+        mcp)
+          _values 'mcp subcommand' \
+            'add[Add an MCP server to Claude Code]' \
+            'add-from-claude-desktop[Import MCP servers from Claude Desktop]' \
+            'add-json[Add an MCP server with a JSON string]' \
+            'get[Get details about an MCP server]' \
+            'list[List configured MCP servers]' \
+            'login[Authenticate with an MCP server]' \
+            'logout[Clear stored OAuth credentials for an MCP server]' \
+            'remove[Remove an MCP server]' \
+            'reset-project-choices[Reset approved/rejected project-scoped servers]' \
+            'serve[Start the Claude Code MCP server]'
+          ;;
+        plugin|plugins)
+          _values 'plugin subcommand' \
+            'details[Show a plugin'"'"'s component inventory and token cost]' \
+            'disable[Disable an enabled plugin]' \
+            'enable[Enable a disabled plugin]' \
+            'eval[Run eval cases against a plugin]' \
+            'init[Scaffold a new plugin]' \
+            'new[Scaffold a new plugin]' \
+            'install[Install a plugin from available marketplaces]' \
+            'i[Install a plugin from available marketplaces]' \
+            'list[List installed plugins]' \
+            'marketplace[Manage Claude Code marketplaces]' \
+            'prune[Remove auto-installed dependencies no longer needed]' \
+            'autoremove[Remove auto-installed dependencies no longer needed]' \
+            'tag[Create a release git tag for a plugin]' \
+            'uninstall[Uninstall an installed plugin]' \
+            'remove[Uninstall an installed plugin]' \
+            'update[Update a plugin to the latest version]' \
+            'validate[Validate a plugin or marketplace manifest]'
+          ;;
+        auth)
+          _values 'auth subcommand' \
+            'login[Sign in to your Anthropic account]' \
+            'logout[Log out from your Anthropic account]' \
+            'status[Show authentication status]'
+          ;;
+        project)
+          _values 'project subcommand' \
+            'purge[Delete all Claude Code state for a project]'
+          ;;
+        auto-mode)
+          _values 'auto-mode subcommand' \
+            'config[Print the effective auto mode config as JSON]' \
+            'critique[Get AI feedback on your custom auto mode rules]' \
+            'defaults[Print the default auto mode rules as JSON]' \
+            'reset[Reset auto mode configuration to the shipped defaults]'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_claude "$@"

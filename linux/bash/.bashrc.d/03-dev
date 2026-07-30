@@ -14,6 +14,11 @@ if [ -d "$RBENV_ROOT" ]; then
     eval "$(rbenv init - --no-rehash bash)"
 fi
 
+# Rust/Cargo
+if [ -d "$HOME/.cargo/bin" ]; then
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
+
 # Linuxbrew/Homebrew
 if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
@@ -69,4 +74,3 @@ esac
 
 # Run on shell initialization too
 auto_load_venv
-
