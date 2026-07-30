@@ -34,6 +34,16 @@ $SUDO apt install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3
 # Installing rclone
 $SUDO apt install -y rclone
 
+# Rust toolchain + cargo + exiftool
+$SUDO apt install -y rustc cargo libimage-exiftool-perl
+
+# Install xdvdfs-cli via cargo
+if command -v cargo >/dev/null 2>&1; then
+  cargo install xdvdfs-cli || echo "Warning: xdvdfs-cli install via cargo failed/skipped."
+else
+  echo "Warning: cargo not found, skipping xdvdfs-cli install."
+fi
+
 # Setting default locale (skip loadkeys on WSL as it doesn't support console keymaps)
 if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
   echo "WSL detected: Skipping loadkeys (not supported in WSL)."

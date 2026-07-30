@@ -24,6 +24,16 @@ pacman_install "-S --needed --noconfirm --noprogressbar" \
   nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib \
   git zsh unzip python3 zip vi fakeroot openssh stow sqlite tmux wget entr less
 
+# Rust toolchain (bundles cargo) + exiftool
+pacman_install "-S --needed --noconfirm --noprogressbar" rust perl-image-exiftool
+
+# Install xdvdfs-cli via cargo
+if command -v cargo >/dev/null 2>&1; then
+  cargo install xdvdfs-cli || echo "Warning: xdvdfs-cli install via cargo failed/skipped."
+else
+  echo "Warning: cargo not found, skipping xdvdfs-cli install."
+fi
+
 # Install AUR helper, then mandatory + optional edge packages
 "$DOTFILES_BIN/dotfiles-arch" install-yay
 "$DOTFILES_BIN/dotfiles-arch" install-packages

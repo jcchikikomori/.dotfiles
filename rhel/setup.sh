@@ -11,6 +11,16 @@ sudo dnf install -y zenity
 # Installing rclone
 sudo dnf install -y rclone
 
+# Rust toolchain + cargo + exiftool
+sudo dnf install -y rust cargo perl-Image-ExifTool
+
+# Install xdvdfs-cli via cargo
+if command -v cargo >/dev/null 2>&1; then
+  cargo install xdvdfs-cli || echo "Warning: xdvdfs-cli install via cargo failed/skipped."
+else
+  echo "Warning: cargo not found, skipping xdvdfs-cli install."
+fi
+
 # Python
 sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel tk-devel tc-devel
 sudo dnf install -y bzip2-devel ncurses-devel libffi-devel readline-devel openssl-devel xz-devel libuuid-devel gdbm-libs libnsl2
