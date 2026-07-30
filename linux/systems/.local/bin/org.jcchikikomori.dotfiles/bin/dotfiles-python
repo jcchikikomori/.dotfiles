@@ -133,24 +133,24 @@ add_to_profile_local() {
     local init_file="$1"
     local manager_name="$2"
     local profile_local="$HOME/.profile.local"
-    
+
     # If profile.local doesn't exist, skip
     if [ ! -f "$profile_local" ]; then
         log_info "Note: $profile_local not found, skipping auto-add for $manager_name"
         return 0
     fi
-    
+
     # Check if already present
     if grep -q "$(basename "$init_file")" "$profile_local" 2>/dev/null; then
         log_info "$manager_name already configured in $profile_local"
         return 0
     fi
-    
+
     if [ "$DRY_RUN" = "true" ]; then
         log_info "[DRY-RUN] Would add $manager_name to $profile_local"
         return 0
     fi
-    
+
     # Append to profile.local
     printf '\n# %s Python environment\n' "$manager_name" >> "$profile_local"
     printf '[ -f %s ] && . %s\n' "$init_file" "$init_file" >> "$profile_local"
@@ -161,24 +161,24 @@ add_to_profile_local() {
 add_venv_activation_to_profile_local() {
     local profile_local="$HOME/.profile.local"
     local venv_activate="$HOME/.venv/global/bin/activate"
-    
+
     # If profile.local doesn't exist, skip
     if [ ! -f "$profile_local" ]; then
         log_info "Note: $profile_local not found, skipping venv auto-activation"
         return 0
     fi
-    
+
     # Check if already present
     if grep -q "\.venv/global/bin/activate" "$profile_local" 2>/dev/null; then
         log_info "Global venv already configured in $profile_local"
         return 0
     fi
-    
+
     if [ "$DRY_RUN" = "true" ]; then
         log_info "[DRY-RUN] Would add global venv activation to $profile_local"
         return 0
     fi
-    
+
     # Append venv activation
     printf '\n# Global Python venv (auto-created by dotfiles-python)\n' >> "$profile_local"
     printf 'if [ -d "%s" ]; then\n' "$HOME/.venv" >> "$profile_local"
@@ -191,18 +191,18 @@ add_venv_activation_to_profile_local() {
 remove_from_profile_local() {
     local marker="$1"
     local profile_local="$HOME/.profile.local"
-    
+
     if [ ! -f "$profile_local" ]; then
         return 0
     fi
-    
+
     if [ "$DRY_RUN" = "true" ]; then
         if grep -q "$marker" "$profile_local" 2>/dev/null; then
             log_info "[DRY-RUN] Would remove '$marker' from $profile_local"
         fi
         return 0
     fi
-    
+
     # Create temp file and remove lines containing the marker
     local temp_file
     temp_file="$(mktemp)"
@@ -723,10 +723,7 @@ UV_EOF
     echo "  To activate immediately:"
     echo "  source $HOME/.venv/global/bin/activate"
     echo ""
-    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
-    echo ""
-    echo "  # Load uv from dotfiles-python"
-    echo "  [ -f ~/.config/dotfiles-python/env-uv ] && . ~/.config/dotfiles-python/env-uv"
+    log_info "$DOTFILES_PYTHON_CONFIG_DIR/env-uv will be loaded automatically on your next shell restart."
     echo ""
 }
 
