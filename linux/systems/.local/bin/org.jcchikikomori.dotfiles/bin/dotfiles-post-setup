@@ -21,6 +21,7 @@ setup_directory() {
     cp -r "dotfiles-vim" "$WORKDIR"
     cp -r "dotfiles-git" "$WORKDIR"
     cp -r "dotfiles-nerf" "$WORKDIR"
+    cp -r "dotfiles-msfonts" "$WORKDIR"
     echo "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
@@ -185,6 +186,7 @@ main() {
         prompt_installation "PHP with phpenv" "dotfiles-php"
         prompt_installation "Copyparty file server" "dotfiles-copyparty"
         prompt_installation "mpv media player" "dotfiles-mpv"
+        prompt_installation "Microsoft fonts (Arial, Times New Roman, etc.)" "dotfiles-msfonts"
         prompt_installation "Vim with plugins" "dotfiles-vim"
     fi
 
