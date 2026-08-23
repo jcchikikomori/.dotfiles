@@ -187,16 +187,36 @@ install_packages() {
   require_writeable_rootfs
   log_info "Installing mandatory packages..."
 
+  repo_packages=""
+  candidate_aur_packages=""
+
   for package_name in podman-docker xsel ncdu rclone; do
     if is_installed "$package_name"; then
       log_info "$package_name is already installed"
+    elif pacman -Si "$package_name" >/dev/null 2>&1; then
+      # Install via pacman directly so we skip yay's AUR resolver/warnings.
+      repo_packages="$repo_packages $package_name"
     else
-      confirm_aur_install "$package_name" || continue
-
-      log_info "Installing $package_name via yay..."
-      yay -S --noconfirm "$package_name"
+      candidate_aur_packages="$candidate_aur_packages $package_name"
     fi
   done
+
+  if [ -n "$repo_packages" ]; then
+    log_info "Installing from configured repositories:$repo_packages"
+    pacman_install "-S --needed --noconfirm --noprogressbar" $repo_packages
+  fi
+
+  aur_packages=""
+  for package_name in $candidate_aur_packages; do
+    if confirm_aur_install "$package_name"; then
+      aur_packages="$aur_packages $package_name"
+    fi
+  done
+
+  if [ -n "$aur_packages" ]; then
+    log_info "Installing via yay:$aur_packages"
+    yay -S --noconfirm $aur_packages
+  fi
 }
 
 # Install optional edge packages (common on SteamOS 3.8.10+ or other distros)
@@ -204,14 +224,20 @@ install_packages_edge() {
   require_writeable_rootfs
   log_info "Installing optional extra packages..."
 
+  edge_packages=""
+
   for package_name in dmemcg-booster kcgroups plasma-foreground-booster; do
     if is_installed "$package_name"; then
       log_info "$package_name is already installed (Your OS/Distro may include this)"
     else
-      log_info "Installing $package_name..."
-      pacman_install "-S --noconfirm --noprogressbar" "$package_name"
+      edge_packages="$edge_packages $package_name"
     fi
   done
+
+  if [ -n "$edge_packages" ]; then
+    log_info "Installing:$edge_packages"
+    pacman_install "-S --noconfirm --noprogressbar" $edge_packages
+  fi
 }
 
 # Run the full setup chain

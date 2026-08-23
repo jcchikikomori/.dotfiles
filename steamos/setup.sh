@@ -34,10 +34,9 @@ else
   echo "Warning: cargo not found, skipping xdvdfs-cli install."
 fi
 
-# Install AUR helper, then mandatory + optional edge packages
+# Install AUR helper, then mandatory
 "$DOTFILES_BIN/dotfiles-arch" install-yay
 "$DOTFILES_BIN/dotfiles-arch" install-packages
-"$DOTFILES_BIN/dotfiles-arch" install-packages-edge
 
 # Locking SteamOS rootfs...
 sudo steamos-readonly enable
