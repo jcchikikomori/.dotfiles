@@ -9,11 +9,19 @@ if [ "$1" = "install" ]; then
     exit 1
   fi
 elif [ "$1" = "update" ]; then
-  echo "Currently not supported yet."
-  exit 1
+  if command -v brew >/dev/null 2>&1; then
+    brew update
+  elif [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
+    /home/linuxbrew/.linuxbrew/bin/brew update
+  elif [ -x "${HOME}/.linuxbrew/bin/brew" ]; then
+    "${HOME}/.linuxbrew/bin/brew" update
+  else
+    echo "Error: brew not found; run '$0 install' first." >&2
+    exit 1
+  fi
 else
   echo "Usage: $0 {install|update}"
   echo "  install: Install Homebrew (Linuxbrew)"
-  echo "  update: Currently not supported yet."
+  echo "  update: Update Homebrew formula index (brew update)"
   exit 1
 fi

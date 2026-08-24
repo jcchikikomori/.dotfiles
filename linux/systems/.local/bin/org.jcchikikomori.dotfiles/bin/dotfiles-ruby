@@ -3,6 +3,7 @@
 set -eu
 
 DISTRO_FILE="${HOME}/.dotfiles-distro"
+RUBY_INSTALL_METHOD="${RUBY_INSTALL_METHOD:-system}"
 
 log() {
   printf '[dotfiles-ruby] %s\n' "$*"
@@ -10,6 +11,10 @@ log() {
 
 install_complete_msg() {
   log "System-wide Ruby installation complete. Version: $(ruby --version)"
+}
+
+homebrew_hint() {
+  log "Hitting native gem build errors? Try 'RUBY_INSTALL_METHOD=homebrew $0 install' - see docs/RubyHomebrewToolchain.md"
 }
 
 script_dir() {
@@ -56,6 +61,27 @@ ensure_homebrew() {
   return 1
 }
 
+ensure_homebrew_ready() {
+  if ensure_homebrew; then
+    return 0
+  fi
+
+  log "Homebrew not detected; installing via dotfiles-homebrew..."
+  if [ -x "${SCRIPT_DIR}/dotfiles-homebrew" ]; then
+    "${SCRIPT_DIR}/dotfiles-homebrew" install
+  elif command -v dotfiles-homebrew >/dev/null 2>&1; then
+    dotfiles-homebrew install
+  else
+    log "dotfiles-homebrew helper not found."
+    exit 1
+  fi
+
+  if ! ensure_homebrew; then
+    log "Homebrew still unavailable after installation."
+    exit 1
+  fi
+}
+
 ensure_distro_file() {
   if [ -r "$DISTRO_FILE" ]; then
     return 0
@@ -90,6 +116,7 @@ install_ruby_debian() {
   log "Installing rbenv via apt..."
   run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y rbenv ruby-ffi rubocop rubygems
   install_complete_msg
+  homebrew_hint
 }
 
 install_ruby_fedora() {
@@ -101,6 +128,7 @@ install_ruby_fedora() {
   run_sudo "$installer" -y install ruby
   log "Installing rbenv via $installer..."
   run_sudo "$installer" -y install rbenv ruby-build-rbenv
+  homebrew_hint
 }
 
 install_ruby_arch() {
@@ -139,21 +167,7 @@ install_ruby_clearlinux() {
 
 install_ruby_homebrew() {
   log "Falling back to Homebrew/Linuxbrew for Ruby installation..."
-  if ! ensure_homebrew; then
-    log "Homebrew not detected; installing via dotfiles-homebrew..."
-    if [ -x "${SCRIPT_DIR}/dotfiles-homebrew" ]; then
-      "${SCRIPT_DIR}/dotfiles-homebrew" install
-    elif command -v dotfiles-homebrew >/dev/null 2>&1; then
-      dotfiles-homebrew install
-    else
-      log "dotfiles-homebrew helper not found."
-      exit 1
-    fi
-    if ! ensure_homebrew; then
-      log "Homebrew still unavailable after installation."
-      exit 1
-    fi
-  fi
+  ensure_homebrew_ready
 
   export HOMEBREW_NO_ANALYTICS=1
   export HOMEBREW_NO_ENV_HINTS=1
@@ -161,14 +175,126 @@ install_ruby_homebrew() {
   brew install ruby
 }
 
+# Full Homebrew install path for stable Linux distros opted in via
+# RUBY_INSTALL_METHOD=homebrew (see install_ruby_for). Distinct from
+# install_ruby_homebrew (the minimal unknown-distro fallback above): this
+# also installs the native gem build dependencies that Bundler's native
+# extensions (mysql2, nokogiri, rmagick, etc.) typically need, so they link
+# consistently against Homebrew's own libs instead of the distro's.
+install_ruby_homebrew_full() {
+  log "Installing Ruby via Homebrew (RUBY_INSTALL_METHOD=homebrew)..."
+  ensure_homebrew_ready
+
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  brew update
+  brew install ruby
+  install_ruby_native_gem_deps
+  install_complete_msg
+}
+
+# Minimal, additive set of native gem build dependencies. Not exhaustive -
+# a given Gemfile may still need extra brew formulae; add them there.
+install_ruby_native_gem_deps() {
+  log "Installing common native gem build dependencies via Homebrew..."
+  brew install openssl libffi libyaml mysql-client imagemagick || \
+    log "Warning: one or more native gem build dependencies failed to install via Homebrew."
+}
+
+# Resolves the versioned gcc/g++ binary (e.g. gcc-16) in a Homebrew bin
+# dir, given the exact prefix ("gcc-" or "g++-"). Matches symlinks too -
+# Homebrew's bin/ entries are always symlinks into the Cellar, never plain
+# files. A plain 'gcc-*' glob also matches wrapper binaries like
+# gcc-ar-16/gcc-ranlib-16/gcc-nm-16, which sort after the real compiler and
+# get picked instead - filter to names whose remainder after the prefix is
+# purely numeric.
+find_homebrew_gcc_binary() {
+  prefix="$1"
+  dir="$2"
+  find "$dir" -maxdepth 1 \( -type f -o -type l \) -name "${prefix}*" 2>/dev/null | while IFS= read -r f; do
+    base=$(basename "$f")
+    rest=${base#"$prefix"}
+    case "$rest" in
+      ''|*[!0-9]*) ;;
+      *) printf '%s\n' "$f" ;;
+    esac
+  done | sort -V | tail -1
+}
+
+# Prints `export CC=...`/`export CXX=...` for Homebrew's versioned gcc/g++,
+# for `eval`-ing from a shell profile gated on RUBY_INSTALL_METHOD=homebrew
+# (see .profile.local.example). Uses ensure_homebrew (detection only) - never
+# installs Homebrew as a side effect of sourcing a profile at shell startup.
+# Silent no-op if Homebrew or its gcc formula aren't present.
+cmd_cc_env() {
+  if ! ensure_homebrew >/dev/null 2>&1; then
+    return 0
+  fi
+
+  brew_prefix=$(brew --prefix 2>/dev/null) || return 0
+  cc=$(find_homebrew_gcc_binary "gcc-" "${brew_prefix}/bin")
+  cxx=$(find_homebrew_gcc_binary "g++-" "${brew_prefix}/bin")
+  [ -n "$cc" ] && printf 'export CC=%s\n' "$cc"
+  [ -n "$cxx" ] && printf 'export CXX=%s\n' "$cxx"
+  return 0
+}
+
+# Fallback for a pinned Ruby version that isn't available as a Homebrew
+# bottle. Builds via Homebrew's own rbenv/ruby-build (not the distro's,
+# which would compile against the system gcc) and forces CC/CXX to
+# Homebrew's own gcc/g++ for this one build only, so the resulting Ruby's
+# native-extension linking stays consistent with a single toolchain/glibc
+# end-to-end. Mixing system and Homebrew toolchains on the same Ruby is
+# what causes native gem extensions to fail to link (or link but crash on
+# a glibc symbol version mismatch at runtime) - not currently wired into
+# install_ruby_for since there is no version-pinning input yet, but kept
+# here so the pattern exists and is manually invokable.
+install_ruby_pinned_homebrew() {
+  version="$1"
+  if [ -z "$version" ]; then
+    log "Usage: install_ruby_pinned_homebrew <ruby-version>"
+    return 1
+  fi
+
+  ensure_homebrew_ready
+  brew install rbenv ruby-build
+
+  brew_prefix=$(brew --prefix)
+  cc=$(find_homebrew_gcc_binary "gcc-" "${brew_prefix}/bin")
+  cxx=$(find_homebrew_gcc_binary "g++-" "${brew_prefix}/bin")
+
+  if [ -z "$cc" ] || [ -z "$cxx" ]; then
+    log "Homebrew gcc/g++ not found; installing gcc via Homebrew..."
+    brew install gcc
+    cc=$(find_homebrew_gcc_binary "gcc-" "${brew_prefix}/bin")
+    cxx=$(find_homebrew_gcc_binary "g++-" "${brew_prefix}/bin")
+  fi
+
+  if [ -z "$cc" ] || [ -z "$cxx" ]; then
+    log "Could not resolve Homebrew gcc/g++ binaries; aborting."
+    return 1
+  fi
+
+  log "Building Ruby ${version} via rbenv/ruby-build using Homebrew's own gcc/g++ ($cc / $cxx)..."
+  env CC="$cc" CXX="$cxx" PATH="${brew_prefix}/bin:$PATH" rbenv install "$version"
+}
+
 install_ruby_for() {
   distro="$1"
   case "$distro" in
     debian|ubuntu|linuxmint|pop|neon|zorin|kali|raspbian)
-      install_ruby_debian
+      if [ "$RUBY_INSTALL_METHOD" = "homebrew" ]; then
+        install_ruby_homebrew_full
+      else
+        install_ruby_debian
+      fi
       ;;
     fedora|centos|rhel)
-      install_ruby_fedora
+      if [ "$RUBY_INSTALL_METHOD" = "homebrew" ]; then
+        install_ruby_homebrew_full
+      else
+        install_ruby_fedora
+      fi
       ;;
     arch|archbtw|manjaro|endeavouros|garuda|arcolinux|steamos)
       install_ruby_arch
@@ -192,10 +318,128 @@ update_action() {
   log "Ruby update complete."
 }
 
+# Writes a per-project .envrc (direnv) pinning RBENV_VERSION to the
+# Homebrew-toolchain rbenv version created by install_ruby_pinned_homebrew
+# (<version>-brew), without touching the project's own shared/git-tracked
+# .ruby-version. Run this from inside the project's repo root. See
+# docs/RubyHomebrewToolchain.md for why this stays per-project rather than
+# something dotfiles applies globally.
+cmd_envrc() {
+  version="$1"
+  if [ -z "$version" ]; then
+    log "Usage: $0 envrc <ruby-version>"
+    return 1
+  fi
+
+  envrc_file=".envrc"
+  rbenv_version="${version}-brew"
+  export_line="export RBENV_VERSION=${rbenv_version}"
+
+  if [ -f "$envrc_file" ]; then
+    if grep -q '^export RBENV_VERSION=' "$envrc_file" 2>/dev/null; then
+      log "$envrc_file already sets RBENV_VERSION; leaving it as-is."
+    else
+      printf '\n# Added by dotfiles-ruby envrc\n%s\n' "$export_line" >> "$envrc_file"
+      log "Appended RBENV_VERSION=${rbenv_version} to existing $envrc_file"
+    fi
+  else
+    printf '# Managed by dotfiles-ruby envrc - keep this out of git (see ~/.config/git/ignore)\n%s\n' "$export_line" > "$envrc_file"
+    log "Created $envrc_file with RBENV_VERSION=${rbenv_version}"
+  fi
+
+  if command -v direnv >/dev/null 2>&1; then
+    direnv allow "$envrc_file"
+  else
+    log "direnv not found; install it, then run 'direnv allow' to activate $envrc_file"
+  fi
+}
+
+# Tags a ruby binary's path by which install method produced it, for
+# cmd_doctor's mixed-toolchain check (see docs/RubyHomebrewToolchain.md for
+# why having more than one of these on PATH at once breaks native gems).
+classify_ruby_path() {
+  case "$1" in
+    */.linuxbrew/*|*/homebrew/*|*/Cellar/*) printf 'homebrew' ;;
+    */.rbenv/*) printf 'rbenv' ;;
+    /usr/bin/ruby|/usr/local/bin/ruby|/bin/ruby) printf 'system' ;;
+    *) printf 'other' ;;
+  esac
+}
+
+# Report-only diagnostic - makes no changes. Surfaces the two failure modes
+# this package has actually hit: a root-owned/non-writable system gem home
+# (Gem::FilePermissionError), and more than one Ruby toolchain resolving on
+# PATH at once (the mixed system/Homebrew glibc issue from issue #237).
+cmd_doctor() {
+  log "Ruby environment diagnostic (report-only, no changes made)"
+  log "Distro (cached): $(read_distro)"
+  log "RUBY_INSTALL_METHOD: ${RUBY_INSTALL_METHOD}"
+
+  if ! command -v ruby >/dev/null 2>&1; then
+    log "No 'ruby' found on PATH."
+    return 0
+  fi
+
+  active_ruby=$(command -v ruby)
+  active_gem=$(command -v gem 2>/dev/null || printf 'not found')
+  log "Active ruby: $active_ruby ($(ruby --version 2>&1))"
+  log "Active gem:  $active_gem"
+
+  gem_home=$(ruby -e 'print Gem.dir' 2>/dev/null || printf 'unknown')
+  log "Gem home: $gem_home"
+  if [ "$gem_home" != "unknown" ] && [ -d "$gem_home" ] && [ ! -w "$gem_home" ]; then
+    log "Warning: gem home is not writable by $(id -un) - 'gem install' without sudo will fail with Gem::FilePermissionError."
+    log "  Fix: RUBY_INSTALL_METHOD=homebrew $0 install (or set GEM_HOME to a user-writable dir)."
+  fi
+
+  log "Ruby binaries found on PATH:"
+  seen=""
+  found_tags=""
+  oldifs=$IFS
+  IFS=:
+  for dir in $PATH; do
+    IFS=$oldifs
+    [ -n "$dir" ] || continue
+    candidate="$dir/ruby"
+    if [ -x "$candidate" ]; then
+      case " $seen " in
+        *" $candidate "*) ;;
+        *)
+          seen="$seen $candidate"
+          tag=$(classify_ruby_path "$candidate")
+          found_tags="$found_tags $tag"
+          marker=" "
+          [ "$candidate" = "$active_ruby" ] && marker="*"
+          log "  ${marker} [$tag] $candidate"
+          ;;
+      esac
+    fi
+    IFS=:
+  done
+  IFS=$oldifs
+
+  distinct_tags=$(printf '%s\n' $found_tags | sort -u | wc -l | tr -d ' ')
+  if [ "$distinct_tags" -gt 1 ]; then
+    log "Warning: multiple distinct Ruby toolchains on PATH (${found_tags# }). Mixing them is what causes native gem link failures - see docs/RubyHomebrewToolchain.md."
+  fi
+
+  if [ "$RUBY_INSTALL_METHOD" = "homebrew" ]; then
+    case "$active_ruby" in
+      */.linuxbrew/*|*/homebrew/*|*/Cellar/*) ;;
+      *) log "Warning: RUBY_INSTALL_METHOD=homebrew but active ruby ($active_ruby) is not a Homebrew ruby - is 'brew shellenv' loaded in this shell?" ;;
+    esac
+  fi
+
+  log "Doctor check complete."
+}
+
 usage() {
-  echo "Usage: $0 {install|update}"
+  echo "Usage: $0 {install|update|envrc <ruby-version>|doctor|cc-env}"
   echo "  install: Install Ruby using the distribution package manager"
   echo "  update: Update Ruby via the distribution package manager"
+  echo "  envrc: Write a per-project .envrc pinning RBENV_VERSION=<version>-brew"
+  echo "  doctor: Report-only diagnostic of active Ruby/gem toolchain and PATH"
+  echo "  cc-env: Print 'export CC=/CXX=' for Homebrew's versioned gcc/g++ (eval this)"
 }
 
 main() {
@@ -210,6 +454,15 @@ main() {
       ;;
     update)
       update_action
+      ;;
+    envrc)
+      cmd_envrc "${2:-}"
+      ;;
+    doctor)
+      cmd_doctor
+      ;;
+    cc-env)
+      cmd_cc_env
       ;;
     *)
       usage
