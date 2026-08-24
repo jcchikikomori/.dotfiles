@@ -103,6 +103,7 @@ For detailed guides, usage reminders, workarounds, and additional documentation,
 - [Git Cheatsheet](docs/GitCheatsheet.md)
 - [Stow Conflicts Guide](docs/STOW_CONFLICTS.md)
 - [Virtualization & Containers](docs/Virtualization.md)
+- [Ruby via Homebrew Toolchain](docs/RubyHomebrewToolchain.md)
 - [OpenCode Agent System](linux/opencode/README.md)
 - [Claude Code Setup](linux/claude/README.md)
 

@@ -56,6 +56,17 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (ruby via homebrew, opt-in)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+        env:
+          RUBY_INSTALL_METHOD: homebrew
+      - name: Verify homebrew Ruby builds a native-extension gem
+        run: |
+          eval "$(brew shellenv)"
+          gem install --no-document msgpack
+        env:
+          RUBY_INSTALL_METHOD: homebrew
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
@@ -277,6 +288,17 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (ruby via homebrew, opt-in)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+        env:
+          RUBY_INSTALL_METHOD: homebrew
+      - name: Verify homebrew Ruby builds a native-extension gem
+        run: |
+          eval "$(brew shellenv)"
+          gem install --no-document msgpack
+        env:
+          RUBY_INSTALL_METHOD: homebrew
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
@@ -363,6 +385,17 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (ruby via homebrew, opt-in)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+        env:
+          RUBY_INSTALL_METHOD: homebrew
+      - name: Verify homebrew Ruby builds a native-extension gem
+        run: |
+          eval "$(brew shellenv)"
+          gem install --no-document msgpack
+        env:
+          RUBY_INSTALL_METHOD: homebrew
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install

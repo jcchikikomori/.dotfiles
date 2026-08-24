@@ -3,6 +3,7 @@
 set -eu
 
 DISTRO_FILE="${HOME}/.dotfiles-distro"
+RUBY_INSTALL_METHOD="${RUBY_INSTALL_METHOD:-system}"
 
 log() {
   printf '[dotfiles-ruby] %s\n' "$*"
@@ -54,6 +55,27 @@ ensure_homebrew() {
   done
 
   return 1
+}
+
+ensure_homebrew_ready() {
+  if ensure_homebrew; then
+    return 0
+  fi
+
+  log "Homebrew not detected; installing via dotfiles-homebrew..."
+  if [ -x "${SCRIPT_DIR}/dotfiles-homebrew" ]; then
+    "${SCRIPT_DIR}/dotfiles-homebrew" install
+  elif command -v dotfiles-homebrew >/dev/null 2>&1; then
+    dotfiles-homebrew install
+  else
+    log "dotfiles-homebrew helper not found."
+    exit 1
+  fi
+
+  if ! ensure_homebrew; then
+    log "Homebrew still unavailable after installation."
+    exit 1
+  fi
 }
 
 ensure_distro_file() {
@@ -139,21 +161,7 @@ install_ruby_clearlinux() {
 
 install_ruby_homebrew() {
   log "Falling back to Homebrew/Linuxbrew for Ruby installation..."
-  if ! ensure_homebrew; then
-    log "Homebrew not detected; installing via dotfiles-homebrew..."
-    if [ -x "${SCRIPT_DIR}/dotfiles-homebrew" ]; then
-      "${SCRIPT_DIR}/dotfiles-homebrew" install
-    elif command -v dotfiles-homebrew >/dev/null 2>&1; then
-      dotfiles-homebrew install
-    else
-      log "dotfiles-homebrew helper not found."
-      exit 1
-    fi
-    if ! ensure_homebrew; then
-      log "Homebrew still unavailable after installation."
-      exit 1
-    fi
-  fi
+  ensure_homebrew_ready
 
   export HOMEBREW_NO_ANALYTICS=1
   export HOMEBREW_NO_ENV_HINTS=1
@@ -161,14 +169,88 @@ install_ruby_homebrew() {
   brew install ruby
 }
 
+# Full Homebrew install path for stable Linux distros opted in via
+# RUBY_INSTALL_METHOD=homebrew (see install_ruby_for). Distinct from
+# install_ruby_homebrew (the minimal unknown-distro fallback above): this
+# also installs the native gem build dependencies that Bundler's native
+# extensions (mysql2, nokogiri, rmagick, etc.) typically need, so they link
+# consistently against Homebrew's own libs instead of the distro's.
+install_ruby_homebrew_full() {
+  log "Installing Ruby via Homebrew (RUBY_INSTALL_METHOD=homebrew)..."
+  ensure_homebrew_ready
+
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  brew update
+  brew install ruby
+  install_ruby_native_gem_deps
+  install_complete_msg
+}
+
+# Minimal, additive set of native gem build dependencies. Not exhaustive -
+# a given Gemfile may still need extra brew formulae; add them there.
+install_ruby_native_gem_deps() {
+  log "Installing common native gem build dependencies via Homebrew..."
+  brew install openssl libffi libyaml mysql-client imagemagick || \
+    log "Warning: one or more native gem build dependencies failed to install via Homebrew."
+}
+
+# Fallback for a pinned Ruby version that isn't available as a Homebrew
+# bottle. Builds via Homebrew's own rbenv/ruby-build (not the distro's,
+# which would compile against the system gcc) and forces CC/CXX to
+# Homebrew's own gcc/g++ for this one build only, so the resulting Ruby's
+# native-extension linking stays consistent with a single toolchain/glibc
+# end-to-end. Mixing system and Homebrew toolchains on the same Ruby is
+# what causes native gem extensions to fail to link (or link but crash on
+# a glibc symbol version mismatch at runtime) - not currently wired into
+# install_ruby_for since there is no version-pinning input yet, but kept
+# here so the pattern exists and is manually invokable.
+install_ruby_pinned_homebrew() {
+  version="$1"
+  if [ -z "$version" ]; then
+    log "Usage: install_ruby_pinned_homebrew <ruby-version>"
+    return 1
+  fi
+
+  ensure_homebrew_ready
+  brew install rbenv ruby-build
+
+  brew_prefix=$(brew --prefix)
+  cc=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'gcc-*' 2>/dev/null | sort -V | tail -1)
+  cxx=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'g++-*' 2>/dev/null | sort -V | tail -1)
+
+  if [ -z "$cc" ] || [ -z "$cxx" ]; then
+    log "Homebrew gcc/g++ not found; installing gcc via Homebrew..."
+    brew install gcc
+    cc=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'gcc-*' 2>/dev/null | sort -V | tail -1)
+    cxx=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'g++-*' 2>/dev/null | sort -V | tail -1)
+  fi
+
+  if [ -z "$cc" ] || [ -z "$cxx" ]; then
+    log "Could not resolve Homebrew gcc/g++ binaries; aborting."
+    return 1
+  fi
+
+  log "Building Ruby ${version} via rbenv/ruby-build using Homebrew's own gcc/g++ ($cc / $cxx)..."
+  env CC="$cc" CXX="$cxx" PATH="${brew_prefix}/bin:$PATH" rbenv install "$version"
+}
+
 install_ruby_for() {
   distro="$1"
   case "$distro" in
     debian|ubuntu|linuxmint|pop|neon|zorin|kali|raspbian)
-      install_ruby_debian
+      if [ "$RUBY_INSTALL_METHOD" = "homebrew" ]; then
+        install_ruby_homebrew_full
+      else
+        install_ruby_debian
+      fi
       ;;
     fedora|centos|rhel)
-      install_ruby_fedora
+      if [ "$RUBY_INSTALL_METHOD" = "homebrew" ]; then
+        install_ruby_homebrew_full
+      else
+        install_ruby_fedora
+      fi
       ;;
     arch|archbtw|manjaro|endeavouros|garuda|arcolinux|steamos)
       install_ruby_arch
