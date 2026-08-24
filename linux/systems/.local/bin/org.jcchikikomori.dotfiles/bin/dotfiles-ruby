@@ -202,14 +202,16 @@ install_ruby_native_gem_deps() {
 }
 
 # Resolves the versioned gcc/g++ binary (e.g. gcc-16) in a Homebrew bin
-# dir, given the exact prefix ("gcc-" or "g++-"). A plain 'gcc-*' glob also
-# matches wrapper binaries like gcc-ar-16/gcc-ranlib-16/gcc-nm-16, which
-# sort after the real compiler and get picked instead - filter to names
-# whose remainder after the prefix is purely numeric.
+# dir, given the exact prefix ("gcc-" or "g++-"). Matches symlinks too -
+# Homebrew's bin/ entries are always symlinks into the Cellar, never plain
+# files. A plain 'gcc-*' glob also matches wrapper binaries like
+# gcc-ar-16/gcc-ranlib-16/gcc-nm-16, which sort after the real compiler and
+# get picked instead - filter to names whose remainder after the prefix is
+# purely numeric.
 find_homebrew_gcc_binary() {
   prefix="$1"
   dir="$2"
-  find "$dir" -maxdepth 1 -type f -name "${prefix}*" 2>/dev/null | while IFS= read -r f; do
+  find "$dir" -maxdepth 1 \( -type f -o -type l \) -name "${prefix}*" 2>/dev/null | while IFS= read -r f; do
     base=$(basename "$f")
     rest=${base#"$prefix"}
     case "$rest" in
@@ -217,6 +219,24 @@ find_homebrew_gcc_binary() {
       *) printf '%s\n' "$f" ;;
     esac
   done | sort -V | tail -1
+}
+
+# Prints `export CC=...`/`export CXX=...` for Homebrew's versioned gcc/g++,
+# for `eval`-ing from a shell profile gated on RUBY_INSTALL_METHOD=homebrew
+# (see .profile.local.example). Uses ensure_homebrew (detection only) - never
+# installs Homebrew as a side effect of sourcing a profile at shell startup.
+# Silent no-op if Homebrew or its gcc formula aren't present.
+cmd_cc_env() {
+  if ! ensure_homebrew >/dev/null 2>&1; then
+    return 0
+  fi
+
+  brew_prefix=$(brew --prefix 2>/dev/null) || return 0
+  cc=$(find_homebrew_gcc_binary "gcc-" "${brew_prefix}/bin")
+  cxx=$(find_homebrew_gcc_binary "g++-" "${brew_prefix}/bin")
+  [ -n "$cc" ] && printf 'export CC=%s\n' "$cc"
+  [ -n "$cxx" ] && printf 'export CXX=%s\n' "$cxx"
+  return 0
 }
 
 # Fallback for a pinned Ruby version that isn't available as a Homebrew
@@ -414,11 +434,12 @@ cmd_doctor() {
 }
 
 usage() {
-  echo "Usage: $0 {install|update|envrc <ruby-version>|doctor}"
+  echo "Usage: $0 {install|update|envrc <ruby-version>|doctor|cc-env}"
   echo "  install: Install Ruby using the distribution package manager"
   echo "  update: Update Ruby via the distribution package manager"
   echo "  envrc: Write a per-project .envrc pinning RBENV_VERSION=<version>-brew"
   echo "  doctor: Report-only diagnostic of active Ruby/gem toolchain and PATH"
+  echo "  cc-env: Print 'export CC=/CXX=' for Homebrew's versioned gcc/g++ (eval this)"
 }
 
 main() {
@@ -439,6 +460,9 @@ main() {
       ;;
     doctor)
       cmd_doctor
+      ;;
+    cc-env)
+      cmd_cc_env
       ;;
     *)
       usage

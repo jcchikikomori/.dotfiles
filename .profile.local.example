@@ -13,11 +13,17 @@
 # =============================================================================
 # Homebrew workaround
 # Please read the documentation (`docs/RubyHomebrewToolchain.md`) first before using these.
+# CC/CXX are resolved via `dotfiles-ruby cc-env` (not hardcoded) since
+# Homebrew's gcc formula only ships versioned binaries (e.g. gcc-16), not
+# unversioned `gcc`/`g++` - and only take effect when RUBY_INSTALL_METHOD is
+# set to homebrew, so they don't affect unrelated system builds.
 # =============================================================================
+# export RUBY_INSTALL_METHOD=homebrew
 # export PATH="$(brew --prefix)/bin:$PATH"
-# export CC="$(brew --prefix)/bin/gcc"
-# export CXX="$(brew --prefix)/bin/g++"
 # export AR="$(brew --prefix)/bin/ar"
+# if [ "$RUBY_INSTALL_METHOD" = "homebrew" ] && command -v dotfiles-ruby >/dev/null 2>&1; then
+#   eval "$(dotfiles-ruby cc-env)"
+# fi
 
 # =============================================================================
 # WSL2-related workarounds
