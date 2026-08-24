@@ -1,0 +1,313 @@
+#!/bin/sh
+
+set -eu
+
+# Microsoft Core Web Fonts + Wine Tahoma installer (user-local)
+# Downloads fonts from official sources, extracts .ttf, installs to ~/.local/share/fonts/Microsoft/
+# Requires: curl, cabextract (for .exe extraction)
+
+MSFONTS_BASE_URL="https://downloads.sourceforge.net/project/corefonts/the%20fonts/final"
+TAHOMA_BASE_URL="https://source.winehq.org/git/wine.git/blob_plain/refs/tags/wine-9.0:/fonts"
+DEFAULT_FONT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/Microsoft"
+
+# Core fonts: exe_filename|display_name
+CORE_FONTS="andale32.exe|Andale Mono
+arial32.exe|Arial
+arialb32.exe|Arial Black
+comic32.exe|Comic Sans MS
+courie32.exe|Courier New
+georgi32.exe|Georgia
+impact32.exe|Impact
+times32.exe|Times New Roman
+trebuc32.exe|Trebuchet MS
+verdan32.exe|Verdana
+webdin32.exe|Webdings"
+
+# Tahoma fonts: filename|display_name
+TAHOMA_FONTS="tahoma.ttf|Tahoma
+tahomabd.ttf|Tahoma Bold"
+
+FONT_DIR="$DEFAULT_FONT_DIR"
+REFRESH_NEEDED=0
+
+usage() {
+    cat <<USAGE
+Usage: dotfiles-msfonts [options] [FONT...]
+
+Install Microsoft Core Web Fonts and Wine Tahoma locally.
+
+Options:
+  --list              List fonts available for download
+  --all               Install every available font
+  --font-dir DIR      Override the target directory (default: $DEFAULT_FONT_DIR)
+  --core-only         Install only MS Core Web Fonts (skip Tahoma)
+  --tahoma-only       Install only Wine Tahoma (skip core fonts)
+  -h, --help          Show this help text
+
+FONT arguments (without flags) install the named fonts (case-insensitive).
+Examples:
+  dotfiles-msfonts --list
+  dotfiles-msfonts --all
+  dotfiles-msfonts Arial "Times New Roman"
+  dotfiles-msfonts --tahoma-only
+
+Licensing:
+  Core fonts: Microsoft TrueType Core Fonts EULA (free for personal use)
+  Tahoma: LGPL-2.1-or-later (Wine reimplementation, fully free)
+USAGE
+}
+
+log() {
+    printf '%s\n' "$*" >&2
+}
+
+err() {
+    log "Error: $*"
+    exit 1
+}
+
+require_cmd() {
+    if ! command -v "$1" >/dev/null 2>&1; then
+        err "'$1' is required but not installed.
+Install it with:
+  Arch/SteamOS:  sudo pacman -S cabextract
+  Debian/Ubuntu:  sudo apt install cabextract
+  Fedora:         sudo dnf install cabextract
+  macOS:          brew install cabextract"
+    fi
+}
+
+normalize() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+list_core_fonts() {
+    printf '%s\n' "$CORE_FONTS" | cut -d'|' -f2 | sort
+}
+
+list_tahoma_fonts() {
+    printf '%s\n' "$TAHOMA_FONTS" | cut -d'|' -f2 | sort
+}
+
+find_core_font() {
+    wanted=$(normalize "$1")
+    printf '%s\n' "$CORE_FONTS" | while IFS='|' read -r exe name; do
+        if [ "$(normalize "$name")" = "$wanted" ]; then
+            printf '%s|%s' "$exe" "$name"
+            return 0
+        fi
+    done
+    return 1
+}
+
+find_tahoma_font() {
+    wanted=$(normalize "$1")
+    printf '%s\n' "$TAHOMA_FONTS" | while IFS='|' read -r file name; do
+        if [ "$(normalize "$name")" = "$wanted" ]; then
+            printf '%s|%s' "$file" "$name"
+            return 0
+        fi
+    done
+    return 1
+}
+
+install_core_font() {
+    font_name="$1"
+    exe_name="$2"
+
+    require_cmd cabextract
+    require_cmd curl
+
+    tmpdir=$(mktemp -d)
+    trap 'rm -rf "$tmpdir"' EXIT
+
+    exe_url="$MSFONTS_BASE_URL/$exe_name"
+    log "Downloading $font_name ($exe_name)..."
+    curl -fSL "$exe_url" -o "$tmpdir/$exe_name" || err "Failed to download $font_name from $exe_url"
+
+    log "Extracting $font_name..."
+    cabextract --lowercase -F '*.ttf' -d "$tmpdir" "$tmpdir/$exe_name" >/dev/null 2>&1 || err "Failed to extract $font_name (cabextract failed)"
+
+    mkdir -p "$FONT_DIR"
+    extracted=0
+    for ttf in "$tmpdir"/*.ttf; do
+        [ -f "$ttf" ] || continue
+        install -m 644 "$ttf" "$FONT_DIR/"
+        log "Installed $(basename "$ttf") to $FONT_DIR"
+        extracted=1
+    done
+
+    if [ "$extracted" -eq 0 ]; then
+        err "No .ttf files found after extracting $font_name"
+    fi
+
+    REFRESH_NEEDED=1
+    trap - EXIT
+    rm -rf "$tmpdir"
+}
+
+install_tahoma_font() {
+    font_name="$1"
+    file_name="$2"
+
+    require_cmd curl
+
+    tmpdir=$(mktemp -d)
+    trap 'rm -rf "$tmpdir"' EXIT
+
+    tahoma_url="$TAHOMA_BASE_URL/$file_name"
+    log "Downloading $font_name..."
+    curl -fSL "$tahoma_url" -o "$tmpdir/$file_name" || err "Failed to download $font_name from $tahoma_url"
+
+    mkdir -p "$FONT_DIR"
+    install -m 644 "$tmpdir/$file_name" "$FONT_DIR/"
+    log "Installed $file_name to $FONT_DIR"
+
+    REFRESH_NEEDED=1
+    trap - EXIT
+    rm -rf "$tmpdir"
+}
+
+install_all_core() {
+    printf '%s\n' "$CORE_FONTS" | while IFS='|' read -r exe name; do
+        [ -n "$exe" ] || continue
+        install_core_font "$name" "$exe"
+    done
+}
+
+install_all_tahoma() {
+    printf '%s\n' "$TAHOMA_FONTS" | while IFS='|' read -r file name; do
+        [ -n "$file" ] || continue
+        install_tahoma_font "$name" "$file"
+    done
+}
+
+refresh_cache() {
+    if [ "$REFRESH_NEEDED" -eq 0 ]; then
+        return
+    fi
+    if command -v fc-cache >/dev/null 2>&1; then
+        log "Refreshing font cache..."
+        if ! fc-cache -f "$FONT_DIR" >/dev/null 2>&1; then
+            log "Warning: fc-cache failed; you may need to refresh fonts manually."
+        fi
+    else
+        log "Skipping fc-cache refresh (fc-cache not available)."
+    fi
+}
+
+main() {
+    if [ $# -eq 0 ]; then
+        usage
+        exit 0
+    fi
+
+    fonts_to_install=""
+    install_all=0
+    run_list=0
+    core_only=0
+    tahoma_only=0
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            --list)
+                run_list=1
+                ;;
+            --all)
+                install_all=1
+                ;;
+            --font-dir)
+                shift
+                [ $# -gt 0 ] || err "--font-dir requires a path"
+                FONT_DIR="$1"
+                ;;
+            --core-only)
+                core_only=1
+                ;;
+            --tahoma-only)
+                tahoma_only=1
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                err "Unknown option: $1"
+                ;;
+            *)
+                fonts_to_install="$fonts_to_install
+$1"
+                ;;
+        esac
+        shift
+    done
+
+    while [ $# -gt 0 ]; do
+        fonts_to_install="$fonts_to_install
+$1"
+        shift
+    done
+
+    if [ $run_list -eq 1 ]; then
+        if [ $tahoma_only -eq 0 ]; then
+            echo "Core Microsoft Fonts:"
+            list_core_fonts
+        fi
+        if [ $core_only -eq 0 ]; then
+            echo ""
+            echo "Wine Tahoma (LGPL):"
+            list_tahoma_fonts
+        fi
+        if [ $install_all -eq 0 ] && [ -z "$(printf '%s' "$fonts_to_install" | tr -d '\n\t ')" ]; then
+            exit 0
+        fi
+    fi
+
+    if [ $install_all -eq 1 ]; then
+        if [ $tahoma_only -eq 0 ]; then
+            log "Installing all Core Microsoft Fonts..."
+            install_all_core
+        fi
+        if [ $core_only -eq 0 ]; then
+            log "Installing Wine Tahoma..."
+            install_all_tahoma
+        fi
+    fi
+
+    trimmed_fonts=$(printf '%s' "$fonts_to_install" | sed '/^$/d')
+    if [ -n "$trimmed_fonts" ]; then
+        while IFS= read -r font; do
+            [ -n "$font" ] || continue
+            found=0
+            if [ $tahoma_only -eq 0 ]; then
+                match=$(find_core_font "$font") && {
+                    exe_name=${match%%|*}
+                    display_name=${match#*|}
+                    install_core_font "$display_name" "$exe_name"
+                    found=1
+                }
+            fi
+            if [ $found -eq 0 ] && [ $core_only -eq 0 ]; then
+                match=$(find_tahoma_font "$font") && {
+                    file_name=${match%%|*}
+                    display_name=${match#*|}
+                    install_tahoma_font "$display_name" "$file_name"
+                    found=1
+                }
+            fi
+            if [ $found -eq 0 ]; then
+                err "Font '$font' not found. Use --list to view available names."
+            fi
+        done <<EOF
+$trimmed_fonts
+EOF
+    fi
+
+    refresh_cache
+}
+
+main "$@"
