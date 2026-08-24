@@ -19,6 +19,11 @@ if [ -d "$HOME/.cargo/bin" ]; then
     export PATH="$HOME/.cargo/bin:$PATH"
 fi
 
+# uv (Python package/env manager) - see dotfiles-python
+if [ -f "$HOME/.config/dotfiles-python/env-uv" ]; then
+    . "$HOME/.config/dotfiles-python/env-uv"
+fi
+
 # Linuxbrew/Homebrew
 if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

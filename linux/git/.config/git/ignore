@@ -1,0 +1,8 @@
+# Global gitignore - read automatically by git from $XDG_CONFIG_HOME/git/ignore
+# (~/.config/git/ignore), no core.excludesfile config needed.
+#
+# direnv - per-project/per-machine overrides (e.g. RBENV_VERSION pins from
+# `dotfiles-ruby envrc`, see docs/RubyHomebrewToolchain.md) should never be
+# committed to a shared repo.
+.envrc
+.direnv/
