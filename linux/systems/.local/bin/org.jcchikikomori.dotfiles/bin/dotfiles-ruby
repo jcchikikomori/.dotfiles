@@ -334,11 +334,91 @@ cmd_envrc() {
   fi
 }
 
+# Tags a ruby binary's path by which install method produced it, for
+# cmd_doctor's mixed-toolchain check (see docs/RubyHomebrewToolchain.md for
+# why having more than one of these on PATH at once breaks native gems).
+classify_ruby_path() {
+  case "$1" in
+    */.linuxbrew/*|*/homebrew/*|*/Cellar/*) printf 'homebrew' ;;
+    */.rbenv/*) printf 'rbenv' ;;
+    /usr/bin/ruby|/usr/local/bin/ruby|/bin/ruby) printf 'system' ;;
+    *) printf 'other' ;;
+  esac
+}
+
+# Report-only diagnostic - makes no changes. Surfaces the two failure modes
+# this package has actually hit: a root-owned/non-writable system gem home
+# (Gem::FilePermissionError), and more than one Ruby toolchain resolving on
+# PATH at once (the mixed system/Homebrew glibc issue from issue #237).
+cmd_doctor() {
+  log "Ruby environment diagnostic (report-only, no changes made)"
+  log "Distro (cached): $(read_distro)"
+  log "RUBY_INSTALL_METHOD: ${RUBY_INSTALL_METHOD}"
+
+  if ! command -v ruby >/dev/null 2>&1; then
+    log "No 'ruby' found on PATH."
+    return 0
+  fi
+
+  active_ruby=$(command -v ruby)
+  active_gem=$(command -v gem 2>/dev/null || printf 'not found')
+  log "Active ruby: $active_ruby ($(ruby --version 2>&1))"
+  log "Active gem:  $active_gem"
+
+  gem_home=$(ruby -e 'print Gem.dir' 2>/dev/null || printf 'unknown')
+  log "Gem home: $gem_home"
+  if [ "$gem_home" != "unknown" ] && [ -d "$gem_home" ] && [ ! -w "$gem_home" ]; then
+    log "Warning: gem home is not writable by $(id -un) - 'gem install' without sudo will fail with Gem::FilePermissionError."
+    log "  Fix: RUBY_INSTALL_METHOD=homebrew $0 install (or set GEM_HOME to a user-writable dir)."
+  fi
+
+  log "Ruby binaries found on PATH:"
+  seen=""
+  found_tags=""
+  oldifs=$IFS
+  IFS=:
+  for dir in $PATH; do
+    IFS=$oldifs
+    [ -n "$dir" ] || continue
+    candidate="$dir/ruby"
+    if [ -x "$candidate" ]; then
+      case " $seen " in
+        *" $candidate "*) ;;
+        *)
+          seen="$seen $candidate"
+          tag=$(classify_ruby_path "$candidate")
+          found_tags="$found_tags $tag"
+          marker=" "
+          [ "$candidate" = "$active_ruby" ] && marker="*"
+          log "  ${marker} [$tag] $candidate"
+          ;;
+      esac
+    fi
+    IFS=:
+  done
+  IFS=$oldifs
+
+  distinct_tags=$(printf '%s\n' $found_tags | sort -u | wc -l | tr -d ' ')
+  if [ "$distinct_tags" -gt 1 ]; then
+    log "Warning: multiple distinct Ruby toolchains on PATH (${found_tags# }). Mixing them is what causes native gem link failures - see docs/RubyHomebrewToolchain.md."
+  fi
+
+  if [ "$RUBY_INSTALL_METHOD" = "homebrew" ]; then
+    case "$active_ruby" in
+      */.linuxbrew/*|*/homebrew/*|*/Cellar/*) ;;
+      *) log "Warning: RUBY_INSTALL_METHOD=homebrew but active ruby ($active_ruby) is not a Homebrew ruby - is 'brew shellenv' loaded in this shell?" ;;
+    esac
+  fi
+
+  log "Doctor check complete."
+}
+
 usage() {
-  echo "Usage: $0 {install|update|envrc <ruby-version>}"
+  echo "Usage: $0 {install|update|envrc <ruby-version>|doctor}"
   echo "  install: Install Ruby using the distribution package manager"
   echo "  update: Update Ruby via the distribution package manager"
   echo "  envrc: Write a per-project .envrc pinning RBENV_VERSION=<version>-brew"
+  echo "  doctor: Report-only diagnostic of active Ruby/gem toolchain and PATH"
 }
 
 main() {
@@ -356,6 +436,9 @@ main() {
       ;;
     envrc)
       cmd_envrc "${2:-}"
+      ;;
+    doctor)
+      cmd_doctor
       ;;
     *)
       usage

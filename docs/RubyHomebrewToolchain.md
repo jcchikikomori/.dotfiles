@@ -68,6 +68,17 @@ Homebrew's `bin` first on `PATH`) for that one build only — see
 `install_ruby_pinned_homebrew()` in `dotfiles-ruby` for the reference
 implementation of this guard.
 
+## Diagnosing a broken toolchain
+
+`dotfiles-ruby doctor` is a report-only diagnostic (makes no changes): it
+prints the active ruby/gem and their resolved paths, `Gem.dir` and whether
+it's writable, every `ruby` binary found on `PATH` tagged by which install
+method produced it (`system`/`rbenv`/`homebrew`/`other`), and warns if more
+than one is present at once (the mixed-toolchain condition described
+below) or if `RUBY_INSTALL_METHOD=homebrew` is set but the active `ruby`
+isn't actually a Homebrew one (usually means `brew shellenv` isn't loaded
+in the current shell).
+
 ## Troubleshooting
 
 - **A gem — or Ruby itself, if you're source-compiling an old pinned
