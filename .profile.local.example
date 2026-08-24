@@ -10,12 +10,25 @@
 #
 # =============================================================================
 
+# =============================================================================
+# Homebrew workaround
+# Please read the documentation (`docs/RubyHomebrewToolchain.md`) first before using these.
+# =============================================================================
+# export PATH="$(brew --prefix)/bin:$PATH"
+# export CC="$(brew --prefix)/bin/gcc"
+# export CXX="$(brew --prefix)/bin/g++"
+# export AR="$(brew --prefix)/bin/ar"
+
+# =============================================================================
 # WSL2-related workarounds
+# =============================================================================
 # Render discrete GPU (NVIDIA) over integrated graphics
 # export MESA_D3D12_DEFAULT_ADAPTER_NAME=NVIDIA
 
+# =============================================================================
 # Source Python environments (uncomment the one you use)
 # uv is auto-loaded already via ~/.profile / ~/.bashrc.d/03-dev - no entry needed here.
+# =============================================================================
 
 # For Miniconda:
 # [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda
