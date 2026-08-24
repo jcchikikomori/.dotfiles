@@ -68,15 +68,21 @@ implementation of this guard.
 
 ## Troubleshooting
 
-- **A gem that compiled fine under the system toolchain suddenly fails
-  with a C error like `passing argument N ... from incompatible pointer
-  type`.** Homebrew's `gcc` is often much newer than the distro's, and
-  newer GCC versions turn some old warnings
+- **A gem — or Ruby itself, if you're source-compiling an old pinned
+  version via `install_ruby_pinned_homebrew` — suddenly fails with a C
+  error like `passing argument N ... from incompatible pointer type` or
+  `conflicting types for '...'`.** Homebrew's `gcc` is often much newer
+  than the distro's, and newer GCC versions turn some old warnings
   (`-Wincompatible-pointer-types`, `-Wimplicit-function-declaration`) into
   hard errors. This isn't something dotfiles can fix generically — it
-  means the gem has a real (if previously-ignored) bug. Check the gem's
-  issue tracker for a fix/patch; this has been seen with the old
-  `debase` debugger gem.
+  means the code has a real (if previously-ignored) bug. Confirmed live:
+  building Ruby 2.5.3 from source with Homebrew's GCC 16 fails during
+  `make` with
+  `enc/jis/props.kwd:146:1: error: conflicting types for 'onig_jis_property'`
+  — Ruby 2.5.3's Oniguruma-derived encoding source is simply too old for
+  GCC 16's stricter defaults. There's no dotfiles-level fix for this; it
+  means that specific old Ruby/gem version needs a newer release, a
+  patch, or the distro's own (older) gcc instead of Homebrew's.
 - **`bundle list`/`bundle check` keeps reporting "missing extensions"
   right after a Ruby rebuild or reinstall, even though nothing looks
   actually broken.** Run a full `bundle install` (not `bundle list`/

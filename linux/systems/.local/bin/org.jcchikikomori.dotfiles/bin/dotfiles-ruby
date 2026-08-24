@@ -195,6 +195,24 @@ install_ruby_native_gem_deps() {
     log "Warning: one or more native gem build dependencies failed to install via Homebrew."
 }
 
+# Resolves the versioned gcc/g++ binary (e.g. gcc-16) in a Homebrew bin
+# dir, given the exact prefix ("gcc-" or "g++-"). A plain 'gcc-*' glob also
+# matches wrapper binaries like gcc-ar-16/gcc-ranlib-16/gcc-nm-16, which
+# sort after the real compiler and get picked instead - filter to names
+# whose remainder after the prefix is purely numeric.
+find_homebrew_gcc_binary() {
+  prefix="$1"
+  dir="$2"
+  find "$dir" -maxdepth 1 -type f -name "${prefix}*" 2>/dev/null | while IFS= read -r f; do
+    base=$(basename "$f")
+    rest=${base#"$prefix"}
+    case "$rest" in
+      ''|*[!0-9]*) ;;
+      *) printf '%s\n' "$f" ;;
+    esac
+  done | sort -V | tail -1
+}
+
 # Fallback for a pinned Ruby version that isn't available as a Homebrew
 # bottle. Builds via Homebrew's own rbenv/ruby-build (not the distro's,
 # which would compile against the system gcc) and forces CC/CXX to
@@ -216,14 +234,14 @@ install_ruby_pinned_homebrew() {
   brew install rbenv ruby-build
 
   brew_prefix=$(brew --prefix)
-  cc=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'gcc-*' 2>/dev/null | sort -V | tail -1)
-  cxx=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'g++-*' 2>/dev/null | sort -V | tail -1)
+  cc=$(find_homebrew_gcc_binary "gcc-" "${brew_prefix}/bin")
+  cxx=$(find_homebrew_gcc_binary "g++-" "${brew_prefix}/bin")
 
   if [ -z "$cc" ] || [ -z "$cxx" ]; then
     log "Homebrew gcc/g++ not found; installing gcc via Homebrew..."
     brew install gcc
-    cc=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'gcc-*' 2>/dev/null | sort -V | tail -1)
-    cxx=$(find "${brew_prefix}/bin" -maxdepth 1 -name 'g++-*' 2>/dev/null | sort -V | tail -1)
+    cc=$(find_homebrew_gcc_binary "gcc-" "${brew_prefix}/bin")
+    cxx=$(find_homebrew_gcc_binary "g++-" "${brew_prefix}/bin")
   fi
 
   if [ -z "$cc" ] || [ -z "$cxx" ]; then
