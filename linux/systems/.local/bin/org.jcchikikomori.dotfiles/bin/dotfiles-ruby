@@ -13,6 +13,10 @@ install_complete_msg() {
   log "System-wide Ruby installation complete. Version: $(ruby --version)"
 }
 
+homebrew_hint() {
+  log "Hitting native gem build errors? Try 'RUBY_INSTALL_METHOD=homebrew $0 install' - see docs/RubyHomebrewToolchain.md"
+}
+
 script_dir() {
   script="$0"
   case "$script" in
@@ -112,6 +116,7 @@ install_ruby_debian() {
   log "Installing rbenv via apt..."
   run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y rbenv ruby-ffi rubocop rubygems
   install_complete_msg
+  homebrew_hint
 }
 
 install_ruby_fedora() {
@@ -123,6 +128,7 @@ install_ruby_fedora() {
   run_sudo "$installer" -y install ruby
   log "Installing rbenv via $installer..."
   run_sudo "$installer" -y install rbenv ruby-build-rbenv
+  homebrew_hint
 }
 
 install_ruby_arch() {
@@ -292,10 +298,47 @@ update_action() {
   log "Ruby update complete."
 }
 
+# Writes a per-project .envrc (direnv) pinning RBENV_VERSION to the
+# Homebrew-toolchain rbenv version created by install_ruby_pinned_homebrew
+# (<version>-brew), without touching the project's own shared/git-tracked
+# .ruby-version. Run this from inside the project's repo root. See
+# docs/RubyHomebrewToolchain.md for why this stays per-project rather than
+# something dotfiles applies globally.
+cmd_envrc() {
+  version="$1"
+  if [ -z "$version" ]; then
+    log "Usage: $0 envrc <ruby-version>"
+    return 1
+  fi
+
+  envrc_file=".envrc"
+  rbenv_version="${version}-brew"
+  export_line="export RBENV_VERSION=${rbenv_version}"
+
+  if [ -f "$envrc_file" ]; then
+    if grep -q '^export RBENV_VERSION=' "$envrc_file" 2>/dev/null; then
+      log "$envrc_file already sets RBENV_VERSION; leaving it as-is."
+    else
+      printf '\n# Added by dotfiles-ruby envrc\n%s\n' "$export_line" >> "$envrc_file"
+      log "Appended RBENV_VERSION=${rbenv_version} to existing $envrc_file"
+    fi
+  else
+    printf '# Managed by dotfiles-ruby envrc - keep this out of git (see ~/.config/git/ignore)\n%s\n' "$export_line" > "$envrc_file"
+    log "Created $envrc_file with RBENV_VERSION=${rbenv_version}"
+  fi
+
+  if command -v direnv >/dev/null 2>&1; then
+    direnv allow "$envrc_file"
+  else
+    log "direnv not found; install it, then run 'direnv allow' to activate $envrc_file"
+  fi
+}
+
 usage() {
-  echo "Usage: $0 {install|update}"
+  echo "Usage: $0 {install|update|envrc <ruby-version>}"
   echo "  install: Install Ruby using the distribution package manager"
   echo "  update: Update Ruby via the distribution package manager"
+  echo "  envrc: Write a per-project .envrc pinning RBENV_VERSION=<version>-brew"
 }
 
 main() {
@@ -310,6 +353,9 @@ main() {
       ;;
     update)
       update_action
+      ;;
+    envrc)
+      cmd_envrc "${2:-}"
       ;;
     *)
       usage

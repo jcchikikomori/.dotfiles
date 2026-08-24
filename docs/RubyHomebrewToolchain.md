@@ -17,7 +17,9 @@ This is **opt-in only** — the default (`RUBY_INSTALL_METHOD` unset, or
 - macOS: unaffected — already uses native Homebrew for everything.
 
 See [issue #237](https://github.com/jcchikikomori/.dotfiles/issues/237) for
-the original motivation.
+the original motivation. On the stable-distro default (system) path,
+`dotfiles-ruby` also prints a one-line reminder that this option exists if
+you ever hit a native gem build error.
 
 ## What it installs
 
@@ -90,20 +92,27 @@ implementation of this guard.
   commands left in a stale state, rather than trying to hand-fix a stale
   `gem_make.out` marker.
 
-## Per-project pinned-version guidance (not automated by dotfiles)
+## Per-project pinned-version guidance
 
 If a specific project needs to pin a Homebrew-toolchain Ruby build without
 forcing that choice on the whole team's shared, git-tracked
-`.ruby-version` file, keep `.ruby-version` untouched and add a gitignored
-`.envrc` (via [direnv](https://direnv.net/)) in that project's repo root:
+`.ruby-version` file, keep `.ruby-version` untouched and add a
+gitignored `.envrc` (via [direnv](https://direnv.net/)) in that project's
+repo root:
 
 ```sh
 export RBENV_VERSION=<version>-brew
 ```
 
-This is per-project, per-machine guidance for the people working on that
-project — dotfiles doesn't and shouldn't automate it, since it's a
-machine-specific override, not a shared setting.
+From inside the project's repo root, `dotfiles-ruby envrc <version>` writes
+this for you (creating `.envrc` or appending to an existing one without
+touching other content) and runs `direnv allow` if direnv is installed.
+`.envrc` is already covered by the global `~/.config/git/ignore` shipped by
+the `git` stow package, so it won't get accidentally committed.
+
+This remains a per-project, per-machine choice, not something dotfiles
+applies globally on its own — `dotfiles-ruby envrc` is a convenience for
+writing it, not an automatic decision about which projects need it.
 
 ## Python
 

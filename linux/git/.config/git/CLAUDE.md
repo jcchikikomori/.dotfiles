@@ -1,6 +1,6 @@
 # Git Package
 
-The `git` stow package ships three files into `$HOME`: `.gitconfig`, `.gitignore`, and `.pre-commit-config.yaml`. This note lives in `~/.config/git/` because the package root maps directly to `$HOME`.
+The `git` stow package ships four files into `$HOME`: `.gitconfig`, `.gitignore`, `.pre-commit-config.yaml`, and `.config/git/ignore`. This note lives in `~/.config/git/` because the package root maps directly to `$HOME`.
 
 ## Identity switching (`.gitconfig`)
 
@@ -24,6 +24,7 @@ Default (top-level `[user]`) is the personal identity.
 - `credential.helper` points at the Windows Git Credential Manager path — WSL-specific; harmless elsewhere but expect it to be a no-op outside WSL.
 - Git LFS filters are pre-configured and `required`.
 - `~/.pre-commit-config.yaml` is the fallback pre-commit config (commitizen conventional-commit checks, whitespace/yaml/json hygiene, black) for repos without their own.
+- `~/.config/git/ignore` is the actual active global gitignore - git reads this path automatically, no `core.excludesfile` needed. `~/.gitignore` is also shipped by this package but is currently inert (nothing points `core.excludesfile` at it); don't assume patterns added there take effect anywhere.
 
 ## Notes for agents
 
