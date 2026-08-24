@@ -1,5 +1,0 @@
-[Desktop Entry]
-Exec=flatpak run com.bitwarden.desktop
-Name=com.bitwarden.desktop
-Type=Application
-X-Flatpak=com.bitwarden.desktop

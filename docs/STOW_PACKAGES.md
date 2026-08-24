@@ -101,6 +101,10 @@ All packages listed above except `bash`.
 ### Flatpak/Wireplumber
 
 - **flatpak** - Flatpak package manager configuration
+  - `~/.config/autostart/*.desktop` entries for Flatpak apps are intentionally
+    **not** stow-managed (see `linux/flatpak/.stow-local-ignore`) — autostart
+    entries are per-machine/app-install state and shouldn't be dictated by the
+    dotfiles repo. Add/remove them manually per machine going forward.
 - **wireplumber** - PipeWire session and policy manager configuration
 
 ### Media
