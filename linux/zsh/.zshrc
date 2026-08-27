@@ -91,12 +91,14 @@ plugins=(brew git globalias gradle grails git-flow-completion zsh-autosuggestion
 # export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-export EDITOR='vim'
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
+if [ -n "${PREFIX:-}" ] && echo "$PREFIX" | grep -q 'com\.termux'; then
+  export EDITOR='vim'
+elif command -v nvim >/dev/null 2>&1; then
+  export EDITOR='nvim'
+  export VISUAL='nvim'
+else
+  export EDITOR='vim'
+fi
 
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"

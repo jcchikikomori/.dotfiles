@@ -1,0 +1,461 @@
+#!/bin/sh
+
+set -eu
+
+APPIMAGE_API_URL="${NEOVIM_APPIMAGE_RELEASE_API:-https://api.github.com/repos/neovim/neovim/releases/latest}"
+APPIMAGE_INSTALL_PATH="${HOME}/.local/bin/nvim"
+CONFIG_PATH="${HOME}/.config/nvim"
+DISTRO_FILE="${HOME}/.dotfiles-distro"
+MIN_VERSION="0.11.2"
+
+log() {
+  printf '[dotfiles-neovim] %s\n' "$*"
+}
+
+err() {
+  log "Error: $*"
+  exit 1
+}
+
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+require_cmd() {
+  command_exists "$1" || err "'$1' is required but not installed"
+}
+
+script_dir() {
+  script="$0"
+  case "$script" in
+    */*)
+      path="$script"
+      ;;
+    *)
+      path=$(command -v "$script" 2>/dev/null || printf '%s' "$script")
+      ;;
+  esac
+  dir=$(dirname "$path")
+  (CDPATH=; cd "$dir" 2>/dev/null && pwd) || pwd
+}
+
+SCRIPT_DIR=$(script_dir)
+
+run_sudo() {
+  if command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    "$@"
+  fi
+}
+
+ensure_homebrew() {
+  if command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+    return 0
+  fi
+
+  for brew_bin in \
+    "${HOMEBREW_PREFIX:-}/bin/brew" \
+    "${HOME}/.linuxbrew/bin/brew" \
+    "/home/linuxbrew/.linuxbrew/bin/brew"; do
+    if [ -x "$brew_bin" ]; then
+      log "Using Homebrew at $brew_bin"
+      eval "$("$brew_bin" shellenv)"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+ensure_distro_file() {
+  if [ -r "$DISTRO_FILE" ]; then
+    return 0
+  fi
+
+  if [ -x "${SCRIPT_DIR}/dotfiles-distro" ]; then
+    "${SCRIPT_DIR}/dotfiles-distro" install >/dev/null 2>&1 || "${SCRIPT_DIR}/dotfiles-distro" install
+  elif command -v dotfiles-distro >/dev/null 2>&1; then
+    dotfiles-distro install >/dev/null 2>&1 || dotfiles-distro install
+  else
+    log "dotfiles-distro helper not found; assuming unknown distribution."
+    return 1
+  fi
+}
+
+read_distro() {
+  ensure_distro_file || true
+  if [ -r "$DISTRO_FILE" ]; then
+    distro=$(sed -n '1p' "$DISTRO_FILE" | tr '[:upper:]' '[:lower:]')
+    if [ -n "$distro" ]; then
+      printf '%s\n' "$distro"
+      return 0
+    fi
+  fi
+  printf 'unknown\n'
+}
+
+is_termux() {
+  [ -n "${PREFIX:-}" ] && printf '%s' "$PREFIX" | grep -q 'com\.termux'
+}
+
+# --- Version comparison helpers ---
+
+version_gte() {
+  # Returns 0 if $1 >= $2 (both in X.Y.Z format)
+  _major1=${1%%.*}
+  _rest1=${1#*.}
+  _minor1=${_rest1%%.*}
+  _patch1=${_rest1#*.}
+
+  _major2=${2%%.*}
+  _rest2=${2#*.}
+  _minor2=${_rest2%%.*}
+  _patch2=${_rest2#*.}
+
+  if [ "${_major1:-0}" -gt "${_major2:-0}" ]; then return 0; fi
+  if [ "${_major1:-0}" -lt "${_major2:-0}" ]; then return 1; fi
+  if [ "${_minor1:-0}" -gt "${_minor2:-0}" ]; then return 0; fi
+  if [ "${_minor1:-0}" -lt "${_minor2:-0}" ]; then return 1; fi
+  if [ "${_patch1:-0}" -ge "${_patch2:-0}" ]; then return 0; fi
+  return 1
+}
+
+get_installed_version() {
+  # Extracts semver from `nvim --version` first line (e.g. "NVIM v0.12.5")
+  nvim --version 2>/dev/null | head -1 | sed 's/.*NVIM v//' | sed 's/[^0-9.].*//'
+}
+
+check_version_gate() {
+  _installed_version=$(get_installed_version) || return 1
+  if [ -z "$_installed_version" ]; then return 1; fi
+  version_gte "$_installed_version" "$MIN_VERSION"
+}
+
+# --- Tier 1: AppImage (official Neovim releases) ---
+
+map_arch() {
+  case "$(uname -m)" in
+    x86_64 | amd64)
+      printf 'x86_64\n'
+      ;;
+    aarch64 | arm64)
+      printf 'arm64\n'
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+compute_sha256() {
+  if command_exists sha256sum; then
+    sha256sum "$1" | awk '{print $1}'
+  elif command_exists shasum; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  else
+    err "Neither sha256sum nor shasum is available to verify the AppImage checksum"
+  fi
+}
+
+install_appimage_tier() {
+  arch=$(map_arch) || {
+    log "Unsupported architecture $(uname -m) for AppImage; skipping tier"
+    return 1
+  }
+  command_exists curl || {
+    log "curl not found; skipping AppImage tier"
+    return 1
+  }
+
+  log "Fetching Neovim release metadata..."
+  release_json=$(curl -fsSL "$APPIMAGE_API_URL") || {
+    log "Failed to fetch Neovim release metadata"
+    return 1
+  }
+
+  parsed=$(printf '%s' "$release_json" | awk -v pat="nvim-linux-${arch}\\\\.appimage\$" '
+    BEGIN { FS = "\""; in_asset = 0 }
+    $2 == "name" {
+      in_asset = ($4 ~ pat) ? 1 : 0
+      next
+    }
+    in_asset && $2 == "browser_download_url" { url = $4 }
+    in_asset && $2 == "digest" { digest = $4 }
+    END { print url "|" digest }
+  ')
+  url=${parsed%%|*}
+  digest=${parsed#*|}
+  if [ -z "$url" ]; then
+    log "Could not locate a Neovim AppImage asset for arch $arch"
+    return 1
+  fi
+
+  tmpdir=$(mktemp -d)
+  trap 'rm -rf "$tmpdir"' EXIT
+  tmpfile="$tmpdir/nvim.AppImage"
+
+  log "Downloading $url"
+  curl -fL "$url" -o "$tmpfile" || {
+    log "AppImage download failed"
+    return 1
+  }
+
+  if [ -n "$digest" ]; then
+    expected=${digest#sha256:}
+    actual=$(compute_sha256 "$tmpfile")
+    if [ "$expected" != "$actual" ]; then
+      log "Checksum mismatch for downloaded AppImage (expected $expected, got $actual); aborting AppImage tier"
+      return 1
+    fi
+  else
+    log "No checksum available in release metadata; skipping verification"
+  fi
+
+  mkdir -p "${HOME}/.local/bin"
+  install -m 755 "$tmpfile" "$APPIMAGE_INSTALL_PATH"
+  trap - EXIT
+  rm -rf "$tmpdir"
+
+  if "$APPIMAGE_INSTALL_PATH" --version >/dev/null 2>&1; then
+    log "Neovim AppImage installed and verified at $APPIMAGE_INSTALL_PATH"
+    return 0
+  fi
+
+  if APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGE_INSTALL_PATH" --version >/dev/null 2>&1; then
+    log "Neovim AppImage requires APPIMAGE_EXTRACT_AND_RUN=1 (no FUSE available); installed OK"
+    return 0
+  fi
+
+  log "AppImage smoke test failed; removing $APPIMAGE_INSTALL_PATH to avoid shadowing a working install"
+  rm -f "$APPIMAGE_INSTALL_PATH"
+  return 1
+}
+
+# --- Tier 2: native distro package manager ---
+
+install_native_termux() {
+  command_exists pkg || return 1
+  pkg install -y neovim || return 1
+}
+
+install_native_debian() {
+  run_sudo apt-get update
+  run_sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y neovim
+}
+
+install_native_fedora() {
+  installer="dnf"
+  command_exists dnf || installer="yum"
+  run_sudo "$installer" -y install neovim
+}
+
+install_native_arch() {
+  run_sudo pacman -Sy --needed --noconfirm neovim
+}
+
+install_native_tier() {
+  if is_termux; then
+    log "Termux detected; installing Neovim via pkg..."
+    install_native_termux || return 1
+  else
+    distro=$(read_distro)
+    log "Detected distribution: $distro"
+    case "$distro" in
+      debian | ubuntu | linuxmint | pop | neon | zorin | kali | raspbian)
+        install_native_debian || return 1
+        ;;
+      fedora | centos | rhel)
+        install_native_fedora || return 1
+        ;;
+      arch | archbtw | manjaro | endeavouros | garuda | arcolinux | steamos)
+        install_native_arch || return 1
+        ;;
+      darwin)
+        # Darwin native tier is skipped; Homebrew is tier 3
+        log "Darwin detected; skipping native tier (Homebrew is tier 3)"
+        return 1
+        ;;
+      unknown | *)
+        log "No native package manager mapping for distro '$distro'"
+        return 1
+        ;;
+    esac
+  fi
+  command_exists nvim
+}
+
+# --- Tier 3: Homebrew (darwin only fallback) ---
+
+install_homebrew_tier() {
+  if ! ensure_homebrew; then
+    log "Homebrew not available"
+    return 1
+  fi
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_ENV_HINTS=1
+  brew install neovim
+}
+
+# --- Tier 4: Flatpak ---
+
+install_flatpak_tier() {
+  command_exists flatpak || {
+    log "flatpak not found; skipping Flatpak tier"
+    return 1
+  }
+  log "Installing io.neovim.nvim via Flatpak..."
+  flatpak install -y flathub io.neovim.nvim || return 1
+  log "Neovim installed via Flatpak; run with: flatpak run io.neovim.nvim"
+}
+
+install_action() {
+  # Check if already installed and meets version gate
+  if check_version_gate; then
+    _current_version=$(get_installed_version)
+    log "Neovim $_current_version already installed and meets minimum version $MIN_VERSION; skipping install."
+    return 0
+  fi
+
+  if command_exists nvim; then
+    _current_version=$(get_installed_version)
+    log "Neovim $_current_version installed but below minimum version $MIN_VERSION; attempting upgrade..."
+  fi
+
+  if install_appimage_tier; then
+    log "Neovim ready via AppImage."
+    return 0
+  fi
+  log "AppImage tier unavailable/failed; trying native package manager..."
+  if install_native_tier; then
+    log "Neovim ready via native package manager."
+    return 0
+  fi
+  log "Native package manager tier unavailable/failed; trying Homebrew..."
+  if install_homebrew_tier; then
+    log "Neovim ready via Homebrew."
+    return 0
+  fi
+  log "Homebrew tier unavailable/failed; trying Flatpak..."
+  if install_flatpak_tier; then
+    return 0
+  fi
+  err "All installation methods failed (AppImage, native package manager, Homebrew, Flatpak)."
+}
+
+update_action() {
+  log "Re-running install fallback chain for update..."
+  install_action
+}
+
+dump_config_action() {
+  require_cmd rsync
+  if [ ! -d "$CONFIG_PATH" ]; then
+    log "No Neovim config found at $CONFIG_PATH; nothing to dump."
+    return 0
+  fi
+
+  DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.dotfiles}"
+  target="$DOTFILES_PATH/linux/neovim/.config/nvim"
+  mkdir -p "$target"
+
+  log "Syncing $CONFIG_PATH -> $target"
+  rsync -av --delete "$CONFIG_PATH/" "$target/"
+  log "Config dumped to submodule directory."
+}
+
+sync_config_action() {
+  DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.dotfiles}"
+  submodule_dir="$DOTFILES_PATH/linux/neovim/.config/nvim"
+
+  if [ ! -d "$submodule_dir/.git" ]; then
+    log "Neovim config submodule not found at $submodule_dir; skipping sync."
+    return 0
+  fi
+
+  require_cmd git
+
+  cd "$submodule_dir"
+  if git diff --quiet && git diff --cached --quiet; then
+    log "No config changes to commit."
+    return 0
+  fi
+
+  git add -A
+  git commit -m "chore: sync neovim config"
+  git push
+  cd -
+  log "Config synced to remote."
+}
+
+uninstall_action() {
+  if [ -f "$APPIMAGE_INSTALL_PATH" ] || [ -L "$APPIMAGE_INSTALL_PATH" ]; then
+    log "Removing $APPIMAGE_INSTALL_PATH"
+    rm -f "$APPIMAGE_INSTALL_PATH"
+    log "AppImage removed."
+  else
+    log "No AppImage at $APPIMAGE_INSTALL_PATH to remove."
+  fi
+}
+
+uninstall_config_action() {
+  if [ -d "$CONFIG_PATH" ] || [ -L "$CONFIG_PATH" ]; then
+    log "Removing $CONFIG_PATH"
+    rm -rf "$CONFIG_PATH"
+    log "Config removed."
+  else
+    log "No config at $CONFIG_PATH to remove."
+  fi
+
+  flatpak_config="$HOME/.var/app/io.neovim.nvim/config/nvim"
+  if [ -L "$flatpak_config" ] || [ -d "$flatpak_config" ]; then
+    log "Removing Flatpak config symlink $flatpak_config"
+    rm -f "$flatpak_config"
+    log "Flatpak config removed."
+  fi
+}
+
+usage() {
+  echo "Usage: $0 {install|update|dump-config|sync-config|uninstall|uninstall-config}"
+  echo "  install:          Install Neovim via AppImage -> native package manager -> Homebrew -> Flatpak"
+  echo "  update:           Re-run the same fallback chain (idempotent)"
+  echo "  dump-config:      Backup ~/.config/nvim to the submodule directory"
+  echo "  sync-config:      Commit and push submodule config changes"
+  echo "  uninstall:        Remove the AppImage install at ~/.local/bin/nvim"
+  echo "  uninstall-config: Remove ~/.config/nvim and Flatpak config symlink"
+}
+
+main() {
+  if [ $# -eq 0 ]; then
+    usage
+    exit 1
+  fi
+
+  case "$1" in
+    install)
+      install_action
+      ;;
+    update)
+      update_action
+      ;;
+    dump-config)
+      dump_config_action
+      ;;
+    sync-config)
+      sync_config_action
+      ;;
+    uninstall)
+      uninstall_action
+      ;;
+    uninstall-config)
+      uninstall_config_action
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

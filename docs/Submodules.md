@@ -9,8 +9,12 @@ Git submodules allow you to include external Git repositories within your projec
 ## Current Submodules
 
 | Path | Repository | Purpose |
-|------|------------|---------|
+| ------ | ------------ | --------- |
 | `linux/vscode/.config/Code/User/prompts` | [impromptu](https://github.com/jcchikikomori/impromptu) | VS Code custom prompts and instructions |
+| `linux/opencode` | [opencode](https://github.com/jcchikikomori/opencode) | OpenCode AI coding agent configuration |
+| `linux/claude` | [claude](https://github.com/jcchikikomori/claude) | Claude Code AI agent configuration |
+| `linux/mpv/.config/mpv` | [mpv-config](https://github.com/jcchikikomori/mpv-config) | mpv media player configuration |
+| `linux/neovim/.config/nvim` | [LazyVim](https://github.com/jcchikikomori/LazyVim) | Neovim LazyVim fork configuration |
 
 ## Initial Clone with Submodules
 
@@ -50,6 +54,7 @@ git submodule status
 ```
 
 Output example:
+
 ```
  a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6 linux/vscode/.config/Code/User/prompts (heads/main)
 ```
@@ -65,11 +70,13 @@ git submodule add <repository-url> <path>
 ```
 
 Example:
+
 ```bash
 git submodule add https://github.com/user/repo linux/config/subdir
 ```
 
 Then commit the changes:
+
 ```bash
 git add .gitmodules linux/config/subdir
 git commit -m "Add submodule: repository description"
@@ -103,6 +110,7 @@ git commit -m "Update impromptu submodule"
 ### Submodule directory is empty
 
 Run:
+
 ```bash
 git submodule update --init --recursive
 ```
@@ -110,6 +118,7 @@ git submodule update --init --recursive
 ### Changes to submodule not showing up
 
 Submodules track specific commits. To see changes:
+
 ```bash
 cd path/to/submodule
 git fetch
@@ -117,6 +126,7 @@ git merge origin/main  # or desired branch
 ```
 
 Then from the parent repo:
+
 ```bash
 git add path/to/submodule
 git commit -m "Update submodule to latest"
@@ -125,6 +135,7 @@ git commit -m "Update submodule to latest"
 ## Integration with dotfiles-post-setup
 
 The `dotfiles-post-setup` script automatically handles:
+
 1. Cloning via `start.sh` (which calls `git clone --recursive`)
 2. Symlinking configurations from submodules to appropriate `$HOME` locations
 

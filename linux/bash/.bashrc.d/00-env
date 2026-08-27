@@ -15,7 +15,14 @@ if [ -d "$SONAR_SCANNER_HOME/bin" ]; then
 fi
 
 # Development environments
-export EDITOR=vim
+if [ -n "${PREFIX:-}" ] && echo "$PREFIX" | grep -q 'com\.termux'; then
+  export EDITOR=vim
+elif command -v nvim >/dev/null 2>&1; then
+  export EDITOR=nvim
+  export VISUAL=nvim
+else
+  export EDITOR=vim
+fi
 export PYENV_ROOT="$HOME/.pyenv"
 export RBENV_ROOT="$HOME/.rbenv"
 export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"

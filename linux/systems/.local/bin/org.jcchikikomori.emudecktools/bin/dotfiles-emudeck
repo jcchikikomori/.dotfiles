@@ -64,9 +64,9 @@ validate_setup() {
     print_header
     print_info "Validating rclone and MEGA configuration..."
     echo ""
-    
+
     "$SCRIPT_DIR/validate_rclone"
-    
+
     if [ $? -eq 0 ]; then
         print_success "Validation passed!"
         return 0
@@ -81,7 +81,7 @@ sync_all() {
     print_header
     print_info "Syncing all emulator data to MEGA..."
     echo ""
-    
+
     # Sync RetroArch
     if [ -f "$SCRIPT_DIR/sync_retroarch_to_mega" ]; then
         print_info "Syncing RetroArch..."
@@ -89,7 +89,7 @@ sync_all() {
         print_success "RetroArch synced"
         echo ""
     fi
-    
+
     # Sync PCSX2
     if [ -f "$SCRIPT_DIR/sync_pcsx2_to_mega" ]; then
         print_info "Syncing PCSX2..."
@@ -97,7 +97,7 @@ sync_all() {
         print_success "PCSX2 synced"
         echo ""
     fi
-    
+
     # Sync Flycast
     if [ -f "$SCRIPT_DIR/sync_flycast_to_mega" ]; then
         print_info "Syncing Flycast..."
@@ -105,7 +105,7 @@ sync_all() {
         print_success "Flycast synced"
         echo ""
     fi
-    
+
     # Sync ES-DE (EmulationStation)
     if [ -f "$SCRIPT_DIR/sync_emulationstation_to_mega" ]; then
         print_info "Syncing ES-DE (EmulationStation)..."
@@ -113,7 +113,7 @@ sync_all() {
         print_success "ES-DE synced"
         echo ""
     fi
-    
+
     print_success "All emulator data synced to MEGA!"
 }
 
@@ -121,18 +121,18 @@ sync_all() {
 sync_emulator() {
     local emulator=$1
     local script="$SCRIPT_DIR/sync_${emulator}_to_mega"
-    
+
     if [ ! -f "$script" ]; then
         print_error "Sync script not found for $emulator"
         return 1
     fi
-    
+
     print_header
     print_info "Syncing $emulator..."
     echo ""
-    
+
     "$script"
-    
+
     print_success "$emulator synced!"
 }
 
@@ -141,12 +141,12 @@ sync_esde_themes() {
     print_header
     print_warning "This will sync ES-DE themes (~4.5GB)"
     echo ""
-    
+
     if [ ! -f "$SCRIPT_DIR/sync_esde_themes_to_mega" ]; then
         print_error "ES-DE themes sync script not found"
         return 1
     fi
-    
+
     "$SCRIPT_DIR/sync_esde_themes_to_mega"
 }
 
@@ -155,14 +155,14 @@ setup_timer() {
     print_header
     print_info "Setting up automatic syncing with systemd timer (30-minute intervals)..."
     echo ""
-    
+
     local user_config_dir="$HOME/.config/systemd/user"
     local service_file="$user_config_dir/emudeck-sync.service"
     local timer_file="$user_config_dir/emudeck-sync.timer"
-    
+
     # Create directory if it doesn't exist
     mkdir -p "$user_config_dir"
-    
+
     # Create service file
     print_info "Creating systemd service..."
     cat > "$service_file" << 'EOF'
@@ -180,7 +180,7 @@ ExecStart=%h/.local/bin/org.jcchikikomori.emudecktools/bin/sync_emulationstation
 StandardOutput=journal
 StandardError=journal
 EOF
-    
+
     # Create timer file
     print_info "Creating systemd timer..."
     cat > "$timer_file" << 'EOF'
@@ -196,12 +196,12 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF
-    
+
     # Reload systemd and enable timer
     print_info "Enabling and starting timer..."
     systemctl --user daemon-reload
     systemctl --user enable --now emudeck-sync.timer
-    
+
     if [ $? -eq 0 ]; then
         print_success "Systemd timer configured successfully!"
         echo ""
@@ -220,7 +220,7 @@ check_timer() {
     print_header
     print_info "Checking systemd timer status..."
     echo ""
-    
+
     systemctl --user status emudeck-sync.timer
 }
 
@@ -229,9 +229,9 @@ disable_timer() {
     print_header
     print_info "Disabling automatic syncing..."
     echo ""
-    
+
     systemctl --user disable --now emudeck-sync.timer
-    
+
     if [ $? -eq 0 ]; then
         print_success "Automatic syncing disabled"
     else
@@ -243,10 +243,10 @@ disable_timer() {
 # Main loop
 main() {
     print_header
-    
+
     while true; do
         show_menu
-        
+
         case "$choice" in
             1) validate_setup ;;
             2) sync_all ;;
@@ -261,7 +261,7 @@ main() {
             11) print_info "Exiting..."; exit 0 ;;
             *) print_error "Invalid choice. Please enter 1-11." ;;
         esac
-        
+
         read -r -p "Press Enter to continue..."
     done
 }

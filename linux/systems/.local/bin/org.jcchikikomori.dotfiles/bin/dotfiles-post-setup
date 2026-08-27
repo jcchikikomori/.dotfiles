@@ -18,6 +18,7 @@ setup_directory() {
     cp -r "dotfiles-ruby" "$WORKDIR"
     cp -r "dotfiles-copyparty" "$WORKDIR"
     cp -r "dotfiles-mpv" "$WORKDIR"
+    cp -r "dotfiles-neovim" "$WORKDIR"
     cp -r "dotfiles-vim" "$WORKDIR"
     cp -r "dotfiles-git" "$WORKDIR"
     cp -r "dotfiles-nerf" "$WORKDIR"
@@ -60,6 +61,8 @@ prompt_installation() {
         elif [ "$script" = "dotfiles-copyparty" ]; then
             $WORKDIR/$script install
         elif [ "$script" = "dotfiles-mpv" ]; then
+            $WORKDIR/$script install
+        elif [ "$script" = "dotfiles-neovim" ]; then
             $WORKDIR/$script install
         else
             $WORKDIR/$script
@@ -185,6 +188,7 @@ main() {
         prompt_installation "NodeJS with NVM" "dotfiles-nodejs"
         prompt_installation "PHP with phpenv" "dotfiles-php"
         prompt_installation "Copyparty file server" "dotfiles-copyparty"
+        prompt_installation "Neovim (LazyVim)" "dotfiles-neovim"
         prompt_installation "mpv media player" "dotfiles-mpv"
         prompt_installation "Microsoft fonts (Arial, Times New Roman, etc.)" "dotfiles-msfonts"
         prompt_installation "Vim with plugins" "dotfiles-vim"

@@ -37,6 +37,9 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
@@ -187,6 +190,9 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
@@ -278,6 +284,9 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
@@ -384,6 +393,9 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
