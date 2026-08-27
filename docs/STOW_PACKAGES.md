@@ -19,7 +19,7 @@ This document lists all stow packages managed by this dotfiles repository.
 | `neovim` | Neovim editor configuration (LazyVim fork, native + Flatpak paths) | Linux, macOS |
 | `opencode` | OpenCode agent configuration | All |
 | `python` | Python environment setup | All |
-| `starship` | Cross-shell prompt | All |
+| `starship` | Cross-shell powerline-style prompt | All |
 | `supermodel` | Sega Model 3 emulator | All |
 | `systems` | System-specific configs (systemd, emulators, etc.) | Linux |
 | `tmux` | Terminal multiplexer | All |
@@ -51,7 +51,7 @@ All packages listed above except `bash`.
 | `alacritty` | GPU-accelerated terminal emulator | Limited/deprecated |
 | `flags` | CLI flags/arguments configuration | |
 | `supermodel` | Sega Model 3 emulator | |
-| `starship` | Cross-shell prompt | |
+| `starship` | Cross-shell powerline-style prompt | |
 | `opencode` | OpenCode agent configuration | |
 | `claude` | Claude Code agent configuration | |
 
@@ -77,7 +77,7 @@ All packages listed above except `bash`.
 - **tmux** - Terminal multiplexer configuration
 - **tmuxp** - Tmux session manager configuration (save/load tmux sessions via YAML/JSON)
 - **alacritty** - GPU-accelerated terminal emulator config
-- **starship** - Cross-shell prompt configuration (written in Rust)
+- **starship** - Cross-shell powerline-style prompt configuration (written in Rust), matching the tmux-powerline SteamOS palette (see docs/Tmux.md)
 
 ### Gaming/Emulation
 

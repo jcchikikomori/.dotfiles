@@ -1,17 +1,51 @@
+# Powerline-style prompt, palette matched to tmux-powerline (linux/tmux/.config/tmux-powerline/config.sh):
+# bg/text-on-accent #0E1419, accent blue #00BFFF, git green #5FAF87 (xterm colour72), neutral #cccccc.
+format = """
+$directory\
+([](fg:#00BFFF bg:#5FAF87)$git_branch$git_status[](fg:#5FAF87) )${custom.not_git}\
+$all\
+$cmd_duration\
+$line_break\
+$character"""
+
+right_format = """$status$time"""
+
 [character]
 success_symbol = "[>](bold green)"
 error_symbol = "[x](bold red)"
 vimcmd_symbol = "[<](bold green)"
 
+[cmd_duration]
+min_time = 2000
+style = "bg:#cccccc fg:#0E1419 bold"
+format = "[](fg:#cccccc)[ $duration ]($style)"
+
+[time]
+disabled = false
+style = "bg:#00BFFF fg:#0E1419 bold"
+time_format = "%H:%M"
+format = "[](fg:#00BFFF)[ $time ]($style)"
+
 [git_commit]
 tag_symbol = " tag "
 
 [git_status]
+style = "bg:#5FAF87 fg:#0E1419"
+format = "([$all_status$ahead_behind ]($style))"
 ahead = ">"
 behind = "<"
 diverged = "<>"
 renamed = "r"
 deleted = "x"
+
+# Fallback for the directory->git chain arrow when there's no git repo at all --
+# Starship format strings can't express "else", so this uses a negated `when`
+# to provide the closing arrow only in that case.
+[custom.not_git]
+command = "true"
+when = "! git rev-parse --is-inside-work-tree 2>/dev/null"
+format = "[](fg:#00BFFF) "
+disabled = false
 
 [aws]
 symbol = "aws "
@@ -59,7 +93,11 @@ symbol = "deno "
 symbol = ".NET "
 
 [directory]
+style = "bg:#00BFFF fg:#0E1419 bold"
+format = "[ $path ]($style)"
 read_only = " ro"
+truncation_length = 3
+truncate_to_repo = true
 
 [docker_context]
 symbol = "docker "
@@ -80,6 +118,8 @@ symbol = "fossil "
 symbol = "gcp "
 
 [git_branch]
+style = "bg:#5FAF87 fg:#0E1419 bold"
+format = "[ $symbol$branch ]($style)"
 symbol = "git "
 
 [gleam]
@@ -241,7 +281,11 @@ symbol = "spack "
 symbol = "solidity "
 
 [status]
-symbol = "[x](bold red) "
+disabled = false
+style = "bg:#cccccc fg:#0E1419 bold"
+format = "[](fg:#cccccc)[ $symbol$status ]($style)[](fg:#cccccc)"
+symbol = "x "
+success_symbol = ""
 
 [sudo]
 symbol = "sudo "
