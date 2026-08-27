@@ -1,0 +1,26 @@
+#compdef dotfiles-neovim
+
+# Zsh completion for dotfiles-neovim
+
+_dotfiles-neovim() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '1: :->command' \
+    '*:: :->args'
+
+  case "$state" in
+    command)
+      _values 'dotfiles-neovim command' \
+        'install[Install Neovim via AppImage, package manager, Homebrew, or Flatpak]' \
+        'update[Re-run the install fallback chain]' \
+        'dump-config[Back up ~/.config/nvim to the submodule directory]' \
+        'sync-config[Commit and push submodule config changes]' \
+        'uninstall[Remove the AppImage install]' \
+        'uninstall-config[Remove ~/.config/nvim and the Flatpak config symlink]'
+      ;;
+  esac
+}
+
+_dotfiles-neovim "$@"
