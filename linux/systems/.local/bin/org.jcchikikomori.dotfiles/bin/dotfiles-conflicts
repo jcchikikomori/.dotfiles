@@ -114,6 +114,16 @@ status_line() {
 
 BLOCKING=0
 
+echo '[dotfiles-conflicts] Checking stow target conflicts (neovim)'
+
+for target in \
+  "$HOME/.config/nvim"
+do
+  if ! status_line "$target"; then
+    BLOCKING=1
+  fi
+done
+
 echo '[dotfiles-conflicts] Checking stow target conflicts (wireplumber)'
 
 for target in \

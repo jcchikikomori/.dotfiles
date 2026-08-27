@@ -16,6 +16,7 @@ This document lists all stow packages managed by this dotfiles repository.
 | `git` | Git configuration | All |
 | `lindbergh` | Sega Lindbergh arcade emulator loader | Linux |
 | `mpv` | mpv media player configuration (native + Flatpak paths) | Linux |
+| `neovim` | Neovim editor configuration (LazyVim fork, native + Flatpak paths) | Linux, macOS |
 | `opencode` | OpenCode agent configuration | All |
 | `python` | Python environment setup | All |
 | `starship` | Cross-shell prompt | All |
@@ -54,7 +55,7 @@ All packages listed above except `bash`.
 | `opencode` | OpenCode agent configuration | |
 | `claude` | Claude Code agent configuration | |
 
-**Note:** `flatpak`, `wireplumber`, `lindbergh`, `dxvk`, and `mpv` are not available on macOS.
+**Note:** `flatpak`, `wireplumber`, `lindbergh`, `dxvk`, and `mpv` are not available on macOS. `neovim` is available on macOS (via Homebrew) but excluded from the Termux package list.
 
 ## Package Details
 
@@ -115,6 +116,18 @@ All packages listed above except `bash`.
   Flatpak build of mpv (`io.mpv.Mpv`) shares identical config with the native install.
   Installed via `dotfiles-mpv install` (AppImage -> native package manager -> Flatpak
   fallback chain).
+
+- **neovim** - Neovim editor configuration, sourced from the `jcchikikomori/dotfiles-lazyvim`
+  (a fork of [LazyVim/starter](https://github.com/LazyVim/starter)) git submodule at
+  `linux/neovim/.config/nvim`. A relative symlink at
+  `linux/neovim/.var/app/io.neovim.nvim/config/nvim` points back into the same submodule
+  so the Flatpak build of Neovim (`io.neovim.nvim`) shares identical config with the
+  native install. Installed via `dotfiles-neovim install` (AppImage -> native package
+  manager -> Homebrew -> Flatpak fallback chain, version-gated at every tier). Neovim
+  ≥ 0.11.2 required; AppImage tier provides the latest version. EDITOR/VISUAL are
+  conditionally set to `nvim` when available (falls back to `vim`); Termux always uses
+  `vim` and is excluded from the `neovim` stow package entirely. See
+  `docs/NeovimCheatsheet.md` for keybindings.
 
 ### CLI Tools
 
@@ -182,10 +195,10 @@ To add or remove packages, edit the `STOW_PACKAGES` variable in `stowme.sh`:
 
 ```sh
 # Linux
-STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim vscode dxvk systems python flatpak mpv alacritty wireplumber flags lindbergh supermodel starship opencode claude"
+STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim neovim vscode dxvk systems python flatpak mpv alacritty wireplumber flags lindbergh supermodel starship opencode claude"
 
 # macOS
-STOW_PACKAGES="zsh git antigen tmux tmuxp vim vscode systems python alacritty flags supermodel starship opencode claude"
+STOW_PACKAGES="zsh git antigen tmux tmuxp vim neovim vscode systems python alacritty flags supermodel starship opencode claude"
 ```
 
 After editing, run `stowme.sh` to apply changes.

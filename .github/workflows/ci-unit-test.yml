@@ -43,6 +43,9 @@ jobs:
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
@@ -193,6 +196,9 @@ jobs:
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
@@ -284,6 +290,9 @@ jobs:
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
@@ -390,6 +399,9 @@ jobs:
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}

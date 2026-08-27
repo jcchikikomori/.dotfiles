@@ -87,7 +87,7 @@ if [ -d "$ESDE_DIR/themes" ]; then
     echo ""
     rclone sync "$ESDE_DIR/themes/" "mega:emudeck-data/es-de/themes" --verbose --transfers 8
     RESULT=$?
-    
+
     if [ $RESULT -eq 0 ]; then
         echo ""
         echo "✓ ES-DE themes synced successfully to mega:emudeck-data/es-de/themes/"
