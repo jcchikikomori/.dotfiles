@@ -117,14 +117,17 @@ All packages listed above except `bash`.
   Installed via `dotfiles-mpv install` (AppImage -> native package manager -> Flatpak
   fallback chain).
 
-- **neovim** - Neovim editor configuration, sourced from the `jcchikikomori/LazyVim`
-  git submodule at `linux/neovim/.config/nvim`. A relative symlink at
+- **neovim** - Neovim editor configuration, sourced from the `jcchikikomori/dotfiles-lazyvim`
+  (a fork of [LazyVim/starter](https://github.com/LazyVim/starter)) git submodule at
+  `linux/neovim/.config/nvim`. A relative symlink at
   `linux/neovim/.var/app/io.neovim.nvim/config/nvim` points back into the same submodule
   so the Flatpak build of Neovim (`io.neovim.nvim`) shares identical config with the
   native install. Installed via `dotfiles-neovim install` (AppImage -> native package
-  manager -> Homebrew fallback chain). Neovim ≥ 0.11.2 required; AppImage tier provides
-  the latest version. EDITOR/VISUAL are conditionally set to `nvim` when available
-  (falls back to `vim`); Termux always uses `vim`.
+  manager -> Homebrew -> Flatpak fallback chain, version-gated at every tier). Neovim
+  ≥ 0.11.2 required; AppImage tier provides the latest version. EDITOR/VISUAL are
+  conditionally set to `nvim` when available (falls back to `vim`); Termux always uses
+  `vim` and is excluded from the `neovim` stow package entirely. See
+  `docs/NeovimCheatsheet.md` for keybindings.
 
 ### CLI Tools
 

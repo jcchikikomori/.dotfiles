@@ -123,8 +123,17 @@ version_gte() {
 }
 
 get_installed_version() {
-  # Extracts semver from `nvim --version` first line (e.g. "NVIM v0.12.5")
-  nvim --version 2>/dev/null | head -1 | sed 's/.*NVIM v//' | sed 's/[^0-9.].*//'
+  # Extracts semver from `nvim --version` first line (e.g. "NVIM v0.12.5").
+  # Falls back to the Flatpak app, which has no `nvim` binary on PATH.
+  if command_exists nvim; then
+    nvim --version 2>/dev/null | head -1 | sed 's/.*NVIM v//' | sed 's/[^0-9.].*//'
+    return 0
+  fi
+  if command_exists flatpak && flatpak list --app --columns=application 2>/dev/null | grep -q '^io\.neovim\.nvim$'; then
+    flatpak run io.neovim.nvim --version 2>/dev/null | head -1 | sed 's/.*NVIM v//' | sed 's/[^0-9.].*//'
+    return 0
+  fi
+  return 1
 }
 
 check_version_gate() {
@@ -324,24 +333,49 @@ install_action() {
   fi
 
   if install_appimage_tier; then
-    log "Neovim ready via AppImage."
-    return 0
+    if check_version_gate; then
+      log "Neovim ready via AppImage."
+      return 0
+    fi
+    log "AppImage tier installed a Neovim below minimum version $MIN_VERSION; treating as failed."
+  else
+    log "AppImage tier unavailable/failed."
   fi
-  log "AppImage tier unavailable/failed; trying native package manager..."
+
+  log "Trying native package manager..."
   if install_native_tier; then
-    log "Neovim ready via native package manager."
-    return 0
+    if check_version_gate; then
+      log "Neovim ready via native package manager."
+      return 0
+    fi
+    log "Native package manager installed a Neovim below minimum version $MIN_VERSION; treating as failed."
+  else
+    log "Native package manager tier unavailable/failed."
   fi
-  log "Native package manager tier unavailable/failed; trying Homebrew..."
+
+  log "Trying Homebrew..."
   if install_homebrew_tier; then
-    log "Neovim ready via Homebrew."
-    return 0
+    if check_version_gate; then
+      log "Neovim ready via Homebrew."
+      return 0
+    fi
+    log "Homebrew installed a Neovim below minimum version $MIN_VERSION; treating as failed."
+  else
+    log "Homebrew tier unavailable/failed."
   fi
-  log "Homebrew tier unavailable/failed; trying Flatpak..."
+
+  log "Trying Flatpak..."
   if install_flatpak_tier; then
-    return 0
+    if check_version_gate; then
+      log "Neovim ready via Flatpak."
+      return 0
+    fi
+    log "Flatpak installed a Neovim below minimum version $MIN_VERSION; treating as failed."
+  else
+    log "Flatpak tier unavailable/failed."
   fi
-  err "All installation methods failed (AppImage, native package manager, Homebrew, Flatpak)."
+
+  err "All installation methods failed to provide Neovim >= $MIN_VERSION (AppImage, native package manager, Homebrew, Flatpak)."
 }
 
 update_action() {

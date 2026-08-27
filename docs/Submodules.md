@@ -14,7 +14,7 @@ Git submodules allow you to include external Git repositories within your projec
 | `linux/opencode` | [opencode](https://github.com/jcchikikomori/opencode) | OpenCode AI coding agent configuration |
 | `linux/claude` | [claude](https://github.com/jcchikikomori/claude) | Claude Code AI agent configuration |
 | `linux/mpv/.config/mpv` | [mpv-config](https://github.com/jcchikikomori/mpv-config) | mpv media player configuration |
-| `linux/neovim/.config/nvim` | [LazyVim](https://github.com/jcchikikomori/LazyVim) | Neovim LazyVim fork configuration |
+| `linux/neovim/.config/nvim` | [dotfiles-lazyvim](https://github.com/jcchikikomori/dotfiles-lazyvim) | Neovim configuration (fork of LazyVim/starter) |
 
 ## Initial Clone with Submodules
 

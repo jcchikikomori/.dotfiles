@@ -287,6 +287,17 @@ if [ "$DETECTED_DISTRO" = "darwin" ]; then
 else
   STOW_PACKAGES="bash zsh git antigen tmux tmuxp vim neovim vscode dxvk systems python flatpak mpv alacritty wireplumber flags lindbergh supermodel starship opencode claude"
 fi
+
+# Termux gets no Neovim: no dotfiles-neovim installer is ever run there,
+# and LazyVim's version floor is out of scope for Termux's Bionic libc.
+if [ "$DETECTED_DISTRO" = "termux" ]; then
+  _filtered_packages=""
+  for _pkg in $STOW_PACKAGES; do
+    [ "$_pkg" = "neovim" ] && continue
+    _filtered_packages="$_filtered_packages $_pkg"
+  done
+  STOW_PACKAGES=${_filtered_packages# }
+fi
 if ! "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
   log_error "Error: dotstow stow failed."
   if [ "$DETECTED_DISTRO" = "rhel" ]; then
