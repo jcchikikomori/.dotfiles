@@ -15,11 +15,12 @@ Managed via TPM (`~/.tmux/plugins/tpm`):
 - **tmux-acpi** - Battery/power status
 - **tmux-notify** - Notifications for long-running commands
 - **tmux-autoreload** - Auto-reload config on changes
+- **tmux-powerline** - Renders the status bar (see below); config lives in `~/.config/tmux-powerline/`
 
 ## Basic Keys
 
 | Key | Action |
-|-----|--------|
+| ----- | -------- |
 | `Ctrl-b` + `\|` | Split pane vertically |
 | `Ctrl-b` + `-` | Split pane horizontally |
 | `Alt` + Arrow | Navigate between panes |
@@ -29,11 +30,13 @@ Managed via TPM (`~/.tmux/plugins/tpm`):
 
 ## Status Bar - SteamOS Theme
 
-The status bar displays:
+Rendered by the `erikw/tmux-powerline` TPM plugin as powerline segments (arrow-separated colored blocks), configured in `linux/tmux/.config/tmux-powerline/` (stowed to `~/.config/tmux-powerline/`):
 
-- **Left:** Session name (cyan highlight) + mem-cpu-load
+- **Left:** Session name (`tmux_session_info`, cyan) + mem-cpu-load (`tmux_mem_cpu_load`)
 - **Center:** Window list (centered)
-- **Right:** Git status (via gitmux) + Power/Battery (via acpi) + current time
+- **Right:** Prefix-highlight indicator + git status (`git_status` segment, wraps gitmux) + Power/Battery (`power_status` segment, wraps tmux-acpi) + clock (`date_time` segment)
+
+Custom segments live in `linux/tmux/.config/tmux-powerline/segments/`; the segment layout, colors, and window-tab formatting are set in `linux/tmux/.config/tmux-powerline/config.sh`. tmux-powerline needs a Powerline-patched or Nerd Font in the terminal emulator to render the arrow separators correctly (see `dotfiles-nerf`).
 
 ### Color Scheme
 
