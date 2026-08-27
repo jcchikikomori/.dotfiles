@@ -5,7 +5,7 @@
 # this script scans the entire dotfiles tree and reports conflicts.
 #
 # GitHub #91: This tool helps prevent stow conflicts when adding new configs.
-#
+# 
 # Workflow for adding new config files to dotfiles:
 #   1. Add new files to {distro}/systems/{subdir}/filename
 #   2. Run: dotfiles-conflicts-comprehensive
@@ -122,13 +122,13 @@ for distro in linux darwin debian ubuntu arch steamos rhel termux; do
   fi
 
   printf '[dotfiles-conflicts-comprehensive] Package: %s/systems\n' "$distro"
-
+  
   # Find all files (not directories) that would be stowed
   find "$package_dir" -type f 2>/dev/null | sort | while read -r file; do
     # Convert dotfiles path to home path
     rel_path="${file#$package_dir/}"
     home_target="$HOME/$rel_path"
-
+    
     # Check if target exists
     if [ -f "$home_target" ] || [ -L "$home_target" ]; then
       if ! status_line "$home_target" >/dev/null 2>&1; then

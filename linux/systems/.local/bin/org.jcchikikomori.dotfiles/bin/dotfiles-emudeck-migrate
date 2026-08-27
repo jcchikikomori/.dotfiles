@@ -150,14 +150,14 @@ cd "$HOME" || exit 1
 
 if ! dotstow stow systems >/dev/null 2>&1; then
   echo "  ✗ Stow failed - restoring backup"
-
+  
   if [ -f "$BACKUP_DIR/emudeck-sync.service" ]; then
     cp "$BACKUP_DIR/emudeck-sync.service" "$SERVICE_FILE"
   fi
   if [ -f "$BACKUP_DIR/emudeck-sync.timer" ]; then
     cp "$BACKUP_DIR/emudeck-sync.timer" "$TIMER_FILE"
   fi
-
+  
   exit 1
 fi
 

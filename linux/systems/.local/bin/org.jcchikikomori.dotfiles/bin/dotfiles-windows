@@ -73,7 +73,7 @@ check_wsl_integration() {
   if ! check_docker; then
     return 1
   fi
-
+  
   # Check if docker daemon is accessible (indicates WSL2 integration is working)
   if docker version >/dev/null 2>&1; then
     return 0
@@ -84,13 +84,13 @@ check_wsl_integration() {
 # Setup local LLM support with Ollama
 llm_setup() {
   log_info "Setting up local LLM support on Windows/WSL2..."
-
+  
   if ! check_wsl; then
     log_warn "This does not appear to be a WSL2 environment"
     echo "This script is designed for Windows Subsystem for Linux (WSL2)"
     return 1
   fi
-
+  
   if command -v devtools-windows-llm >/dev/null 2>&1; then
     devtools-windows-llm install
   else
@@ -119,7 +119,7 @@ gpu_info() {
     echo ""
     echo "=== GPU Information ==="
     echo ""
-
+    
     if check_nvidia; then
       echo "NVIDIA GPU: Detected"
       echo ""
@@ -139,32 +139,32 @@ docker_check() {
   echo ""
   echo "=== Docker Desktop Check ==="
   echo ""
-
+  
   if ! check_wsl; then
     log_warn "Not running in WSL2 environment"
     echo "This check is designed for Windows Subsystem for Linux"
     return 1
   fi
-
+  
   echo "WSL2 Environment: Detected"
   if [ -f /proc/version ]; then
     echo "Kernel:"
     grep 'Linux version' /proc/version 2>/dev/null | head -1 | sed 's/^/  /'
   fi
   echo ""
-
+  
   echo "Docker Installation:"
   if command -v docker >/dev/null 2>&1; then
     echo "  Docker CLI: Available"
     docker --version | sed 's/^/  /'
-
+    
     echo ""
     echo "Docker Daemon:"
     if docker info >/dev/null 2>&1; then
       echo "  Status: Running"
       echo "  Server Version:"
       docker version --format '{{.Server.Version}}' 2>/dev/null | sed 's/^/    /'
-
+      
       echo ""
       echo "WSL2 Integration:"
       if check_wsl_integration; then
@@ -193,7 +193,7 @@ docker_check() {
     echo "  2. Enable WSL2 backend during installation"
     echo "  3. Restart your WSL2 instance: wsl --shutdown"
   fi
-
+  
   echo ""
   echo "NVIDIA GPU Support:"
   if check_nvidia; then
