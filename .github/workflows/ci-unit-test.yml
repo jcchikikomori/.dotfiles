@@ -37,15 +37,15 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
-      - name: Execute post-setup (neovim)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
@@ -190,15 +190,15 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
-      - name: Execute post-setup (neovim)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
@@ -284,15 +284,15 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
-      - name: Execute post-setup (neovim)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}
@@ -393,15 +393,15 @@ jobs:
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
-      - name: Execute post-setup (neovim)
-        run: |
-          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (git)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-git
       - name: Execute post-setup (homebrew)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-homebrew install
+      - name: Execute post-setup (neovim)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-neovim install
       - name: Execute post-setup (python)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python install ${{ matrix.python_method }}

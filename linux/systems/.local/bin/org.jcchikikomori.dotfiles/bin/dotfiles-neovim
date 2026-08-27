@@ -2,6 +2,12 @@
 
 set -eu
 
+# Version checks below run `command -v nvim`, so the AppImage tier's own
+# install target must already be on PATH within this same process — a
+# caller may not have added it yet (e.g. CI adds $HOME/.local/bin to
+# $GITHUB_PATH only in a later step).
+export PATH="${HOME}/.local/bin:${PATH}"
+
 APPIMAGE_API_URL="${NEOVIM_APPIMAGE_RELEASE_API:-https://api.github.com/repos/neovim/neovim/releases/latest}"
 APPIMAGE_INSTALL_PATH="${HOME}/.local/bin/nvim"
 CONFIG_PATH="${HOME}/.config/nvim"
