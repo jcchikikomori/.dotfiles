@@ -12,4 +12,4 @@
 	url = https://github.com/jcchikikomori/mpv-config.git
 [submodule "linux/neovim/.config/nvim"]
 	path = linux/neovim/.config/nvim
-	url = https://github.com/jcchikikomori/LazyVim
+	url = https://github.com/jcchikikomori/LazyVim.git
