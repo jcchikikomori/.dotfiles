@@ -196,8 +196,8 @@ install_appimage_tier() {
   ')
   url=${parsed%%|*}
   digest=${parsed#*|}
-  if [ -z "$url" ]; then
-    log "Could not locate a Neovim AppImage asset for arch $arch"
+  if [ -z "$url" ] || [ -z "$digest" ]; then
+    log "Could not locate a Neovim AppImage asset with a checksum for arch $arch; skipping tier"
     return 1
   fi
 
@@ -211,15 +211,11 @@ install_appimage_tier() {
     return 1
   }
 
-  if [ -n "$digest" ]; then
-    expected=${digest#sha256:}
-    actual=$(compute_sha256 "$tmpfile")
-    if [ "$expected" != "$actual" ]; then
-      log "Checksum mismatch for downloaded AppImage (expected $expected, got $actual); aborting AppImage tier"
-      return 1
-    fi
-  else
-    log "No checksum available in release metadata; skipping verification"
+  expected=${digest#sha256:}
+  actual=$(compute_sha256 "$tmpfile")
+  if [ "$expected" != "$actual" ]; then
+    log "Checksum mismatch for downloaded AppImage (expected $expected, got $actual); aborting AppImage tier"
+    return 1
   fi
 
   mkdir -p "${HOME}/.local/bin"
