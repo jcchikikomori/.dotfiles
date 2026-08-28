@@ -43,7 +43,7 @@ function re_escape(s,    out, i, c, special) {
 
 BEGIN {
     ESC = sprintf("%c", 27)
-    GLYPH = "\357\202\260"          # UTF-8 bytes for U+E0B0 ()
+    GLYPH = "\356\202\260"          # UTF-8 bytes for U+E0B0 (), i.e. 0xEE 0x82 0xB0
     PILL_FG = "14;20;25"            # constant text color (#0E1419) on every pill
     if (shell == "bash") {
         WRAP_OPEN = "\\["
