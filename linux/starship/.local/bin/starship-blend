@@ -61,10 +61,17 @@ BEGIN {
 
 # Build the wedge escape+glyph text for a transition from fromBg to toBg.
 # Either side may be "" (no explicit background -- default terminal bg).
+# Each wedge leads with a reset ("0;"), because the SGR state still in
+# effect here belongs to the preceding pill. Without the reset, a wedge
+# into the default background would keep that background and paint the
+# glyph in its own color on itself -- an invisible solid block instead of
+# a triangle -- and any leftover bold would carry over too.
+# NOTE: no apostrophes anywhere below; this awk program is a single-quoted
+# shell string, so one would end it early and silently truncate the script.
 function wedge(fromBg, toBg,    sgr) {
-    if (fromBg == "") sgr = "38;2;" toBg
-    else if (toBg == "") sgr = "38;2;" fromBg
-    else sgr = "38;2;" fromBg ";48;2;" toBg
+    if (fromBg == "") sgr = "0;38;2;" toBg
+    else if (toBg == "") sgr = "0;38;2;" fromBg
+    else sgr = "0;38;2;" fromBg ";48;2;" toBg
     return WRAP_OPEN ESC "[" sgr "m" WRAP_CLOSE GLYPH
 }
 
