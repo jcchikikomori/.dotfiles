@@ -1,4 +1,16 @@
 # Starship-related
 if command -v starship &> /dev/null; then
     eval "$(starship init bash)"
+
+    # Post-process the rendered prompt to blend powerline separators
+    # between segments Starship only decides to show at render time (an
+    # active language/tool module, a duration past the threshold) --
+    # starship.toml itself has no way to predict those in advance. bash
+    # has no separate right-prompt concept, so PS1 is the only thing to
+    # wrap. See starship-blend.
+    eval "$(declare -f starship_precmd | sed '1s/starship_precmd/_starship_precmd_orig/')"
+    starship_precmd() {
+        _starship_precmd_orig
+        PS1="$(printf '%s' "$PS1" | starship-blend left)"
+    }
 fi

@@ -1,0 +1,158 @@
+#!/bin/sh
+# Post-processes a rendered Starship prompt line, inserting a powerline
+# separator glyph (colored to blend) between any two adjacent segments
+# that have different background colors -- including segments Starship
+# only decides to show at render time (an active language/tool module, a
+# duration over the threshold), which starship.toml itself has no way to
+# predict in advance.
+#
+# Usage: starship-blend <left|right>
+#   left  -- the $format prompt: first segment starts flush (no leading
+#            wedge), matching the physical left edge of the terminal.
+#   right -- the $right_format prompt: first segment gets a synthesized
+#            leading wedge from transparent, since it doesn't touch the
+#            terminal's physical left edge.
+# Reads the prompt text on stdin, writes the blended result on stdout.
+# Shell-specific zero-width escape wrapping is picked via $STARSHIP_SHELL
+# (already exported by `starship init`).
+#
+# Starship elides SGR attributes that are unchanged from the previous
+# segment (e.g. it won't re-send "bold" or the foreground color if the
+# prior segment already set them). Splicing a wedge in between two
+# segments breaks that assumption, so whenever a wedge is inserted before
+# a pill, this also re-emits that pill's escape code fully explicit
+# (bold + our constant text color 0E1419 + its own background) instead of
+# passing through Starship's possibly-partial original one. This is safe
+# specifically because every bold pill in starship.toml uses fg:#0E1419,
+# and the one module that doesn't want bold (git_status) always shares
+# git_branch's background, so it never directly follows an inserted wedge.
+
+mode="${1:-left}"
+
+exec awk -v mode="$mode" -v shell="${STARSHIP_SHELL:-zsh}" '
+function re_escape(s,    out, i, c, special) {
+    special = "\\^$.[]|()*+?{}"
+    out = ""
+    for (i = 1; i <= length(s); i++) {
+        c = substr(s, i, 1)
+        if (index(special, c) > 0) out = out "\\" c
+        else out = out c
+    }
+    return out
+}
+
+BEGIN {
+    ESC = sprintf("%c", 27)
+    GLYPH = "\357\202\260"          # UTF-8 bytes for U+E0B0 ()
+    PILL_FG = "14;20;25"            # constant text color (#0E1419) on every pill
+    if (shell == "bash") {
+        WRAP_OPEN = "\\["
+        WRAP_CLOSE = "\\]"
+    } else {
+        WRAP_OPEN = "%{"
+        WRAP_CLOSE = "%}"
+    }
+    WRAP_OPEN_RE = re_escape(WRAP_OPEN)
+    WRAP_CLOSE_RE = re_escape(WRAP_CLOSE)
+    pat = WRAP_OPEN_RE ESC "\\[[0-9;]*m" WRAP_CLOSE_RE
+    add_leading = (mode == "right")
+    RS = "\032"                     # slurp all of stdin as a single record
+}
+
+# Build the wedge escape+glyph text for a transition from fromBg to toBg.
+# Either side may be "" (no explicit background -- default terminal bg).
+function wedge(fromBg, toBg,    sgr) {
+    if (fromBg == "") sgr = "38;2;" toBg
+    else if (toBg == "") sgr = "38;2;" fromBg
+    else sgr = "38;2;" fromBg ";48;2;" toBg
+    return WRAP_OPEN ESC "[" sgr "m" WRAP_CLOSE GLYPH
+}
+
+# Fully explicit escape for a pill with the given background, bypassing
+# whatever Starship elided in its own (now possibly-stale) original token.
+function pill_escape(bg) {
+    return WRAP_OPEN ESC "[1;48;2;" bg ";38;2;" PILL_FG "m" WRAP_CLOSE
+}
+
+# Extract the "R;G;B" background triple from a raw SGR code list
+# ("1;48;2;10;20;30;38;2;...")  Returns "" if no 48;2;r;g;b is present.
+function bg_of(codes,    n, f, i) {
+    n = split(codes, f, ";")
+    for (i = 1; i <= n; i++) {
+        if (f[i] == "48" && i + 4 <= n && f[i + 1] == "2") {
+            return f[i + 2] ";" f[i + 3] ";" f[i + 4]
+        }
+    }
+    return ""
+}
+
+{
+    text = $0
+    out = ""
+    pos = 1
+    prev_bg = ""
+    have_prev = 0
+    len = length(text)
+
+    while (pos <= len) {
+        rest = substr(text, pos)
+        start = match(rest, pat)
+        if (start == 0) {
+            out = out rest
+            pos = len + 1
+            break
+        }
+        # Text before this escape token belongs to the PREVIOUS run --
+        # copy it through untouched.
+        pre = substr(rest, 1, start - 1)
+        out = out pre
+
+        tok = substr(rest, start, RLENGTH)
+        after_pos = pos + start - 1 + RLENGTH
+
+        # Peek at the text immediately following this escape token to see
+        # whether it is a real run (non-empty) or just a pass-through
+        # (e.g. a bare reset with nothing before the next escape).
+        rest2 = substr(text, after_pos)
+        nstart = match(rest2, pat)
+        if (nstart == 0) {
+            following = rest2
+        } else {
+            following = substr(rest2, 1, nstart - 1)
+        }
+
+        if (following == "") {
+            # Not a run -- pass the escape through unchanged.
+            out = out tok
+            pos = after_pos
+            continue
+        }
+
+        codes = tok
+        sub("^" WRAP_OPEN_RE ESC "\\[", "", codes)
+        sub("m" WRAP_CLOSE_RE "$", "", codes)
+        this_bg = bg_of(codes)
+
+        wedge_inserted = 0
+        if (!have_prev) {
+            if (add_leading && this_bg != "") {
+                out = out wedge("", this_bg)
+                wedge_inserted = 1
+            }
+        } else if (this_bg != prev_bg) {
+            out = out wedge(prev_bg, this_bg)
+            wedge_inserted = 1
+        }
+        have_prev = 1
+        prev_bg = this_bg
+
+        if (wedge_inserted && this_bg != "") {
+            out = out pill_escape(this_bg)
+        } else {
+            out = out tok
+        }
+        pos = after_pos
+    }
+    printf "%s", out
+}
+'
