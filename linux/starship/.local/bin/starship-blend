@@ -7,11 +7,19 @@
 # predict in advance.
 #
 # Usage: starship-blend <left|right>
-#   left  -- the $format prompt: first segment starts flush (no leading
-#            wedge), matching the physical left edge of the terminal.
-#   right -- the $right_format prompt: first segment gets a synthesized
-#            leading wedge from transparent, since it doesn't touch the
-#            terminal's physical left edge.
+#   left  -- the $format prompt. Separators are U+E0B0 (), placed after
+#            each segment: the glyph takes the colour of the segment it
+#            trails and sits on the background of the one it leads into.
+#            The first segment starts flush, against the physical left
+#            edge of the terminal, so it gets no leading wedge.
+#   right -- the $right_format prompt, which is the mirror image. Its
+#            separators are U+E0B2 (), placed before each segment: the
+#            glyph takes the colour of the segment it leads into and sits
+#            on the background of the one it trails. That gives each pill
+#            a pointed left nose, the conventional look for a right-
+#            aligned powerline. The first segment does get a leading
+#            wedge, since it does not touch the left edge of the terminal;
+#            the last needs no trailing one, as it ends at the right edge.
 # Reads the prompt text on stdin, writes the blended result on stdout.
 # Shell-specific zero-width escape wrapping is picked via $STARSHIP_SHELL
 # (already exported by `starship init`).
@@ -43,7 +51,8 @@ function re_escape(s,    out, i, c, special) {
 
 BEGIN {
     ESC = sprintf("%c", 27)
-    GLYPH = "\356\202\260"          # UTF-8 bytes for U+E0B0 (), i.e. 0xEE 0x82 0xB0
+    GLYPH_R = "\356\202\260"        # UTF-8 bytes for U+E0B0 (), i.e. 0xEE 0x82 0xB0
+    GLYPH_L = "\356\202\262"        # UTF-8 bytes for U+E0B2 (), i.e. 0xEE 0x82 0xB2
     PILL_FG = "14;20;25"            # constant text color (#0E1419) on every pill
     if (shell == "bash") {
         WRAP_OPEN = "\\["
@@ -55,12 +64,19 @@ BEGIN {
     WRAP_OPEN_RE = re_escape(WRAP_OPEN)
     WRAP_CLOSE_RE = re_escape(WRAP_CLOSE)
     pat = WRAP_OPEN_RE ESC "\\[[0-9;]*m" WRAP_CLOSE_RE
-    add_leading = (mode == "right")
+    right_mode = (mode == "right")
+    add_leading = right_mode
     RS = "\032"                     # slurp all of stdin as a single record
 }
 
-# Build the wedge escape+glyph text for a transition from fromBg to toBg.
-# Either side may be "" (no explicit background -- default terminal bg).
+# Build the wedge escape+glyph text for the join between the segment
+# ending in fromBg and the one starting in thisBg. Either side may be ""
+# (no explicit background -- the default terminal background).
+#
+# The two modes are mirror images. On the left the glyph points right and
+# wears the OUTGOING colour; on the right it points left and wears the
+# INCOMING one, with the two backgrounds swapped to match.
+#
 # Each wedge leads with a reset ("0;"), because the SGR state still in
 # effect here belongs to the preceding pill. Without the reset, a wedge
 # into the default background would keep that background and paint the
@@ -68,11 +84,19 @@ BEGIN {
 # a triangle -- and any leftover bold would carry over too.
 # NOTE: no apostrophes anywhere below; this awk program is a single-quoted
 # shell string, so one would end it early and silently truncate the script.
-function wedge(fromBg, toBg,    sgr) {
-    if (fromBg == "") sgr = "0;38;2;" toBg
-    else if (toBg == "") sgr = "0;38;2;" fromBg
-    else sgr = "0;38;2;" fromBg ";48;2;" toBg
-    return WRAP_OPEN ESC "[" sgr "m" WRAP_CLOSE GLYPH
+function wedge(fromBg, thisBg,    sgr) {
+    if (right_mode) {
+        # A right-aligned segment that fades into the default background
+        # needs no separator at all -- it simply ends.
+        if (thisBg == "") return ""
+        if (fromBg == "") sgr = "0;38;2;" thisBg
+        else sgr = "0;38;2;" thisBg ";48;2;" fromBg
+        return WRAP_OPEN ESC "[" sgr "m" WRAP_CLOSE GLYPH_L
+    }
+    if (fromBg == "") sgr = "0;38;2;" thisBg
+    else if (thisBg == "") sgr = "0;38;2;" fromBg
+    else sgr = "0;38;2;" fromBg ";48;2;" thisBg
+    return WRAP_OPEN ESC "[" sgr "m" WRAP_CLOSE GLYPH_R
 }
 
 # Fully explicit escape for a pill with the given background, bypassing
