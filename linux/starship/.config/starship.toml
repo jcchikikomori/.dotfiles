@@ -2,8 +2,8 @@
 # bg/text-on-accent #0E1419, accent blue #00BFFF, git green #5FAF87 (xterm colour72), neutral #cccccc.
 format = """
 $directory\
-([](fg:#00BFFF bg:#5FAF87)$git_branch$git_status[](fg:#5FAF87) )${custom.not_git}\
-([](fg:#FFAF00)$all[](fg:#FFAF00) )\
+([](fg:#00BFFF bg:#5FAF87)$git_branch$git_status[](fg:#5FAF87))${custom.not_git}\
+([](fg:#FFAF00)$all[](fg:#FFAF00))\
 $cmd_duration\
 $line_break\
 $character"""
@@ -44,7 +44,7 @@ deleted = "x"
 [custom.not_git]
 command = "true"
 when = "! git rev-parse --is-inside-work-tree 2>/dev/null"
-format = "[](fg:#00BFFF) "
+format = "[](fg:#00BFFF)"
 disabled = false
 
 [aws]
