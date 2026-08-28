@@ -109,3 +109,6 @@ linux/systems/.local/bin/*
 
 # tmux
 tmux-client-*.log
+
+# Local-only MCP server config (machine-specific paths, not shared)
+.mcp.json

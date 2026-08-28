@@ -258,3 +258,7 @@ eval "$(starship init zsh)"
 # PROMPT/RPROMPT if a starship upgrade changes its generated init script.
 PROMPT='$(starship prompt --terminal-width="$COLUMNS" --keymap="${KEYMAP:-}" --status="${STARSHIP_CMD_STATUS:-}" --pipestatus="${STARSHIP_PIPE_STATUS[*]:-}" --cmd-duration="${STARSHIP_DURATION:-}" --jobs="$STARSHIP_JOBS_COUNT" | starship-blend left)'
 RPROMPT='$(starship prompt --right --terminal-width="$COLUMNS" --keymap="${KEYMAP:-}" --status="${STARSHIP_CMD_STATUS:-}" --pipestatus="${STARSHIP_PIPE_STATUS[*]:-}" --cmd-duration="${STARSHIP_DURATION:-}" --jobs="$STARSHIP_JOBS_COUNT" | starship-blend right)'
+
+# Sit the right prompt flush against the right edge. Left unset, zsh keeps
+# one blank column there, which reads as a gap after the clock pill.
+ZLE_RPROMPT_INDENT=0
