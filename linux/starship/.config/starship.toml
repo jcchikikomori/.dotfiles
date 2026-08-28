@@ -3,12 +3,12 @@
 format = """
 $directory\
 ([](fg:#00BFFF bg:#5FAF87)$git_branch$git_status[](fg:#5FAF87) )${custom.not_git}\
-$all\
+([](fg:#FFAF00)$all[](fg:#FFAF00) )\
 $cmd_duration\
 $line_break\
 $character"""
 
-right_format = """$status$time"""
+right_format = """$status[](fg:#cccccc bg:#00BFFF)$time"""
 
 [character]
 success_symbol = "[>](bold green)"
@@ -18,13 +18,13 @@ vimcmd_symbol = "[<](bold green)"
 [cmd_duration]
 min_time = 2000
 style = "bg:#cccccc fg:#0E1419 bold"
-format = "[](fg:#cccccc)[ $duration ]($style)"
+format = "[](fg:#cccccc)[ $duration ]($style)[](fg:#cccccc)"
 
 [time]
 disabled = false
 style = "bg:#00BFFF fg:#0E1419 bold"
 time_format = "%H:%M"
-format = "[](fg:#00BFFF)[ $time ]($style)"
+format = "[ $time ]($style)"
 
 [git_commit]
 tag_symbol = " tag "
@@ -48,48 +48,78 @@ format = "[](fg:#00BFFF) "
 disabled = false
 
 [aws]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = '[ $symbol($profile )(\($region\)) ]($style)'
 symbol = "aws "
 
 [azure]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($subscription) ]($style)"
 symbol = "az "
 
 [buf]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "buf "
 
 [bun]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "bun "
 
 [c]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "C "
 
 [cpp]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "C++ "
 
 [cobol]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "cobol "
 
 [conda]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($environment )]($style)"
 symbol = "conda "
 
 [container]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol $name ]($style)"
 symbol = "container "
 
 [crystal]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "cr "
 
 [cmake]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "cmake "
 
 [daml]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "daml "
 
 [dart]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "dart "
 
 [deno]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "deno "
 
 [dotnet]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = ".NET "
 
 [directory]
@@ -100,21 +130,33 @@ truncation_length = 3
 truncate_to_repo = true
 
 [docker_context]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol$context ]($style)"
 symbol = "docker "
 
 [elixir]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "exs "
 
 [elm]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "elm "
 
 [fennel]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "fnl "
 
 [fossil_branch]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol$branch ]($style)"
 symbol = "fossil "
 
 [gcloud]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = '[ $symbol$account(@$domain)(\($region\)) ]($style)'
 symbol = "gcp "
 
 [git_branch]
@@ -123,61 +165,103 @@ format = "[ $symbol$branch ]($style)"
 symbol = "git "
 
 [gleam]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "gleam "
 
 [golang]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "go "
 
 [gradle]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "gradle "
 
 [guix_shell]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($environment )]($style)"
 symbol = "guix "
 
 [haskell]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "haskell "
 
 [helm]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "helm "
 
 [hg_branch]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol$branch ]($style)"
 symbol = "hg "
 
 [java]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "java "
 
 [julia]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "jl "
 
 [kotlin]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "kt "
 
 [lua]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "lua "
 
 [nodejs]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "nodejs "
 
 [memory_usage]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol$ram( | $swap) ]($style)"
 symbol = "memory "
 
 [meson]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "meson "
 
 [nats]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "nats "
 
 [nim]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "nim "
 
 [nix_shell]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($environment )]($style)"
 symbol = "nix "
 
 [ocaml]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "ml "
 
 [opa]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "opa "
+
+[os]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol ]($style)"
 
 [os.symbols]
 AIX = "aix "
@@ -233,71 +317,113 @@ Void = "void "
 Windows = "win "
 
 [package]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol$version ]($style)"
 symbol = "pkg "
 
 [perl]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "pl "
 
 [php]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "php "
 
 [pijul_channel]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol$channel ]($style)"
 symbol = "pijul "
 
 [pixi]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "pixi "
 
 [pulumi]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "pulumi "
 
 [purescript]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "purs "
 
 [python]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "py "
 
 [quarto]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "quarto "
 
 [raku]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "raku "
 
 [rlang]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "r "
 
 [ruby]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "rb "
 
 [rust]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "rs "
 
 [scala]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "scala "
 
 [spack]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "spack "
 
 [solidity]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "solidity "
 
 [status]
 disabled = false
 style = "bg:#cccccc fg:#0E1419 bold"
-format = "[](fg:#cccccc)[ $symbol$status ]($style)[](fg:#cccccc)"
+format = "[](fg:#cccccc)[ $symbol$status ]($style)"
 symbol = "x "
 success_symbol = ""
 
 [sudo]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol ]($style)"
 symbol = "sudo "
 
 [swift]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "swift "
 
 [typst]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "typst "
 
 [terraform]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($workspace )]($style)"
 symbol = "terraform "
 
 [zig]
+style = "bg:#FFAF00 fg:#0E1419 bold"
+format = "[ $symbol($version )]($style)"
 symbol = "zig "
