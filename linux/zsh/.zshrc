@@ -249,3 +249,16 @@ source $HOME/.brewphp82
 # Starship
 # Note: always load at the end of it.
 eval "$(starship init zsh)"
+
+# Post-process the rendered prompt to blend powerline separators between
+# segments Starship only decides to show at render time (an active
+# language/tool module, a duration past the threshold) -- starship.toml
+# itself has no way to predict those in advance. See starship-blend.
+# Note: keep these argument lists in sync with `starship init zsh`'s own
+# PROMPT/RPROMPT if a starship upgrade changes its generated init script.
+PROMPT='$(starship prompt --terminal-width="$COLUMNS" --keymap="${KEYMAP:-}" --status="${STARSHIP_CMD_STATUS:-}" --pipestatus="${STARSHIP_PIPE_STATUS[*]:-}" --cmd-duration="${STARSHIP_DURATION:-}" --jobs="$STARSHIP_JOBS_COUNT" | starship-blend left)'
+RPROMPT='$(starship prompt --right --terminal-width="$COLUMNS" --keymap="${KEYMAP:-}" --status="${STARSHIP_CMD_STATUS:-}" --pipestatus="${STARSHIP_PIPE_STATUS[*]:-}" --cmd-duration="${STARSHIP_DURATION:-}" --jobs="$STARSHIP_JOBS_COUNT" | starship-blend right)'
+
+# Sit the right prompt flush against the right edge. Left unset, zsh keeps
+# one blank column there, which reads as a gap after the clock pill.
+ZLE_RPROMPT_INDENT=0
