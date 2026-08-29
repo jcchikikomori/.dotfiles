@@ -57,6 +57,10 @@ omos() {
   for arg in "$@"; do
     if [[ "$arg" == --port=* ]]; then
       port="${arg#--port=}"
+      if [[ -z "$port" ]]; then
+        print -u2 -- "omos: --port requires a value"
+        return 2
+      fi
       break
     fi
   done
@@ -65,7 +69,16 @@ omos() {
     local -i index
     for ((index = 1; index <= ${#args[@]}; index++)); do
       if [[ "${args[index]}" == --port ]]; then
-        port="${args[index + 1]}"
+        # Guard against `set -u`: index+1 may be out of bounds when --port is
+        # the last arg, or the next token may itself be a flag. Both cases are
+        # user error (--port without a usable value) — fail loudly rather than
+        # dispatch a malformed argv that opencode can't parse.
+        local next="${args[index + 1]:-}"
+        if [[ -z "$next" || "$next" == --* ]]; then
+          print -u2 -- "omos: --port requires a value"
+          return 2
+        fi
+        port="$next"
         break
       fi
     done
