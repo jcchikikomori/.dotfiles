@@ -50,3 +50,43 @@ _check_push_alias_usage() {
       ;;
   esac
 }
+
+# omos() — launch opencode with auto-port for tmux multiplexer support
+omos() {
+  local port arg
+  for arg in "$@"; do
+    if [[ "$arg" == --port=* ]]; then
+      port="${arg#--port=}"
+      if [[ -z "$port" ]]; then
+        print -u2 -- "omos: --port requires a value"
+        return 2
+      fi
+      break
+    fi
+  done
+  if [[ -z "$port" ]]; then
+    local -a args=("$@")
+    local -i index
+    for ((index = 1; index <= ${#args[@]}; index++)); do
+      if [[ "${args[index]}" == --port ]]; then
+        # Guard against `set -u`: index+1 may be out of bounds when --port is
+        # the last arg, or the next token may itself be a flag. Both cases are
+        # user error (--port without a usable value) — fail loudly rather than
+        # dispatch a malformed argv that opencode can't parse.
+        local next="${args[index + 1]:-}"
+        if [[ -z "$next" || "$next" == --* ]]; then
+          print -u2 -- "omos: --port requires a value"
+          return 2
+        fi
+        port="$next"
+        break
+      fi
+    done
+  fi
+  if [[ -n "$port" ]]; then
+    OPENCODE_PORT="$port" command opencode "$@"
+    return
+  fi
+  port=$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()') || return
+  OPENCODE_PORT="$port" command opencode --port "$port" "$@"
+}
