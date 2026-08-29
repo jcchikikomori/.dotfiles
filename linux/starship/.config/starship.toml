@@ -39,79 +39,79 @@ renamed = "r"
 deleted = "x"
 
 [aws]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#FF9900 fg:#0E1419 bold"
 format = '[ $symbol($profile )(\($region\)) ]($style)'
-symbol = "aws "
+symbol = " "
 
 [azure]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#0078D4 fg:#0E1419 bold"
 format = "[ $symbol($subscription) ]($style)"
-symbol = "az "
+symbol = " "
 
 [buf]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#5A0FC8 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "buf "
+symbol = " "
 
 [bun]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#E8DCC8 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "bun "
+symbol = " "
 
 [c]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#00599C fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "C "
+symbol = " "
 
 [cpp]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#00599C fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "C++ "
+symbol = " "
 
 [cobol]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#005CA5 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "cobol "
+symbol = " "
 
 [conda]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#43B02A fg:#0E1419 bold"
 format = "[ $symbol($environment )]($style)"
-symbol = "conda "
+symbol = " "
 
 [container]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#2496ED fg:#0E1419 bold"
 format = "[ $symbol $name ]($style)"
-symbol = "container "
+symbol = " "
 
 [crystal]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#DE005E fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "cr "
+symbol = " "
 
 [cmake]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#064F8C fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "cmake "
+symbol = " "
 
 [daml]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#00D5FF fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "daml "
+symbol = " "
 
 [dart]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#00B4AB fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "dart "
+symbol = " "
 
 [deno]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A091FF fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "deno "
+symbol = " "
 
 [dotnet]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#512BD4 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = ".NET "
+symbol = " "
 
 [directory]
 style = "bg:#00BFFF fg:#0E1419 bold"
@@ -121,137 +121,137 @@ truncation_length = 3
 truncate_to_repo = true
 
 [docker_context]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#2496ED fg:#0E1419 bold"
 format = "[ $symbol$context ]($style)"
-symbol = "docker "
+symbol = " "
 
 [elixir]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#4E2A8E fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "exs "
+symbol = " "
 
 [elm]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#1293D8 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "elm "
+symbol = " "
 
 [fennel]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#E8DCC8 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "fnl "
+symbol = " "
 
 [fossil_branch]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol$branch ]($style)"
-symbol = "fossil "
+symbol = " "
 
 [gcloud]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#4285F4 fg:#0E1419 bold"
 format = '[ $symbol$account(@$domain)(\($region\)) ]($style)'
-symbol = "gcp "
+symbol = "󱷶 "
 
 [git_branch]
 style = "bg:#5FAF87 fg:#0E1419 bold"
 format = "[ $symbol$branch ]($style)"
-symbol = "git "
+symbol = " "
 
 [gleam]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#EA576A fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "gleam "
+symbol = " "
 
 [golang]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#00ADD8 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "go "
+symbol = " "
 
 [gradle]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#064F8C fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "gradle "
+symbol = " "
 
 [guix_shell]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#51A5D0 fg:#0E1419 bold"
 format = "[ $symbol($environment )]($style)"
-symbol = "guix "
+symbol = " "
 
 [haskell]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#5E5185 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "haskell "
+symbol = " "
 
 [helm]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#1E3A8A fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "helm "
+symbol = " "
 
 [hg_branch]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol$branch ]($style)"
-symbol = "hg "
+symbol = " "
 
 [java]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#E76F00 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "java "
+symbol = " "
 
 [julia]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#9558B2 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "jl "
+symbol = " "
 
 [kotlin]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#7F52FF fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "kt "
+symbol = " "
 
 [lua]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#1E3A8A fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "lua "
+symbol = " "
 
 [nodejs]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#5FAE46 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "nodejs "
+symbol = " "
 
 [memory_usage]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol$ram( | $swap) ]($style)"
-symbol = "memory "
+symbol = "󰃛 "
 
 [meson]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#D4A017 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "meson "
+symbol = "󰔷 "
 
 [nats]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#27AAE1 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "nats "
+symbol = " "
 
 [nim]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#D4C017 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "nim "
+symbol = " "
 
 [nix_shell]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#5277C3 fg:#0E1419 bold"
 format = "[ $symbol($environment )]($style)"
-symbol = "nix "
+symbol = " "
 
 [ocaml]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#EC6827 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "ml "
+symbol = " "
 
 [opa]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#00508F fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "opa "
+symbol = " "
 
 [os]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol ]($style)"
 
 [os.symbols]
@@ -308,113 +308,113 @@ Void = "void "
 Windows = "win "
 
 [package]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol$version ]($style)"
-symbol = "pkg "
+symbol = "󰃗 "
 
 [perl]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#39457E fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "pl "
+symbol = " "
 
 [php]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#777BB4 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "php "
+symbol = " "
 
 [pijul_channel]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol$channel ]($style)"
-symbol = "pijul "
+symbol = " "
 
 [pixi]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#D4A017 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "pixi "
+symbol = "󰃗 "
 
 [pulumi]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#8A3391 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "pulumi "
+symbol = " "
 
 [purescript]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#3A3F47 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "purs "
+symbol = " "
 
 [python]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#3776AB fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "py "
+symbol = " "
 
 [quarto]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#2D3E50 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "quarto "
+symbol = " "
 
 [raku]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "raku "
+symbol = "󱖊 "
 
 [rlang]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#276DC3 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "r "
+symbol = "󰟔 "
 
 [ruby]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#CC342D fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "rb "
+symbol = " "
 
 [rust]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#CE422B fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "rs "
+symbol = "󱘗 "
 
 [scala]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#DC322F fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "scala "
+symbol = " "
 
 [spack]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#0F3A80 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "spack "
+symbol = " "
 
 [solidity]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#3B3B3B fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "solidity "
+symbol = " "
 
 [status]
 disabled = false
 style = "bg:#cccccc fg:#0E1419 bold"
 format = "[ $symbol$status ]($style)"
-symbol = "x "
+symbol = " "
 success_symbol = ""
 
 [sudo]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#A0A0A0 fg:#0E1419 bold"
 format = "[ $symbol ]($style)"
-symbol = "sudo "
+symbol = " "
 
 [swift]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#F05138 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "swift "
+symbol = " "
 
 [typst]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#239D90 fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "typst "
+symbol = " "
 
 [terraform]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#7B42BC fg:#0E1419 bold"
 format = "[ $symbol($workspace )]($style)"
-symbol = "terraform "
+symbol = " "
 
 [zig]
-style = "bg:#FFAF00 fg:#0E1419 bold"
+style = "bg:#F7A41D fg:#0E1419 bold"
 format = "[ $symbol($version )]($style)"
-symbol = "zig "
+symbol = " "
