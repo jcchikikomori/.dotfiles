@@ -3,7 +3,10 @@
 echo 'Installing dependencies from system...'
 sudo dnf group install -y "development-tools"
 sudo dnf install -y gcc-c++ make ccache
-sudo dnf install -y vim gvim nano htop iftop stow git zsh unzip xclip xsel ncdu wget gawk
+# NOTES:
+# - xorg-x11-server-Xvfb = X virtual framebuffer (Camoufox MCP / headless browser automation)
+# - podman-compose = compose-compatible wrapper for podman
+sudo dnf install -y vim gvim nano htop iftop stow git zsh unzip xclip xsel ncdu wget gawk xorg-x11-server-Xvfb podman-compose
 sudo dnf install -y perl
 sudo dnf install -y php composer
 sudo dnf install -y zenity
