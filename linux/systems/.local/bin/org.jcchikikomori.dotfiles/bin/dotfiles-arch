@@ -190,7 +190,7 @@ install_packages() {
   repo_packages=""
   candidate_aur_packages=""
 
-  for package_name in podman-docker xsel ncdu rclone; do
+  for package_name in podman-docker podman-compose xorg-server-xvfb xsel ncdu rclone; do
     if is_installed "$package_name"; then
       log_info "$package_name is already installed"
     elif pacman -Si "$package_name" >/dev/null 2>&1; then
