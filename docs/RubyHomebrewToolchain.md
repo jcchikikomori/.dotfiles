@@ -3,16 +3,21 @@
 ## What this is
 
 `dotfiles-ruby` normally installs Ruby (and rbenv) via the distro's own
-package manager (`apt`, `dnf`, `pacman`). On Debian/Ubuntu and RHEL/Fedora,
-setting `RUBY_INSTALL_METHOD=homebrew` before running `dotfiles-ruby install`
-(or `update`) switches to installing Ruby via Homebrew (Linuxbrew) instead.
+package manager (`apt`, `dnf`, `pacman`). On Debian/Ubuntu, RHEL/Fedora, and
+Arch/SteamOS, setting `RUBY_INSTALL_METHOD=homebrew` before running
+`dotfiles-ruby install` (or `update`) switches to installing Ruby via
+Homebrew (Linuxbrew) instead.
 
 This is **opt-in only** — the default (`RUBY_INSTALL_METHOD` unset, or
 `system`) is completely unchanged. Scope:
 
-- Debian/Ubuntu and RHEL/Fedora: opt-in via the env var, as described here.
-- Arch/SteamOS: unaffected — stays on `pacman`. Arch is rolling-release, so
-  its system Ruby/libs are already current; this isn't where the pain is.
+- Debian/Ubuntu, RHEL/Fedora, and Arch/SteamOS: opt-in via the env var, as
+  described here. Arch/SteamOS was originally excluded (rolling-release
+  Arch keeps system Ruby/libs current, so the mixed-toolchain pain this
+  option fixes was assumed not to apply) but [issue #242](https://github.com/jcchikikomori/.dotfiles/issues/242)
+  showed the opt-in was silently ignored there instead of being unavailable
+  — SteamOS's read-only rootfs and first-time-install path benefit from the
+  same consistent-toolchain fix as the other distros.
 - Termux: unsupported (no Linuxbrew on Bionic libc).
 - macOS: unaffected — already uses native Homebrew for everything.
 

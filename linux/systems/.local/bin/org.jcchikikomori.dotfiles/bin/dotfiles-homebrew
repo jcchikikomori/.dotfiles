@@ -1,6 +1,25 @@
 #!/bin/sh
 
+# Source shared SteamOS read-only rootfs guard. dotfiles-homebrew install
+# runs Homebrew's official installer, which uses sudo for system paths
+# (/home/linuxbrew/, sometimes /etc/profile.d/) and fails on a read-only
+# SteamOS rootfs. The shared helper tells the user to disable read-only
+# first instead of letting the installer explode.
+script_dir() {
+  script="$0"
+  case "$script" in
+    */*) path="$script" ;;
+    *) path=$(command -v "$script" 2>/dev/null || printf '%s' "$script") ;;
+  esac
+  dir=$(dirname "$path")
+  (CDPATH=; cd "$dir" 2>/dev/null && pwd) || pwd
+}
+
+SCRIPT_DIR=$(script_dir)
+. "$SCRIPT_DIR/dotfiles-steamos-readonly"
+
 if [ "$1" = "install" ]; then
+  require_writeable_rootfs || exit 1
   if [ -x "/bin/bash" ]; then
     echo "Installing Homebrew (Linuxbrew)..."
     /bin/bash -c "$(NONINTERACTIVE=1 curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"

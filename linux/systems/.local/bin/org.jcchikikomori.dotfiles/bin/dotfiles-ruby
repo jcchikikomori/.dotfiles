@@ -33,6 +33,9 @@ script_dir() {
 
 SCRIPT_DIR=$(script_dir)
 
+# Source shared SteamOS read-only rootfs guard
+. "${SCRIPT_DIR}/dotfiles-steamos-readonly"
+
 run_sudo() {
   if command -v sudo >/dev/null 2>&1; then
     sudo "$@"
@@ -137,6 +140,7 @@ install_ruby_arch() {
   log "Installing rbenv via pacman..."
   run_sudo pacman -Sy --needed --noconfirm rbenv ruby-ffi ruby-lsp rubocop rubygems
   install_complete_msg
+  homebrew_hint
 }
 
 install_ruby_opensuse() {
@@ -297,7 +301,11 @@ install_ruby_for() {
       fi
       ;;
     arch|archbtw|manjaro|endeavouros|garuda|arcolinux|steamos)
-      install_ruby_arch
+      if [ "$RUBY_INSTALL_METHOD" = "homebrew" ]; then
+        install_ruby_homebrew_full
+      else
+        install_ruby_arch
+      fi
       ;;
     unknown|*)
       install_ruby_homebrew
@@ -306,12 +314,14 @@ install_ruby_for() {
 }
 
 install_action() {
+  require_writeable_rootfs
   distro=$(read_distro)
   log "Detected distribution from cache: $distro"
   install_ruby_for "$distro"
 }
 
 update_action() {
+  require_writeable_rootfs
   distro=$(read_distro)
   log "Updating Ruby for distribution: $distro"
   install_ruby_for "$distro"
