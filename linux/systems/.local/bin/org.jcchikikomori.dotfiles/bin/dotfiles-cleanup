@@ -38,6 +38,38 @@ backup_item() {
   fi
 }
 
+# Backup helper with path exclusions for AI tool dirs.
+# ~/.claude/plugins/marketplaces/*/ are cloned git repos whose
+# .git/objects/pack/ packfiles frequently have restrictive permissions
+# (mode 000 / set by the host tooling), which makes `cp -a` fail with
+# "Permission denied" and clutters the stow log. Those packfiles are
+# regenerable via `git fetch` in each marketplace, not user data — skipping
+# them is safe. Uses tar for portable --exclude support across GNU tar
+# (Linux/Termux) and BSD tar (macOS). --strip-components=1 keeps the
+# resulting tree at $HOME/.backups/$label/ rather than nesting under it.
+backup_item_excluding() {
+  local src="$1"
+  local label="${2:-$(basename "$src")}"
+  shift 2
+  if [ -e "$src" ] && [ ! -L "$src" ]; then
+    mkdir -p "$HOME/.backups"
+    if [ -d "$src" ]; then
+      mkdir -p "$HOME/.backups/$label"
+      # Build --exclude flags from the remaining positional args
+      exclude_args=""
+      for pattern in "$@"; do
+        exclude_args="$exclude_args --exclude=$pattern"
+      done
+      # shellcheck disable=SC2086
+      tar $exclude_args -cf - -C "$(dirname "$src")" "$(basename "$src")" 2>/dev/null \
+        | tar --strip-components=1 -xf - -C "$HOME/.backups/$label"
+    else
+      cp -a "$src" "$HOME/.backups/"
+    fi
+    echo "  backed up $label"
+  fi
+}
+
 echo 'Backing up...'
 mkdir -p "$HOME/.backups"
 mkdir -p "$HOME/.backups/opencode"
@@ -51,9 +83,9 @@ backup_item "$HOME/.profile"
 backup_item "$HOME/.zshrc.pre-oh-my-zsh"
 backup_item "$HOME/.git"
 backup_item "$HOME/.config/opencode/memory_data"
-backup_item "$HOME/.opencode"
-backup_item "$HOME/.claude"
-backup_item "$HOME/.agents"
+backup_item_excluding "$HOME/.opencode" ".opencode" ".git" "*/.git"
+backup_item_excluding "$HOME/.claude" ".claude" ".git" "*/.git"
+backup_item_excluding "$HOME/.agents" ".agents" ".git" "*/.git"
 
 echo 'Cleaning up tmux...'
 rm -f "$HOME/.tmux.conf.local"
