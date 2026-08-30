@@ -13,6 +13,8 @@ Environment=COPYPARTY_AUTH_ENABLED=0
 Environment=COPYPARTY_USERNAME=
 Environment=COPYPARTY_PASSWORD=
 EnvironmentFile=-%h/.config/copyparty/copyparty.env
+# NOTE: dotfiles-copyparty's process-fallback launch (non-systemd hosts) mirrors
+# this ExecStart — keep the two in sync.
 ExecStart=/bin/sh -lc 'if [ "${COPYPARTY_DEBUG:-0}" = "1" ]; then set -x; fi; if [ "${COPYPARTY_AUTH_ENABLED:-0}" = "1" ]; then exec %h/.local/bin/copyparty -p "${COPYPARTY_PORT}" ${COPYPARTY_EXTRA_ARGS} -a "${COPYPARTY_USERNAME}:${COPYPARTY_PASSWORD}" -v %h:/:rwmd,"${COPYPARTY_USERNAME}"; else exec %h/.local/bin/copyparty -p "${COPYPARTY_PORT}" ${COPYPARTY_EXTRA_ARGS} -v %h/Downloads:/downloads:r -v %h/Pictures:/pictures:r -v %h/Videos:/videos:r; fi'
 StandardOutput=journal
 StandardError=journal
