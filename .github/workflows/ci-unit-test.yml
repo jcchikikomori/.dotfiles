@@ -212,6 +212,26 @@ jobs:
       - name: Execute post-setup (ruby)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+      - name: Execute post-setup (ruby via homebrew, opt-in)
+        run: |
+          ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ruby install
+        env:
+          RUBY_INSTALL_METHOD: homebrew
+      - name: Verify homebrew Ruby builds a native-extension gem
+        run: |
+          if command -v brew >/dev/null 2>&1; then
+            eval "$(brew shellenv)"
+          elif [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          elif [ -x "${HOME}/.linuxbrew/bin/brew" ]; then
+            eval "$("${HOME}/.linuxbrew/bin/brew" shellenv)"
+          else
+            echo "brew not found on PATH or known install locations" >&2
+            exit 1
+          fi
+          gem install --no-document msgpack
+        env:
+          RUBY_INSTALL_METHOD: homebrew
       - name: Execute post-setup (nodejs)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-nodejs install
