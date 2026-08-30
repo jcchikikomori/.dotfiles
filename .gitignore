@@ -68,7 +68,7 @@ linux/opencode/.config/opencode/.env
 linux/opencode/.config/opencode/memory_data
 linux/opencode/.config/opencode/oh-my-opencode-slim.json
 
-# oh-my-opencode
+# oh-my-opencode-slim plans/evidence directory
 .omo/
 
 # opencode-redactor

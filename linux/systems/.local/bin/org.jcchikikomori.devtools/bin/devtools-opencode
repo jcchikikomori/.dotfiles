@@ -114,10 +114,10 @@ COMMANDS:
       list               List MCPs from opencode.jsonc
       project [path]     Generate project-level .vscode/mcp.json
       install [name]     Install MCPs via VSCode CLI
-    omo                  Oh-My-OpenCode plugin management
-      install            Install/configure oh-my-opencode
-      restore            Re-apply saved oh-my-opencode config after stow
-      status             Show oh-my-opencode status
+    omos                 Oh-My-OpenCode-Slim plugin management
+      install            Install/configure oh-my-opencode-slim
+      restore            Re-apply saved oh-my-opencode-slim config after stow
+      status             Show oh-my-opencode-slim status
     wizard               Launch interactive setup wizard
     clear-cache          Clear opencode cache
     status               Show opencode installation and config status
@@ -130,8 +130,8 @@ EXAMPLES:
     devtools-opencode mcp install
     devtools-opencode vscode apply
     devtools-opencode vscode project ./my-project
-    devtools-opencode omo install
-    devtools-opencode omo restore
+    devtools-opencode omos install
+    devtools-opencode omos restore
     devtools-opencode status
 
 PATHS:
@@ -911,38 +911,36 @@ do_env() {
     echo ""
 }
 
-# ─── Oh-My-OpenCode (OMO) ────────────────────────────────────────────────────
+# ─── Oh-My-OpenCode-Slim (OMOS) ──────────────────────────────────────────────
 
-OMO_PREFS_FILE="${HOME}/.local/share/devtools-opencode/omo.prefs"
-OMO_BACKUP_DIR="${HOME}/.backups/opencode/omo"
+OMOS_PREFS_FILE="${HOME}/.local/share/devtools-opencode/omos.prefs"
+OMOS_BACKUP_DIR="${HOME}/.backups/opencode/omos"
 
-_ensure_omo_dirs() {
-    mkdir -p "$(dirname "$OMO_PREFS_FILE")"
-    mkdir -p "$OMO_BACKUP_DIR"
+_ensure_omos_dirs() {
+    mkdir -p "$(dirname "$OMOS_PREFS_FILE")"
+    mkdir -p "$OMOS_BACKUP_DIR"
 }
 
-_omo_is_installed() {
-    [ -f "$HOME/.config/opencode/oh-my-openagent.json" ] || \
-    [ -f "$HOME/.config/opencode/oh-my-opencode.json" ]
+_omos_is_installed() {
+    [ -f "$HOME/.config/opencode/oh-my-opencode-slim.json" ]
 }
 
-_omo_backup_state() {
-    _ensure_omo_dirs
+_omos_backup_state() {
+    _ensure_omos_dirs
     local timestamp
     timestamp=$(date +%Y%m%d-%H%M%S)
-    local backup_subdir="$OMO_BACKUP_DIR/$timestamp"
+    local backup_subdir="$OMOS_BACKUP_DIR/$timestamp"
     mkdir -p "$backup_subdir"
 
-    # Backup oh-my-opencode real files (not symlinks)
-    for file in "$HOME/.config/opencode/oh-my-openagent.json" \
-                "$HOME/.config/opencode/oh-my-opencode.json"; do
+    # Backup oh-my-opencode-slim real file (not symlink)
+    for file in "$HOME/.config/opencode/oh-my-opencode-slim.json"; do
         if [ -f "$file" ] && [ ! -L "$file" ]; then
             cp "$file" "$backup_subdir/"
             _log "  Backed up $(basename "$file")"
         fi
     done
 
-    # Backup backup files created by oh-my-opencode
+    # Backup backup files created by oh-my-opencode-slim
     for backup in "$HOME/.config/opencode"/oh-my-*.json.backup-*; do
         if [ -f "$backup" ] && [ ! -L "$backup" ]; then
             cp "$backup" "$backup_subdir/"
@@ -950,51 +948,51 @@ _omo_backup_state() {
     done
 
     # Backup prefs if they exist
-    if [ -f "$OMO_PREFS_FILE" ]; then
-        cp "$OMO_PREFS_FILE" "$backup_subdir/omo.prefs"
+    if [ -f "$OMOS_PREFS_FILE" ]; then
+        cp "$OMOS_PREFS_FILE" "$backup_subdir/omos.prefs"
     fi
 
     if [ -d "$backup_subdir" ] && [ "$(ls -A "$backup_subdir")" ]; then
-        _log "OMO state backed up to $backup_subdir"
+        _log "OMOS state backed up to $backup_subdir"
     fi
 }
 
-_omo_restore_state() {
+_omos_restore_state() {
     # Dotfiles-managed omos config is authoritative: when oh-my-opencode-slim.json
     # is a symlink (stowed from the dotfiles opencode submodule), skip regenerating
-    # it so 'omo restore' cannot clobber the tracked configuration.
+    # it so 'omos restore' cannot clobber the tracked configuration.
     if [ -L "$HOME/.config/opencode/oh-my-opencode-slim.json" ]; then
-        _log "oh-my-opencode-slim.json is dotfiles-managed (symlink); skipping omo restore."
+        _log "oh-my-opencode-slim.json is dotfiles-managed (symlink); skipping omos restore."
         return 0
     fi
 
-    if [ ! -f "$OMO_PREFS_FILE" ]; then
-        _warn "No OMO preferences found. Run 'devtools-opencode omo install' first."
+    if [ ! -f "$OMOS_PREFS_FILE" ]; then
+        _warn "No OMOS preferences found. Run 'devtools-opencode omos install' first."
         return 1
     fi
 
-    . "$OMO_PREFS_FILE"
+    . "$OMOS_PREFS_FILE"
 
-    if [ -z "${OMO_FLAGS:-}" ]; then
+    if [ -z "${OMOS_FLAGS:-}" ]; then
         _warn "No saved install flags found in prefs."
         return 1
     fi
 
-    _log "Restoring oh-my-opencode with saved preferences..."
-    _log "  Flags: $OMO_FLAGS"
+    _log "Restoring oh-my-opencode-slim with saved preferences..."
+    _log "  Flags: $OMOS_FLAGS"
 
     # Re-run installer with saved flags
     if command -v bunx > /dev/null 2>&1; then
-        bunx oh-my-opencode install --no-tui $OMO_FLAGS
+        bunx oh-my-opencode-slim install --no-tui $OMOS_FLAGS
     elif command -v npx > /dev/null 2>&1; then
-        npx oh-my-opencode install --no-tui $OMO_FLAGS
+        npx oh-my-opencode-slim install --no-tui $OMOS_FLAGS
     else
-        _error "Neither bunx nor npx found. Cannot restore oh-my-opencode."
+        _error "Neither bunx nor npx found. Cannot restore oh-my-opencode-slim."
     fi
 }
 
-do_omo_install() {
-    _ensure_omo_dirs
+do_omos_install() {
+    _ensure_omos_dirs
 
     local flags=""
     local interactive=1
@@ -1005,68 +1003,43 @@ do_omo_install() {
     fi
 
     if [ "$interactive" -eq 1 ]; then
-        # Interactive mode: prompt for subscriptions
+        # Interactive mode: prompt for omo-slim options
         echo ""
-        echo "=== Oh-My-OpenCode Setup ==="
+        echo "=== Oh-My-OpenCode-Slim Setup ==="
         echo ""
-        echo "Answer the following questions about your subscriptions:"
+        echo "Answer the following questions about your omo-slim configuration:"
         echo ""
 
-        # Claude
-        printf "Do you have a Claude Pro/Max subscription? [y/n/max20]: "
-        read -r claude_ans
-        case "$claude_ans" in
-            [Yy]*) flags="$flags --claude=yes" ;;
-            [Mm]*) flags="$flags --claude=max20" ;;
-            *) flags="$flags --claude=no" ;;
+        # Preset (default: opencode-go)
+        printf "Which preset should omo-slim use? [opencode-go]: "
+        read -r preset_ans
+        case "$preset_ans" in
+            "") flags="$flags --preset=opencode-go" ;;
+            *) flags="$flags --preset=$preset_ans" ;;
         esac
 
-        # OpenAI
-        printf "Do you have an OpenAI/ChatGPT Plus subscription? [y/n]: "
-        read -r openai_ans
-        case "$openai_ans" in
-            [Yy]*) flags="$flags --openai=yes" ;;
-            *) flags="$flags --openai=no" ;;
+        # Companion (default: no)
+        printf "Enable the desktop companion? [y/N]: "
+        read -r companion_ans
+        case "$companion_ans" in
+            [Yy]*) flags="$flags --companion=yes" ;;
+            *) flags="$flags --companion=no" ;;
         esac
 
-        # Gemini
-        printf "Will you integrate Gemini models? [y/n]: "
-        read -r gemini_ans
-        case "$gemini_ans" in
-            [Yy]*) flags="$flags --gemini=yes" ;;
-            *) flags="$flags --gemini=no" ;;
+        # Background subagents (default: yes)
+        printf "Enable background subagents? [Y/n]: "
+        read -r bg_ans
+        case "$bg_ans" in
+            [Nn]*) flags="$flags --background-subagents=no" ;;
+            *) flags="$flags --background-subagents=yes" ;;
         esac
 
-        # Copilot
-        printf "Do you have a GitHub Copilot subscription? [y/n]: "
-        read -r copilot_ans
-        case "$copilot_ans" in
-            [Yy]*) flags="$flags --copilot=yes" ;;
-            *) flags="$flags --copilot=no" ;;
-        esac
-
-        # OpenCode Zen
-        printf "Do you have access to OpenCode Zen models? [y/n]: "
-        read -r zen_ans
-        case "$zen_ans" in
-            [Yy]*) flags="$flags --opencode-zen=yes" ;;
-            *) flags="$flags --opencode-zen=no" ;;
-        esac
-
-        # OpenCode Go
-        printf "Do you have an OpenCode Go subscription? [y/n]: "
-        read -r go_ans
-        case "$go_ans" in
-            [Yy]*) flags="$flags --opencode-go=yes" ;;
-            *) flags="$flags --opencode-go=no" ;;
-        esac
-
-        # Z.ai
-        printf "Do you have a Z.ai Coding Plan subscription? [y/n]: "
-        read -r zai_ans
-        case "$zai_ans" in
-            [Yy]*) flags="$flags --zai-coding-plan=yes" ;;
-            *) flags="$flags --zai-coding-plan=no" ;;
+        # Skills (default: yes)
+        printf "Install the bundled omo-slim skills? [Y/n]: "
+        read -r skills_ans
+        case "$skills_ans" in
+            [Nn]*) flags="$flags --skills=no" ;;
+            *) flags="$flags --skills=yes" ;;
         esac
     else
         # Non-interactive: use provided flags or defaults
@@ -1074,53 +1047,52 @@ do_omo_install() {
         if [ $# -gt 0 ]; then
             flags="$*"
         else
-            _error "Non-interactive mode requires flags. Example: devtools-opencode omo install --no-tui --claude=yes --openai=no"
+            _error "Non-interactive mode requires flags. Example: devtools-opencode omos install --no-tui --preset=opencode-go"
         fi
     fi
 
     # Save preferences
-    cat > "$OMO_PREFS_FILE" <<EOF
-# Oh-My-OpenCode preferences
-# Generated by devtools-opencode omo install
-# This file is used by 'devtools-opencode omo restore' to re-apply settings after stow.
-OMO_FLAGS="$flags"
+    cat > "$OMOS_PREFS_FILE" <<EOF
+# Oh-My-OpenCode-Slim preferences
+# Generated by devtools-opencode omos install
+# This file is used by 'devtools-opencode omos restore' to re-apply settings after stow.
+OMOS_FLAGS="$flags"
 EOF
 
-    _log "Saved preferences to $OMO_PREFS_FILE"
-    _log "Installing oh-my-opencode..."
+    _log "Saved preferences to $OMOS_PREFS_FILE"
+    _log "Installing oh-my-opencode-slim..."
     _log "  Flags: $flags"
 
     # Run installer
     if command -v bunx > /dev/null 2>&1; then
-        bunx oh-my-opencode install --no-tui $flags
+        bunx oh-my-opencode-slim install --no-tui $flags
     elif command -v npx > /dev/null 2>&1; then
-        npx oh-my-opencode install --no-tui $flags
+        npx oh-my-opencode-slim install --no-tui $flags
     else
         _error "Neither bunx nor npx found. Please install Bun or Node.js first."
     fi
 
-    _log "Oh-My-OpenCode installation complete."
+    _log "Oh-My-OpenCode-Slim installation complete."
     echo ""
     echo "Next steps:"
     echo "  1. Run 'opencode auth login' to authenticate your providers"
     echo "  2. Run 'opencode --version' to verify the setup"
     echo ""
-    echo "If you re-stow dotfiles later, run 'devtools-opencode omo restore' to re-apply."
+    echo "If you re-stow dotfiles later, run 'devtools-opencode omos restore' to re-apply."
 }
 
-do_omo_restore() {
-    _omo_backup_state
-    _omo_restore_state
+do_omos_restore() {
+    _omos_backup_state
+    _omos_restore_state
 }
 
-do_omo_status() {
-    echo "=== Oh-My-OpenCode Status ==="
+do_omos_status() {
+    echo "=== Oh-My-OpenCode-Slim Status ==="
     echo ""
 
-    if _omo_is_installed; then
+    if _omos_is_installed; then
         echo "Installation:  INSTALLED"
-        for file in "$HOME/.config/opencode/oh-my-openagent.json" \
-                    "$HOME/.config/opencode/oh-my-opencode.json"; do
+        for file in "$HOME/.config/opencode/oh-my-opencode-slim.json"; do
             if [ -f "$file" ]; then
                 echo "Config file:   $file"
             fi
@@ -1129,20 +1101,20 @@ do_omo_status() {
         echo "Installation:  NOT INSTALLED"
     fi
 
-    if [ -f "$OMO_PREFS_FILE" ]; then
-        echo "Preferences:   $OMO_PREFS_FILE"
-        . "$OMO_PREFS_FILE"
-        echo "Saved flags:   ${OMO_FLAGS:-<none>}"
+    if [ -f "$OMOS_PREFS_FILE" ]; then
+        echo "Preferences:   $OMOS_PREFS_FILE"
+        . "$OMOS_PREFS_FILE"
+        echo "Saved flags:   ${OMOS_FLAGS:-<none>}"
     else
-        echo "Preferences:   NONE (run 'devtools-opencode omo install' to create)"
+        echo "Preferences:   NONE (run 'devtools-opencode omos install' to create)"
     fi
 
     # Show recent backups
-    if [ -d "$OMO_BACKUP_DIR" ]; then
+    if [ -d "$OMOS_BACKUP_DIR" ]; then
         local latest
-        latest=$(ls -t "$OMO_BACKUP_DIR" 2>/dev/null | head -1)
+        latest=$(ls -t "$OMOS_BACKUP_DIR" 2>/dev/null | head -1)
         if [ -n "$latest" ]; then
-            echo "Latest backup: $OMO_BACKUP_DIR/$latest"
+            echo "Latest backup: $OMOS_BACKUP_DIR/$latest"
         fi
     fi
     echo ""
@@ -1203,18 +1175,18 @@ main() {
                     ;;
             esac
             ;;
-        omo)
+        omos)
             case "$subcommand" in
-                install) shift 2; do_omo_install "$@" ;;
-                restore) do_omo_restore ;;
-                status) do_omo_status ;;
+                install) shift 2; do_omos_install "$@" ;;
+                restore) do_omos_restore ;;
+                status) do_omos_status ;;
                 *)
-                    echo "Usage: devtools-opencode omo {install|restore|status}"
+                    echo "Usage: devtools-opencode omos {install|restore|status}"
                     echo ""
-                    echo "  install   Install/configure oh-my-opencode interactively"
-                    echo "            Or non-interactive: devtools-opencode omo install --no-tui --claude=yes ..."
-                    echo "  restore   Re-apply saved oh-my-opencode config (use after stow)"
-                    echo "  status    Show oh-my-opencode installation status"
+                    echo "  install   Install/configure oh-my-opencode-slim interactively"
+                    echo "            Or non-interactive: devtools-opencode omos install --no-tui --preset=opencode-go ..."
+                    echo "  restore   Re-apply saved oh-my-opencode-slim config (use after stow)"
+                    echo "  status    Show oh-my-opencode-slim installation status"
                     exit 1
                     ;;
             esac

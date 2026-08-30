@@ -19,7 +19,7 @@ _devtools-opencode() {
         'sync[Sync shared AI agent configs to OpenCode]' \
         'mcp[Manage MCP dependencies]' \
         'vscode[VSCode MCP integration]' \
-        'omo[Oh-My-OpenCode plugin management]' \
+        'omos[Oh-My-OpenCode-Slim plugin management]' \
         'wizard[Launch interactive setup wizard]' \
         'clear-cache[Clear opencode cache]' \
         'status[Show opencode installation and config status]' \
@@ -42,11 +42,11 @@ _devtools-opencode() {
             'project[Generate project-level .vscode/mcp.json]' \
             'install[Install MCPs via VSCode CLI]'
           ;;
-        omo)
-          _values 'omo subcommand' \
-            'install[Install/configure oh-my-opencode]' \
-            'restore[Re-apply saved oh-my-opencode config after stow]' \
-            'status[Show oh-my-opencode status]'
+        omos)
+          _values 'omos subcommand' \
+            'install[Install/configure oh-my-opencode-slim]' \
+            'restore[Re-apply saved oh-my-opencode-slim config after stow]' \
+            'status[Show oh-my-opencode-slim status]'
           ;;
       esac
       ;;
