@@ -6,14 +6,14 @@ Developer tooling scripts, separate from the `org.jcchikikomori.dotfiles` setup 
 
 ### `bin/devtools-opencode`
 
-Unified OpenCode setup and management. The most load-bearing script here — invoked by `stowme.sh` (omo restore) and CI (`install`, MCP binary verification).
+Unified OpenCode setup and management. The most load-bearing script here — invoked by `stowme.sh` (omos restore) and CI (`install`, MCP binary verification).
 
 ```text
 install / update     Install or update opencode and MCP dependencies
 sync                 Sync shared AI agent configs (shared/ai-agents/) to OpenCode
 mcp [install|list|status]                      Manage MCP dependencies (pipx/npx binaries)
 vscode [generate|apply|list|project|install]   VSCode MCP integration
-omo [backup|restore]                           oh-my-opencode preferences
+omos [install|restore|status]                   oh-my-opencode-slim preferences
 ```
 
 ### `bin/devtools-clean-branch`

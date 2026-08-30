@@ -314,10 +314,10 @@ fi
 # Restore symlinks that were temporarily removed for stow compatibility.
 restore_external_symlinks
 
-if [ -f "$HOME/.local/share/devtools-opencode/omo.prefs" ] && command -v devtools-opencode > /dev/null 2>&1; then
+if [ -f "$HOME/.local/share/devtools-opencode/omos.prefs" ] && command -v devtools-opencode > /dev/null 2>&1; then
   printf '\n'
-  printf 'Restoring oh-my-opencode configuration...\n'
-  devtools-opencode omo restore
+  printf 'Restoring oh-my-opencode-slim configuration...\n'
+  devtools-opencode omos restore
 fi
 
 # Remind user about EmuDeck sync setup if emudecktools package was stowed.
