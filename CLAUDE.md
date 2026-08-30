@@ -59,6 +59,37 @@ Commit messages must be conventional-commit format (commitizen enforces via `com
 - Keep `SKIP_INSTALL_PROGLANG` unattended-mode checks and the `install` argument support intact in version-manager scripts (CI depends on both).
 - Interactive prompts must have a non-interactive escape hatch for CI.
 
+## Branching & PR Workflow
+
+**Branch hierarchy (do not bypass):**
+
+- `master` — release branch, default branch (`origin/HEAD`). **No direct commits.**
+- `develop` — active integration branch. **No direct commits.** All work lands here via PR.
+- `<type>/<issue#>-<short-desc>` — feature/bugfix branches; fork from `develop`, target `develop` in the PR.
+- `release/<version>` — release prep; fork from `develop`, target `master` after stabilisation.
+
+**Branch types:**
+
+- `feature/<issue#>-<slug>` — new functionality or enhancement.
+- `bugfix/<issue#>-<slug>` — bug fix.
+- `release/<version>` — release preparation.
+- `docs/<scope>` — documentation-only changes.
+
+**Naming rules:**
+
+- Always include the GitHub issue number: `bugfix/255-powerline-git-fix`, not `bugfix/powerline-fix`.
+- Slug is short, kebab-case, no trailing punctuation.
+
+**PR rules:**
+
+- One PR per logical change. Squash-merge to `develop` cleans the history.
+- PR title is the conventional-commit subject; body follows `.github/PULL_REQUEST_TEMPLATE.md`.
+- Link the issue with `Closes #<issue-number>` in the PR body.
+- CI green before merge. Head branch deleted after squash-merge.
+- For larger work, drop a plan at `.omo/plans/<plan-name>.md` and capture evidence at `.omo/evidence/<task>-<short-desc>.diff`; reference both in the PR body's Implementation Checklist.
+
+**Why:** direct commits to `develop` or `master` skip review, bypass the CI gate on the merged commit, and leave no audit trail tying the change back to the issue that motivated it. PRs are cheap; the discipline is not.
+
 ## Directory-Specific Notes
 
 - `linux/systems/.local/bin/org.jcchikikomori.dotfiles/CLAUDE.md` — agent notes for the utility-script directory (e.g. `dotfiles-arch` command reference, AUR safety-research requirement).
