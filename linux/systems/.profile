@@ -137,7 +137,11 @@ if [ -d "$PYENV_ROOT" ]; then
     eval "$(pyenv init -)"
 fi
 
-if [ -d "$RBENV_ROOT" ]; then
+# -d covers the git-clone/pacman rbenv (RBENV_ROOT is the clone/install
+# target itself, always present); command -v covers a Homebrew-formula
+# rbenv, which only creates RBENV_ROOT lazily on first use so the dir check
+# alone never passes there.
+if [ -d "$RBENV_ROOT" ] || command -v rbenv >/dev/null 2>&1; then
     export PATH="$RBENV_ROOT/bin:$PATH"
     eval "$(rbenv init -)"
 fi
