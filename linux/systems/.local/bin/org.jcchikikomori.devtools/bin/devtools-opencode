@@ -960,6 +960,14 @@ _omo_backup_state() {
 }
 
 _omo_restore_state() {
+    # Dotfiles-managed omos config is authoritative: when oh-my-opencode-slim.json
+    # is a symlink (stowed from the dotfiles opencode submodule), skip regenerating
+    # it so 'omo restore' cannot clobber the tracked configuration.
+    if [ -L "$HOME/.config/opencode/oh-my-opencode-slim.json" ]; then
+        _log "oh-my-opencode-slim.json is dotfiles-managed (symlink); skipping omo restore."
+        return 0
+    fi
+
     if [ ! -f "$OMO_PREFS_FILE" ]; then
         _warn "No OMO preferences found. Run 'devtools-opencode omo install' first."
         return 1
