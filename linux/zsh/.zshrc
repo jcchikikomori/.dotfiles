@@ -241,11 +241,6 @@ source $HOME/.antigenrc
 # Note: must load after antigen so overrides beat oh-my-zsh plugin aliases (e.g. gc)
 source $HOME/.zalias
 
-# Specific homebrew profiles
-# Note: Ensure to execute this to the last order/sequence of the .zshrc
-#       to avoid any conflicts with other profiles.
-source $HOME/.brewphp82
-
 # Starship
 # Note: always load at the end of it.
 eval "$(starship init zsh)"

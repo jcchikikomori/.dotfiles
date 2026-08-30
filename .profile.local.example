@@ -25,6 +25,11 @@
 #   eval "$(dotfiles-ruby cc-env)"
 # fi
 
+# Specific homebrew profiles (old implementation, for PHP)
+# Note: Ensure to execute this to the last order/sequence of the .profile.local
+#       to avoid any conflicts with other profiles.
+# source $HOME/.brewphp82
+
 # =============================================================================
 # WSL2-related workarounds
 # =============================================================================
