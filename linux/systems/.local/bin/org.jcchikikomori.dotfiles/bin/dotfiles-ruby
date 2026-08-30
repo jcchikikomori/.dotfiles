@@ -33,6 +33,9 @@ script_dir() {
 
 SCRIPT_DIR=$(script_dir)
 
+# Source shared SteamOS read-only rootfs guard
+. "${SCRIPT_DIR}/dotfiles-steamos-readonly"
+
 run_sudo() {
   if command -v sudo >/dev/null 2>&1; then
     sudo "$@"
@@ -311,12 +314,14 @@ install_ruby_for() {
 }
 
 install_action() {
+  require_writeable_rootfs
   distro=$(read_distro)
   log "Detected distribution from cache: $distro"
   install_ruby_for "$distro"
 }
 
 update_action() {
+  require_writeable_rootfs
   distro=$(read_distro)
   log "Updating Ruby for distribution: $distro"
   install_ruby_for "$distro"

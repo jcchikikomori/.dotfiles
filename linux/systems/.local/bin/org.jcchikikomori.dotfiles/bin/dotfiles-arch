@@ -9,6 +9,7 @@ set -eu
 # Source shared pacman install helper
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 . "$SCRIPT_DIR/dotfiles-pacman-install"
+. "$SCRIPT_DIR/dotfiles-steamos-readonly"
 
 log_info() {
   echo "[dotfiles-arch] $1"
@@ -21,26 +22,6 @@ log_error() {
 # Check if a package is already installed
 is_installed() {
   pacman -Q "$1" >/dev/null 2>&1
-}
-
-# Check if the root filesystem is immutable (SteamOS)
-require_writeable_rootfs() {
-  if ! command -v steamos-readonly >/dev/null 2>&1; then
-    return 0
-  fi
-
-  set +e
-  readonly_status=$(steamos-readonly status 2>&1)
-  set -e
-
-  if echo "$readonly_status" | grep -q "enabled"; then
-    log_error "SteamOS rootfs is read-only."
-    log_error "Please make it writeable before running this command:"
-    log_error "  dotfiles-steamdeck writeable"
-    log_error "or:"
-    log_error "  sudo steamos-readonly disable"
-    return 1
-  fi
 }
 
 # Fix pacman keyring (generic Arch version based on steamos/setup.sh)

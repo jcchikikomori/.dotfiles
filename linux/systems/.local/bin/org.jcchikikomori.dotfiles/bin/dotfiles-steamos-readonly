@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Shared SteamOS rootfs read-only check.
+# Source this file to get require_writeable_rootfs().
+#
+# Returns 0 if the rootfs is writeable OR steamos-readonly is not present
+# (i.e. not running on SteamOS). Returns 1, after printing a stderr message
+# with remediation steps, if steamos-readonly is present and reports the
+# rootfs as read-only.
+#
+# POSIX-only; safe under `set -eu` in the caller (does not toggle set -e
+# or depend on a caller-defined log function).
+
+require_writeable_rootfs() {
+  if ! command -v steamos-readonly >/dev/null 2>&1; then
+    return 0
+  fi
+
+  readonly_status=$(steamos-readonly status 2>/dev/null || true)
+
+  if printf '%s\n' "$readonly_status" | grep -q "enabled"; then
+    printf 'ERROR: SteamOS rootfs is read-only.\n' >&2
+    printf 'Please make it writeable before running this command:\n' >&2
+    printf '  dotfiles-steamdeck writeable\n' >&2
+    printf 'or:\n' >&2
+    printf '  sudo steamos-readonly disable\n' >&2
+    return 1
+  fi
+}
