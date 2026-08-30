@@ -70,6 +70,56 @@ backup_item_excluding() {
   fi
 }
 
+# Remove a target file at $HOME/<path>, but never let the rm reach through a
+# directory symlink and delete a tracked source file inside the dotfiles
+# repo. When stow bundles a package subdirectory as a single directory
+# symlink (e.g. ~/.pyenv -> ~/.dotfiles/linux/python/.pyenv), a plain
+# `rm -f $HOME/.pyenv/version` follows through the symlink and deletes the
+# source. If $target's canonical path resolves inside $pkg_dir (the dotfiles
+# repo's package subdirectory), the target is a tracked source — never
+# `rm` it directly. Walk up the path from $target and unlink the first
+# directory symlink in the chain so `stow` can recreate the tree on
+# restow. Otherwise fall back to a normal `rm -f` to clear stale real
+# files (e.g. pyenv's own ~/.pyenv/version written before stow ran).
+#
+# GitHub: #241
+safe_rm_stow_target() {
+  local target="$1"
+  local pkg_dir="$2"
+
+  local target_dir
+  target_dir=$(dirname -- "$target")
+
+  local target_canonical pkg_canonical
+  if target_canonical=$(CDPATH= cd -P -- "$target_dir" 2>/dev/null && pwd); then
+    target_canonical="$target_canonical/$(basename -- "$target")"
+  else
+    target_canonical=
+  fi
+  pkg_canonical=$(CDPATH= cd -P -- "$pkg_dir" 2>/dev/null && pwd) || pkg_canonical=
+
+  # Only intervene if the file lives under the package source tree.
+  # Use `case` for the prefix check — `[ ... = "${dir}/"* ]` is unreliable
+  # across POSIX shells (dash glob-expands the trailing `*` and reports
+  # "too many arguments" once the package dir contains real files).
+  if [ -n "$target_canonical" ] && [ -n "$pkg_canonical" ]; then
+    case "$target_canonical" in
+    "${pkg_canonical}/"*)
+      local check_dir="$target_dir"
+      while [ -n "$check_dir" ] && [ "$check_dir" != "/" ]; do
+        if [ -L "$check_dir" ]; then
+          rm -f "$check_dir"
+          return 0
+        fi
+        check_dir=$(dirname -- "$check_dir")
+      done
+      ;;
+    esac
+  fi
+
+  rm -f "$target"
+}
+
 echo 'Backing up...'
 mkdir -p "$HOME/.backups"
 mkdir -p "$HOME/.backups/opencode"
@@ -128,11 +178,17 @@ rm -f "$HOME/.config/wireplumber/wireplumber.conf.d/51-priority-override.conf"
 rm -f "$HOME/.config/kwinrulesrc"
 rm -f "$HOME/.config/alacritty/alacritty.toml"
 rm -f "$HOME/.config/htop/htoprc"
-rm -f "$HOME/.pyenv/version"
-rm -f "$HOME/.ruby-version"
-rm -f "$HOME/.gemrc"
-rm -f "$HOME/.railsrc"
-rm -f "$HOME/.supermodel/Config/Supermodel.ini"
+
+# GitHub #241: these paths are tracked inside stow package source trees.
+# `rm -f` through a stow-created directory symlink can delete the source
+# file; safe_rm_stow_target guards against that by unlinking the symlink
+# instead (see helper definition above).
+DOTFILES_PATH=${DOTFILES_PATH:-$HOME/.dotfiles}
+safe_rm_stow_target "$HOME/.pyenv/version" "$DOTFILES_PATH/linux/python/.pyenv"
+safe_rm_stow_target "$HOME/.ruby-version" "$DOTFILES_PATH/linux/systems/.ruby-version"
+safe_rm_stow_target "$HOME/.gemrc" "$DOTFILES_PATH/linux/systems/.gemrc"
+safe_rm_stow_target "$HOME/.railsrc" "$DOTFILES_PATH/linux/systems/.railsrc"
+safe_rm_stow_target "$HOME/.supermodel/Config/Supermodel.ini" "$DOTFILES_PATH/linux/supermodel/.supermodel/Config"
 
 if [ -L "$HOME/.local/share/kwin/scripts" ]; then
   rm -f "$HOME/.local/share/kwin/scripts"

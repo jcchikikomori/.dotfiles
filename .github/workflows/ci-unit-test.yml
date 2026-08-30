@@ -86,6 +86,95 @@ jobs:
         if: always()
         run: |
           sh stowme.sh
+      - name: Post-stowing test (Regression)
+        if: always()
+        run: |
+          # dotfiles-cleanup ran `rm -f $HOME/.pyenv/version`
+          # and `rm -f $HOME/.supermodel/Config/Supermodel.ini`. When stow
+          # bundles a package subdirectory as a directory symlink (its
+          # default for conflict-free trees), `rm -f` followed the symlink
+          # and deleted the tracked source file in the repo. This step:
+          #   1) asserts the real tracked files survived `stowme.sh`
+          #   2) reproduces the bug with a fake package and asserts the
+          #      fix preserves the source.
+
+          if ! command -v stow >/dev/null 2>&1; then
+            echo "::warning::stow not found on PATH; skipping regression test"
+            exit 0
+          fi
+
+          # End-to-end: tracked files in $HOME/.dotfiles must still exist.
+          for tracked in \
+            "$HOME/.dotfiles/linux/python/.pyenv/version" \
+            "$HOME/.dotfiles/linux/supermodel/.supermodel/Config/Supermodel.ini"
+          do
+            if [ ! -f "$tracked" ]; then
+              echo "FAIL: tracked source file was deleted by stowme.sh: $tracked"
+              exit 1
+            fi
+          done
+          echo "OK: tracked source files survived stowme.sh"
+
+          # Focused unit test: rebuild the buggy condition with a fake
+          # package and drive safe_rm_stow_target against it.
+          fake_dotfiles=$(mktemp -d)
+          fake_home=$(mktemp -d)
+          trap 'rm -rf "$fake_dotfiles" "$fake_home"' EXIT
+
+          mkdir -p "$fake_dotfiles/linux/fakepkg/.subdir"
+          printf 'fake-version\n' > "$fake_dotfiles/linux/fakepkg/.subdir/file"
+
+          stow -d "$fake_dotfiles/linux" -t "$fake_home" fakepkg
+
+          # Sanity: stow must have bundled .subdir as a directory symlink
+          # (this is the exact bug condition).
+          if [ ! -L "$fake_home/.subdir" ]; then
+            echo "FAIL: expected $fake_home/.subdir to be a directory symlink after stow"
+            ls -la "$fake_home"
+            exit 1
+          fi
+
+          # Inline copy of safe_rm_stow_target from dotfiles-cleanup.
+          # Keep in sync with the helper definition.
+          safe_rm_stow_target() {
+            target="$1"
+            pkg_dir="$2"
+            target_dir=$(dirname -- "$target")
+            if target_canonical=$(CDPATH= cd -P -- "$target_dir" 2>/dev/null && pwd); then
+              target_canonical="$target_canonical/$(basename -- "$target")"
+            else
+              target_canonical=
+            fi
+            pkg_canonical=$(CDPATH= cd -P -- "$pkg_dir" 2>/dev/null && pwd) || pkg_canonical=
+            # Use `case` for the prefix check (POSIX); `[ = "${dir}/"* ]`
+            # glob-expands the trailing `*` under dash.
+            if [ -n "$target_canonical" ] && [ -n "$pkg_canonical" ]; then
+              case "$target_canonical" in
+                "${pkg_canonical}/"*)
+                  check_dir="$target_dir"
+                  while [ -n "$check_dir" ] && [ "$check_dir" != "/" ]; do
+                    if [ -L "$check_dir" ]; then
+                      rm -f "$check_dir"
+                      return 0
+                    fi
+                    check_dir=$(dirname -- "$check_dir")
+                  done
+                  ;;
+              esac
+            fi
+            rm -f "$target"
+          }
+
+          safe_rm_stow_target \
+            "$fake_home/.subdir/file" \
+            "$fake_dotfiles/linux/fakepkg/.subdir"
+
+          # Without the fix, the source file would be deleted here.
+          if [ ! -f "$fake_dotfiles/linux/fakepkg/.subdir/file" ]; then
+            echo "FAIL: safe_rm_stow_target deleted the source file (regression)"
+            exit 1
+          fi
+          echo "OK: fake-package source file preserved by safe_rm_stow_target"
       - name: Execute post-setup (devtools-opencode install)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.devtools/bin/devtools-opencode install
