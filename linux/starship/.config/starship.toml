@@ -2,7 +2,7 @@
 # bg/text-on-accent #0E1419, accent blue #00BFFF, git green #5FAF87 (xterm colour72), neutral #cccccc.
 format = """
 $directory\
-$git_branch$git_commit$git_status\
+$git_branch$git_commit$git_state$git_status\
 $all\
 $cmd_duration\
 $line_break\
@@ -32,6 +32,10 @@ format = "[ $hash ]($style)"
 commit_hash_length = 7
 only_detached = true
 tag_symbol = " tag "
+
+[git_state]
+style = "bg:#5FAF87 fg:#0E1419"
+format = '([\($state( $progress_current/$progress_total)\) ]($style))'
 
 [git_status]
 style = "bg:#5FAF87 fg:#0E1419"
