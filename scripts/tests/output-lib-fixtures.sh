@@ -298,10 +298,10 @@ case_elapsed_format() {
   assert_eq "00:00" "$d" "elapsed: empty" || status=1
 
   step_line=$(CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; df_step_end 0' sh "$LIB")
+  assert_contains "work..." "$step_line" "step-end: success line" || status=1
+  assert_contains "done" "$step_line" "step-end: done mark" || status=1
   if printf '%s\n' "$step_line" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
-    :
-  else
-    printf '[fixture] step-end: MM:SS status timer ... FAIL: [%s]\n' "$step_line" >&2
+    printf '[fixture] step-end: success has no MM:SS ... FAIL: [%s]\n' "$step_line" >&2
     status=1
   fi
 
@@ -331,44 +331,46 @@ case_color_escapes() {
   return "$status"
 }
 
-case_spinner_tty() {
+case_step_tty() {
   status=0
   if ! command -v script >/dev/null 2>&1; then
-    printf '[fixture] spinner: script(1) unavailable, skipping\n'
+    printf '[fixture] step: script(1) unavailable, skipping\n'
     return 0
   fi
 
-  # Spinner frames are transient \r-rendered writes from a background subshell
-  # and are not reliably persisted by script(1) across GNU/BSD flavors. Assert
-  # the stable observable output instead: the step completion line, the MM:SS
-  # timer, and absence of literal backslash escape artifacts. Both locale runs
-  # are kept to exercise the utf8 and C frame paths.
-  utf_file="$1/spinner-utf.out"
-  ascii_file="$1/spinner-ascii.out"
+  # No animated spinner frames: step output is static start + completion lines
+  # without a success timer. Assert the stable, persistable tty output: step
+  # name, start/completion lines, absence of frame glyphs, and no
+  # literal backslash escape artifacts. Both locale runs are kept to exercise
+  # the utf8 and C mark paths.
+  utf_file="$1/step-utf.out"
+  ascii_file="$1/step-ascii.out"
 
   tty_capture "$utf_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   utf_out=$(cat "$utf_file")
-  assert_contains "spin" "$utf_out" "spinner-utf: step name" || status=1
-  assert_contains "done" "$utf_out" "spinner-utf: completion line" || status=1
-  if printf '%s\n' "$utf_out" | LC_ALL=C grep -Eq '[0-9]+:[0-9]{2}'; then
-    :
-  else
-    printf '[fixture] spinner-utf: MM:SS timer ... FAIL\n' >&2
+  assert_contains "spin" "$utf_out" "step-utf: step name" || status=1
+  assert_contains "spin..." "$utf_out" "step-utf: start line" || status=1
+  assert_contains "✓" "$utf_out" "step-utf: utf8 done mark" || status=1
+  assert_contains "done" "$utf_out" "step-utf: completion line" || status=1
+  if printf '%s\n' "$utf_out" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] step-utf: no success MM:SS timer ... FAIL\n' >&2
     status=1
   fi
-  assert_not_contains '\033' "$utf_out" "spinner-utf: no literal backslash-033" || status=1
+  assert_not_contains "ᗧ" "$utf_out" "step-utf: no spinner frames" || status=1
+  assert_not_contains '\033' "$utf_out" "step-utf: no literal backslash-033" || status=1
 
   tty_capture "$ascii_file" "env DF_PREFIX=fixture LC_ALL=C CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   ascii_out=$(cat "$ascii_file")
-  assert_contains "spin" "$ascii_out" "spinner-ascii: step name" || status=1
-  assert_contains "done" "$ascii_out" "spinner-ascii: completion line" || status=1
-  if printf '%s\n' "$ascii_out" | LC_ALL=C grep -Eq '[0-9]+:[0-9]{2}'; then
-    :
-  else
-    printf '[fixture] spinner-ascii: MM:SS timer ... FAIL\n' >&2
+  assert_contains "spin" "$ascii_out" "step-ascii: step name" || status=1
+  assert_contains "spin..." "$ascii_out" "step-ascii: start line" || status=1
+  assert_contains "OK" "$ascii_out" "step-ascii: ascii done mark" || status=1
+  assert_contains "done" "$ascii_out" "step-ascii: completion line" || status=1
+  if printf '%s\n' "$ascii_out" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] step-ascii: no success MM:SS timer ... FAIL\n' >&2
     status=1
   fi
-  assert_not_contains '\033' "$ascii_out" "spinner-ascii: no literal backslash-033" || status=1
+  assert_not_contains ">" "$ascii_out" "step-ascii: no spinner frames" || status=1
+  assert_not_contains '\033' "$ascii_out" "step-ascii: no literal backslash-033" || status=1
 
   return "$status"
 }
@@ -423,7 +425,7 @@ main() {
   run_case "byte-clean: CI + piped" case_byte_clean_modes "$temp_dir"
   run_case "elapsed: MM:SS format" case_elapsed_format
   run_case "color: escape bytes vs literal" case_color_escapes "$temp_dir"
-  run_case "spinner: tty capture behavior" case_spinner_tty "$temp_dir"
+  run_case "step: static tty output (start + done)" case_step_tty "$temp_dir"
   run_case "df_run: exit/log/path/tty" case_df_run_contract "$temp_dir"
 
   if [ "$FIXTURE_FAILED" -eq 1 ]; then
