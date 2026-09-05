@@ -64,6 +64,28 @@ assert_bytes_clean() {
   return 0
 }
 
+assert_has_esc() {
+  file="$1"
+  label="$2"
+  esc=$(printf '\033')
+  if LC_ALL=C grep -q "$esc" "$file"; then
+    return 0
+  fi
+  printf '[fixture] %s ... FAIL: no ESC byte found\n' "$label" >&2
+  return 1
+}
+
+assert_no_esc() {
+  file="$1"
+  label="$2"
+  esc=$(printf '\033')
+  if LC_ALL=C grep -q "$esc" "$file"; then
+    printf '[fixture] %s ... FAIL: unexpected ESC byte found\n' "$label" >&2
+    return 1
+  fi
+  return 0
+}
+
 assert_success() {
   label="$1"
   shift
@@ -141,6 +163,7 @@ case_smoke() {
   assert_contains "[dotfiles:fixture]" "$captured" "smoke: prefix" || status=1
   assert_contains "smoke" "$captured" "smoke: message" || status=1
   assert_bytes_clean "$out_file" "smoke: byte-clean" || status=1
+  assert_not_contains '\033' "$captured" "smoke: no literal backslash-033" || status=1
 
   return "$status"
 }
@@ -230,6 +253,29 @@ case_byte_clean_modes() {
   return "$status"
 }
 
+case_color_escapes() {
+  status=0
+  if ! command -v script >/dev/null 2>&1; then
+    printf '[fixture] color: script(1) unavailable, skipping\n'
+    return 0
+  fi
+
+  esc_file="$1/color-esc.out"
+  script -qec "env DF_PREFIX=fixture CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_ok colored'" /dev/null > "$esc_file" 2>&1
+
+  assert_has_esc "$esc_file" "color: real ESC bytes emitted" || status=1
+  esc_out=$(cat "$esc_file")
+  assert_contains "colored" "$esc_out" "color: message present" || status=1
+  assert_not_contains '\033' "$esc_out" "color: no literal backslash-033" || status=1
+
+  plain_file="$1/color-plain.out"
+  script -qec "env DF_PREFIX=fixture CI=false DOTFILES_VERBOSE=0 DOTFILES_NO_COLOR=1 sh -c '. \"$LIB\"; df_output_init; df_ok plain'" /dev/null > "$plain_file" 2>&1
+
+  assert_no_esc "$plain_file" "color: no-color emits no ESC" || status=1
+
+  return "$status"
+}
+
 case_spinner_frames() {
   status=0
   if ! command -v script >/dev/null 2>&1; then
@@ -261,6 +307,7 @@ case_df_run_contract() {
 
   out=$(cat "$out_file")
   assert_contains "code=7" "$out" "df_run: exit code" || status=1
+  assert_not_contains "child-output" "$out" "df_run: default no stdout leak" || status=1
   log_path=$(printf '%s\n' "$out" | awk -F= '/^path=/{print $2}' | sed -n '1p')
 
   if [ -z "$log_path" ] || [ ! -f "$log_path" ]; then
@@ -274,10 +321,15 @@ case_df_run_contract() {
 
   if command -v script >/dev/null 2>&1; then
     tty_out="$1/df-run-tty.out"
-    script -qec "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture sh -c '. \"$LIB\"; df_output_init; df_run sh -c \"echo tty-auto-stream\"'" /dev/null > "$tty_out" 2>&1
+    script -qec "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture sh -c '. \"$LIB\"; df_output_init; df_run sh -c \"echo tty-suppressed\"'" /dev/null > "$tty_out" 2>&1
     tty_content=$(cat "$tty_out")
-    assert_contains "tty-auto-stream" "$tty_content" "df_run: stdin tty auto-stream" || status=1
+    assert_not_contains "tty-suppressed" "$tty_content" "df_run: tty default suppresses" || status=1
   fi
+
+  verbose_out="$1/df-run-verbose.out"
+  DOTFILES_LOG_DIR="$logs" DOTFILES_VERBOSE=1 DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_run sh -c "echo verbose-stream"' sh "$LIB" > "$verbose_out" 2>&1
+  verbose_content=$(cat "$verbose_out")
+  assert_contains "verbose-stream" "$verbose_content" "df_run: verbose streams" || status=1
 
   return "$status"
 }
@@ -291,6 +343,7 @@ main() {
   run_case "df_truncate: boundary + suffix" case_truncate_boundary
   run_case "df_is_utf8: locale + darwin" case_utf8_detection "$temp_dir"
   run_case "byte-clean: CI + piped" case_byte_clean_modes "$temp_dir"
+  run_case "color: escape bytes vs literal" case_color_escapes "$temp_dir"
   run_case "spinner: frame assertions" case_spinner_frames "$temp_dir"
   run_case "df_run: exit/log/path/tty" case_df_run_contract "$temp_dir"
 
