@@ -259,10 +259,15 @@ main() {
     # https://github.com/alacritty/alacritty-theme
     run_step "Setting up Alacritty themes" df_run sh -c 'mkdir -p "$HOME/.config/alacritty/themes" && git clone https://github.com/alacritty/alacritty-theme "$HOME/.config/alacritty/themes"'
 
-    run_step "Setting up Nerd Fonts" df_run sh -c "sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode && sh $WORKDIR/dotfiles-nerf --smoke-test"
+    # Fonts are cosmetic, and dotfiles-nerf resolves assets through the
+    # unauthenticated GitHub releases API, which rate-limits on shared CI
+    # runners. A font download must not be able to abort the whole setup.
+    run_step "Setting up Nerd Fonts" df_run_soft sh -c "sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode && sh $WORKDIR/dotfiles-nerf --smoke-test" || df_warn "Nerd Fonts install failed/skipped"
 
     # Check if running on Termux
-    if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+    # PREFIX is only set under Termux, and set -u makes a bare $PREFIX abort
+    # everywhere else.
+    if [ -n "${PREFIX:-}" ] && echo "${PREFIX:-}" | grep -q "com.termux"; then
         echo ""
         df_info "=== Termux Environment Detected ==="
         df_info "Only Python (pyenv) is officially supported on Linux distributions."
@@ -288,7 +293,7 @@ main() {
         prompt_installation "Vim with plugins" "dotfiles-vim"
     fi
 
-    if [ -z "$PREFIX" ] || ! echo "$PREFIX" | grep -q "com.termux"; then
+    if [ -z "${PREFIX:-}" ] || ! echo "${PREFIX:-}" | grep -q "com.termux"; then
         DOTFILES_DIR="${DOTFILES_PATH:-$HOME/.dotfiles}"
         if command -v devtools-opencode > /dev/null 2>&1; then
             prompt_installation "opencode AI coding agent" "devtools-opencode install"

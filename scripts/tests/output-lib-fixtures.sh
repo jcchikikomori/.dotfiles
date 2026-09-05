@@ -390,9 +390,11 @@ case_step_tty() {
   # ticker will animate, otherwise the timer counts on the line BELOW a frozen
   # "(00:00)" line. Assert the start frame and the done line land on the same
   # physical line (i.e. no LF between them).
-  first_physical=$(sed -n '1p' "$utf_file")
-  assert_contains "(00:00)" "$first_physical" "step-utf: start frame on line 1" || status=1
-  assert_contains "done" "$first_physical" "step-utf: done shares line 1 (no LF after start)" || status=1
+  # Locate the physical line holding the step rather than assuming it is line 1:
+  # some `script` implementations (arch's util-linux) emit a preamble line first.
+  first_physical=$(LC_ALL=C grep -F -m1 'spin...' "$utf_file")
+  assert_contains "(00:00)" "$first_physical" "step-utf: start frame on step line" || status=1
+  assert_contains "done" "$first_physical" "step-utf: done shares step line (no LF after start)" || status=1
 
   return "$status"
 }
