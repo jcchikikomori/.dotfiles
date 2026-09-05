@@ -2,6 +2,18 @@
 
 # Issues occurring with the script: vim, zsh & systems (.profile file)
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ ! -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
+  echo "[dotfiles:cleanup] Error: dotfiles-lib-output not found" >&2
+  exit 1
+fi
+
+# shellcheck source=/dev/null
+. "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+
+DF_PREFIX="cleanup"
+df_output_init
+
 DOTSTOW_BIN=$(command -v dotstow 2>/dev/null)
 if [ -z "$DOTSTOW_BIN" ] && [ -x "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotstow" ]; then
   DOTSTOW_BIN="$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotstow"
@@ -15,11 +27,11 @@ fi
 
 # Check if dotstow is available and executable
 if [ -z "$DOTSTOW_BIN" ]; then
-  echo "Error: dotstow command not found in PATH or known install locations. Aborting." >&2
+  df_error "dotstow command not found in PATH or known install locations. Aborting."
   exit 1
 fi
 
-echo 'Unstowing...'
+df_info 'Unstowing...'
 if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
   "$DOTSTOW_BIN" unstow git antigen tmux tmuxp vscode systems opencode claude
 else
@@ -34,7 +46,7 @@ backup_item() {
   if [ -e "$src" ] && [ ! -L "$src" ]; then
     mkdir -p "$HOME/.backups"
     cp -a "$src" "$HOME/.backups/"
-    echo "  backed up $label"
+    df_info "  backed up $label"
   fi
 }
 
@@ -66,7 +78,7 @@ backup_item_excluding() {
     else
       cp -a "$src" "$HOME/.backups/"
     fi
-    echo "  backed up $label"
+    df_info "  backed up $label"
   fi
 }
 
@@ -120,7 +132,7 @@ safe_rm_stow_target() {
   rm -f "$target"
 }
 
-echo 'Backing up...'
+df_info 'Backing up...'
 mkdir -p "$HOME/.backups"
 mkdir -p "$HOME/.backups/opencode"
 mkdir -p "$HOME/.binbackups"
@@ -137,11 +149,11 @@ backup_item_excluding "$HOME/.opencode" ".opencode" ".git" "*/.git"
 backup_item_excluding "$HOME/.claude" ".claude" ".git" "*/.git"
 backup_item_excluding "$HOME/.agents" ".agents" ".git" "*/.git"
 
-echo 'Cleaning up tmux...'
+df_info 'Cleaning up tmux...'
 rm -f "$HOME/.tmux.conf.local"
 rm -rf "$HOME/.config/tmux-powerline"
 
-echo 'Cleaning up VSCode...'
+df_info 'Cleaning up VSCode...'
 backup_item "$HOME/.vscode-server/extensions/extensions.json"
 rm -rf "$HOME/.vscode"
 rm -rf "$HOME/.vscode-server"
@@ -150,10 +162,10 @@ rm -rf "$HOME/.config/Code/User/prompts"
 if [ -f "$HOME/.backups/extensions.json" ]; then
   mkdir -p "$HOME/.vscode-server/extensions"
   cp -f "$HOME/.backups/extensions.json" "$HOME/.vscode-server/extensions/extensions.json"
-  echo "  restored extensions.json as real file"
+  df_info "  restored extensions.json as real file"
 fi
 
-echo 'Cleaning up other files...'
+df_info 'Cleaning up other files...'
 rm -f "$HOME/.gitconfig"
 rm -f "$HOME/.alacritty.yml"
 rm -f "$HOME/.antigenrc"
@@ -200,7 +212,7 @@ fi
 
 # Clean up old opencode directory structure (moved to linux/opencode)
 if [ -d "$HOME/.dotfiles/opencode" ] && [ ! -f "$HOME/.dotfiles/opencode/.config/opencode/opencode.jsonc" ]; then
-  echo 'Cleaning up old opencode directory...'
+  df_info 'Cleaning up old opencode directory...'
   rm -rf "$HOME/.dotfiles/opencode"
 fi
 

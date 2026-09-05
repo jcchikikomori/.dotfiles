@@ -37,6 +37,26 @@ else
   exit 1
 fi
 
+# Verify migrated output contract under CI mode:
+# - prefixed output format [dotfiles:<script>]
+# - no carriage return bytes
+# - no ANSI escape bytes
+PY_STATUS_OUT="${HOME_DIR}/python-status-output.txt"
+CI=true DOTFILES_VERBOSE=1 sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python status >"$PY_STATUS_OUT" 2>&1
+grep -q "\[dotfiles:python\]" "$PY_STATUS_OUT"
+
+if LC_ALL=C grep -q "$(printf '\r')" "$PY_STATUS_OUT"; then
+  echo "ERROR: found carriage return bytes in CI output" >&2
+  exit 1
+fi
+
+if LC_ALL=C grep -q "$(printf '\033')" "$PY_STATUS_OUT"; then
+  echo "ERROR: found ANSI escape bytes in CI output" >&2
+  exit 1
+fi
+
+echo "CI output contract check passed (prefix + no CR/ANSI)."
+
 # Copyparty non-systemd fallback lifecycle (issue #212 regression).
 # This container has no systemd user bus, so dotfiles-copyparty must fall back
 # to background-process mode. A stub binary stands in for a pipx-installed
