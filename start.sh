@@ -34,12 +34,14 @@ run_step() {
   shift
   df_step "$label"
   if "$@"; then
-    df_step_end 0
-    return 0
+    code=0
+  else
+    code=$?
   fi
-  code=$?
+  # df_step_end returns the effective status: non-zero when $code is non-zero
+  # OR when a df_run inside the step failed but the command swallowed it.
   df_step_end "$code"
-  return "$code"
+  return "$?"
 }
 
 prelim() {

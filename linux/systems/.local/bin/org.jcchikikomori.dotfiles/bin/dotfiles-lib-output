@@ -25,6 +25,9 @@ DF_OUTPUT_WIDTH=80
 DF_OUTPUT_TIMER_START=0
 DF_OUTPUT_STEP_NAME=""
 DF_OUTPUT_LOG_FILE=""
+DF_OUTPUT_TICKER_PID=""
+DF_OUTPUT_STEP_FAILED=0
+DF_OUTPUT_STEP_FAIL_CODE=0
 
 df__bool_true() {
   case "$1" in
@@ -245,11 +248,28 @@ df__fmt_prefix() {
   printf '[dotfiles:%s]' "$DF_OUTPUT_PREFIX"
 }
 
+df__redraw_enabled() {
+  [ "$DF_OUTPUT_TTY" -eq 1 ] || return 1
+  [ "$DF_OUTPUT_CI" -eq 0 ] || return 1
+  [ "$DF_OUTPUT_VERBOSE" -eq 0 ] || return 1
+  return 0
+}
+
+# Wipe the in-place redraw line so a permanent log line never appends to, or
+# leaves residue from, the ticker's carriage-return output.
+df__clear_redraw_line() {
+  [ -n "$DF_OUTPUT_TICKER_PID" ] || return 0
+  printf '\r%b' '\033[K'
+  return 0
+}
+
 df__stderr() {
+  df__clear_redraw_line
   printf '%s\n' "$1" >&2
 }
 
 df__stdout() {
+  df__clear_redraw_line
   printf '%s\n' "$1"
 }
 
@@ -383,15 +403,66 @@ df__fmt_duration() {
   fi
 }
 
-df_step() {
-  DF_OUTPUT_STEP_NAME="$*"
-  df_timer_start
-  df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+df__step_progress_line() {
+  prefix=$(df__fmt_prefix)
+  line="${prefix} ${DF_OUTPUT_STEP_NAME}... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  df__log_line "$line"
+}
+
+df__ticker_start() {
+  DF_OUTPUT_TICKER_PID=""
+  df__redraw_enabled || return 0
+
+  (
+    while :; do
+      sleep 1
+      printf '\r%s%b' "$(df__step_progress_line)" '\033[K'
+    done
+  ) 2>/dev/null &
+  DF_OUTPUT_TICKER_PID=$!
   return 0
 }
 
+# Safe to call at any time, including from an exit trap mid-step.
+df__ticker_stop() {
+  [ -n "$DF_OUTPUT_TICKER_PID" ] || return 0
+  kill "$DF_OUTPUT_TICKER_PID" 2>/dev/null || true
+  wait "$DF_OUTPUT_TICKER_PID" 2>/dev/null || true
+  DF_OUTPUT_TICKER_PID=""
+  printf '\r%b' '\033[K'
+  return 0
+}
+
+df_step() {
+  DF_OUTPUT_STEP_NAME="$*"
+  DF_OUTPUT_STEP_FAILED=0
+  DF_OUTPUT_STEP_FAIL_CODE=0
+  df_timer_start
+  df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  df__ticker_start
+  return 0
+}
+
+df__step_fail_latch() {
+  DF_OUTPUT_STEP_FAILED=1
+  DF_OUTPUT_STEP_FAIL_CODE="${1:-1}"
+  return 0
+}
+
+# Propagation contract: df_step_end returns the EFFECTIVE status, which is
+# non-zero when the caller passed a non-zero status OR when any df_run /
+# df_run_interactive inside the step failed (the latch). Callers that wrap
+# steps must propagate this return value; passing a hard-coded 0 is no longer
+# enough to force a success mark.
 df_step_end() {
   status="${1:-0}"
+
+  df__ticker_stop
+
+  if [ "$status" -eq 0 ] 2>/dev/null && [ "$DF_OUTPUT_STEP_FAILED" -eq 1 ]; then
+    status="$DF_OUTPUT_STEP_FAIL_CODE"
+    [ "$status" -ne 0 ] 2>/dev/null || status=1
+  fi
 
   if [ "$status" -eq 0 ] 2>/dev/null; then
     if df_is_utf8; then
@@ -411,7 +482,10 @@ df_step_end() {
     df_error "$DF_OUTPUT_STEP_NAME... $mark ($timer)"
   fi
 
-  return 0
+  DF_OUTPUT_STEP_FAILED=0
+  DF_OUTPUT_STEP_FAIL_CODE=0
+
+  return "$status"
 }
 
 df_log_path() {
@@ -444,7 +518,9 @@ df_run() {
     if "$@"; then
       return 0
     fi
-    return $?
+    status=$?
+    df__step_fail_latch "$status"
+    return "$status"
   fi
 
   log_file=$(df_log_path)
@@ -459,6 +535,7 @@ df_run() {
   fi
 
   if [ "$status" -ne 0 ] 2>/dev/null; then
+    df__step_fail_latch "$status"
     df_error "command failed (exit $status)"
     df_info "details: $log_file"
   fi
@@ -470,7 +547,27 @@ df_run_interactive() {
   if [ "$#" -eq 0 ]; then
     return 0
   fi
-  "$@"
+  if "$@"; then
+    return 0
+  fi
+  status=$?
+  df__step_fail_latch "$status"
+  return "$status"
+}
+
+# Same as df_run, but a failure never marks the surrounding step as failed.
+# Use only for genuinely optional/diagnostic commands.
+df_run_soft() {
+  prev_failed="$DF_OUTPUT_STEP_FAILED"
+  prev_code="$DF_OUTPUT_STEP_FAIL_CODE"
+  if df_run "$@"; then
+    status=0
+  else
+    status=$?
+  fi
+  DF_OUTPUT_STEP_FAILED="$prev_failed"
+  DF_OUTPUT_STEP_FAIL_CODE="$prev_code"
+  return "$status"
 }
 
 df_fail() {

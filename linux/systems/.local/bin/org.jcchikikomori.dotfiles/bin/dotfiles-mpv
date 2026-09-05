@@ -273,20 +273,20 @@ install_action() {
   if install_appimage_tier; then
     df_info "mpv ready via AppImage."
     df_step_end 0
-    return 0
+    return "$?"
   fi
   df_info "AppImage tier unavailable/failed; trying native package manager..."
   if install_native_tier; then
     df_info "mpv ready via native package manager."
     df_step_end 0
-    return 0
+    return "$?"
   fi
   df_info "Native package manager tier unavailable/failed; trying Flatpak..."
   if install_flatpak_tier; then
     df_step_end 0
-    return 0
+    return "$?"
   fi
-  df_step_end 1
+  df_step_end 1 || true
   df_fail "All installation methods failed (AppImage, native package manager, Flatpak)."
 }
 
