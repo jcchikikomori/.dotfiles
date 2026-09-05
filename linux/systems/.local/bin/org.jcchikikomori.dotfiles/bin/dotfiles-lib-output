@@ -388,7 +388,7 @@ df__spinner_render() {
   frame="$1"
   prefix=$(df__fmt_prefix)
   timer=$(df__fmt_duration "$(df_timer_elapsed)")
-  text="${prefix} ${DF_OUTPUT_STEP_NAME}... ${frame} (${timer})"
+  text="${prefix} ${DF_OUTPUT_STEP_NAME}... (${timer}) ${frame}"
   text=$(df__log_line "$text")
   printf '\r%s' "$text"
 }
