@@ -386,7 +386,7 @@ df__fmt_duration() {
 df_step() {
   DF_OUTPUT_STEP_NAME="$*"
   df_timer_start
-  df_info "$DF_OUTPUT_STEP_NAME..."
+  df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
   return 0
 }
 
