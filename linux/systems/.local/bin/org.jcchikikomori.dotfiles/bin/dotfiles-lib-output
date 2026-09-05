@@ -439,13 +439,28 @@ df__step_begin() {
   DF_OUTPUT_STEP_FAIL_CODE=0
   DF_OUTPUT_TICKER_PID=""
   df_timer_start
-  df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  return 0
+}
+
+df__step_frame() {
+  printf '\r%s%b' "$(df__step_progress_line)" '\033[K'
   return 0
 }
 
 df_step() {
   df__step_begin "$@"
-  df__ticker_start
+
+  if df__redraw_enabled; then
+    # The first frame must be written IN PLACE, with no trailing newline, so
+    # the ticker keeps updating this same line. Emitting a normal df_info line
+    # here would terminate it with \n and push the cursor down, leaving a
+    # permanent "(00:00)" line above a counter animating on the line below it.
+    df__step_frame
+    df__ticker_start
+  else
+    df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  fi
+
   return 0
 }
 
@@ -457,6 +472,7 @@ df_step() {
 # child's own ticker is the only one that may own the line.
 df_step_quiet() {
   df__step_begin "$@"
+  df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
   return 0
 }
 
