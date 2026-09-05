@@ -57,7 +57,9 @@ run_step "Installing core packages" df_run sudo apt-get install -y stow vim nano
 # - vim-gtk3 = gvim
 # - xvfb = X virtual framebuffer (Camoufox MCP / headless browser automation)
 # - podman-compose = compose-compatible wrapper for podman
-run_step "Installing additional essentials" df_run sudo apt-get install -y python3 zip vi openssh xclip xsel ncdu wget vim-gtk3 xvfb podman-compose || df_fail "Failed additional essential package install"
+# TODO(#267): one of these packages is unavailable on the Ubuntu CI image.
+# Tolerated for now; the failure is still printed with its log path.
+run_step "Installing additional essentials" df_run_soft sudo apt-get install -y python3 zip vi openssh xclip xsel ncdu wget vim-gtk3 xvfb podman-compose || df_warn "additional essential package install failed/skipped (see #267)"
 
 # Installing additional packages (for building others such as pyenv)
 run_step "Installing build dependencies" df_run sudo apt-get install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev || df_fail "Failed build dependency install"

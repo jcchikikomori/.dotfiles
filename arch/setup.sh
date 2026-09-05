@@ -46,7 +46,10 @@ run_step() {
 }
 
 # Setting default locale
-run_step "Setting keyboard + locale" df_run sudo sh -c "loadkeys us && sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen && locale-gen en_US.UTF-8 && localectl set-locale LANG=en_US.UTF-8" || df_fail "Failed locale setup"
+# TODO(#267): loadkeys/localectl need a console and systemd, neither of which
+# exists in the Arch CI container. Tolerated for now; the WSL path already skips
+# loadkeys and this should gain the same guard.
+run_step "Setting keyboard + locale" df_run_soft sudo sh -c "loadkeys us && sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen && locale-gen en_US.UTF-8 && localectl set-locale LANG=en_US.UTF-8" || df_warn "locale setup failed/skipped (see #267)"
 
 # Install essentials
 pacman_install "-Syyu --noconfirm --noprogressbar" nano htop iftop mtr dkms lz4 bash-completion base-devel pacman-contrib git zsh unzip

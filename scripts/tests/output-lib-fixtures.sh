@@ -352,7 +352,7 @@ case_step_tty() {
   utf_file="$1/step-utf.out"
   ascii_file="$1/step-ascii.out"
 
-  tty_capture "$utf_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
+  tty_capture "$utf_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   # On a tty the start frame and its redraws share ONE physical line, separated
   # by CR, so split on CR as well as LF to inspect individual frames.
   utf_out=$(tr '\r' '\n' < "$utf_file")
@@ -370,7 +370,7 @@ case_step_tty() {
   assert_not_contains "ᗧ" "$utf_out" "step-utf: no spinner frames" || status=1
   assert_not_contains '\033' "$utf_out" "step-utf: no literal backslash-033" || status=1
 
-  tty_capture "$ascii_file" "env DF_PREFIX=fixture LC_ALL=C CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
+  tty_capture "$ascii_file" "env DF_PREFIX=fixture LC_ALL=C CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   ascii_out=$(tr '\r' '\n' < "$ascii_file")
   ascii_start=$(printf '%s\n' "$ascii_out" | LC_ALL=C grep -F 'spin...' | sed -n '1p')
   ascii_done=$(printf '%s\n' "$ascii_out" | LC_ALL=C grep -F 'spin...' | sed -n '$p')
@@ -499,7 +499,7 @@ case_redraw_gating() {
   # ticker output leaks after the step ends. Exact intermediate frames are not
   # asserted because they were flaky in CI.
   tty_file="$1/redraw-tty.out"
-  tty_capture "$tty_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step tick; sleep 3; df_step_end 0; sleep 2; printf \"SENTINEL\\n\"'"
+  tty_capture "$tty_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step tick; sleep 3; df_step_end 0; sleep 2; printf \"SENTINEL\\n\"'"
   tty_out=$(cat "$tty_file")
 
   assert_contains "tick..." "$tty_out" "redraw: step name present" || status=1
@@ -538,7 +538,7 @@ case_nested_step_tty() {
   # an over-width line that wraps into permanent garbage and shows a frozen
   # (00:00). Assert no rendered line carries two prefixes.
   out_file="$1/nested.out"
-  tty_capture "$out_file" "env HARNESS_SLEEP=3 DOTFILES_BIN='$BIN' sh '$harness' outer"
+  tty_capture "$out_file" "env GITHUB_ACTIONS= CI=false HARNESS_SLEEP=3 DOTFILES_BIN='$BIN' sh '$harness' outer"
 
   nested_out=$(cat "$out_file" | tr '\r' '\n')
 
