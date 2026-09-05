@@ -154,8 +154,27 @@ setup_profile_local() {
     esac
 }
 
+# Copy only when src and dest are not already the same file. Stow symlinks the
+# repo copy into $HOME, so a plain `cp -f` errors with "are the same file".
+copy_if_different() {
+    src="$1"
+    dest="$2"
+
+    [ -e "$src" ] || return 0
+
+    src_real=$(readlink -f "$src" 2>/dev/null || printf '%s' "$src")
+    dest_real=$(readlink -f "$dest" 2>/dev/null || printf '%s' "$dest")
+
+    if [ "$src_real" = "$dest_real" ]; then
+        df_debug "skip copy: $dest already points at $src"
+        return 0
+    fi
+
+    cp -f "$src" "$dest"
+}
+
 main() {
-    df_run ls -lah "$WORKDIR" || true
+    df_run_soft ls -lah "$WORKDIR" || true
 
     df_info 'Setting up git flow...'
     df_run sh $WORKDIR/dotfiles-git || df_fail "dotfiles-git setup failed"
@@ -165,8 +184,8 @@ main() {
     ln -snf "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
 
     df_info 'Symlinking vim rc files...'
-    cp -f $HOME/.dotfiles/linux/vim/.vimrc ~/.vimrc
-    cp -f $HOME/.dotfiles/linux/vim/.virc ~/.virc
+    copy_if_different "$HOME/.dotfiles/linux/vim/.vimrc" "$HOME/.vimrc"
+    copy_if_different "$HOME/.dotfiles/linux/vim/.virc" "$HOME/.virc"
 
     df_info 'Installing dotstow...'
     df_run ./dotfiles-dotstow || df_fail "dotfiles-dotstow install failed"

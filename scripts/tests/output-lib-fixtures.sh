@@ -424,6 +424,90 @@ case_df_run_contract() {
   return "$status"
 }
 
+case_step_fail_latch() {
+  status=0
+
+  # A df_run failure inside a step must force a failure mark even when the
+  # caller swallows the status and passes a hard-coded 0 to df_step_end.
+  out_file="$1/latch.out"
+  DOTFILES_LOG_DIR="$1/logs" CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; df_run sh -c "exit 100" || true; if df_step_end 0; then printf "rc=0\n"; else printf "rc=%s\n" "$?"; fi' sh "$LIB" > "$out_file" 2>&1
+
+  out=$(cat "$out_file")
+  assert_contains "failed" "$out" "latch: failure mark on swallowed df_run" || status=1
+  assert_not_contains "done" "$out" "latch: no success mark" || status=1
+  assert_contains "rc=100" "$out" "latch: df_step_end returns latched code" || status=1
+
+  # Explicit caller status still wins when nothing latched.
+  clean_file="$1/latch-clean.out"
+  CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; if df_step_end 0; then printf "rc=0\n"; else printf "rc=%s\n" "$?"; fi' sh "$LIB" > "$clean_file" 2>&1
+  clean_out=$(cat "$clean_file")
+  assert_contains "done" "$clean_out" "latch: clean step still succeeds" || status=1
+  assert_contains "rc=0" "$clean_out" "latch: clean step returns 0" || status=1
+
+  # The latch must not leak into the next step.
+  reset_file="$1/latch-reset.out"
+  DOTFILES_LOG_DIR="$1/logs" CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "one"; df_run sh -c "exit 3" || true; df_step_end 0 || true; df_step "two"; if df_step_end 0; then printf "rc=0\n"; else printf "rc=%s\n" "$?"; fi' sh "$LIB" > "$reset_file" 2>&1
+  reset_out=$(cat "$reset_file")
+  assert_contains "rc=0" "$reset_out" "latch: reset by next df_step" || status=1
+
+  # df_run_soft failures are deliberately non-fatal to the step.
+  soft_file="$1/latch-soft.out"
+  DOTFILES_LOG_DIR="$1/logs" CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; df_run_soft sh -c "exit 4" || true; if df_step_end 0; then printf "rc=0\n"; else printf "rc=%s\n" "$?"; fi' sh "$LIB" > "$soft_file" 2>&1
+  soft_out=$(cat "$soft_file")
+  assert_contains "rc=0" "$soft_out" "latch: df_run_soft does not latch" || status=1
+
+  return "$status"
+}
+
+case_redraw_gating() {
+  status=0
+
+  # CI, non-TTY and verbose modes must emit a single static line with no
+  # carriage-return redraw bytes.
+  ci_file="$1/redraw-ci.out"
+  CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; sleep 2; df_step_end 0' sh "$LIB" > "$ci_file" 2>&1
+  assert_bytes_clean "$ci_file" "redraw: no CR/ESC in CI" || status=1
+
+  piped_file="$1/redraw-piped.out"
+  CI=false DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; sleep 2; df_step_end 0' sh "$LIB" > "$piped_file" 2>&1
+  assert_bytes_clean "$piped_file" "redraw: no CR/ESC when piped" || status=1
+
+  verbose_file="$1/redraw-verbose.out"
+  CI=false DOTFILES_VERBOSE=1 DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; sleep 2; df_step_end 0' sh "$LIB" > "$verbose_file" 2>&1
+  assert_bytes_clean "$verbose_file" "redraw: no CR/ESC in verbose" || status=1
+
+  ci_out=$(cat "$ci_file")
+  assert_eq "2" "$(printf '%s\n' "$ci_out" | grep -c 'work\.\.\.')" "redraw: exactly start + end lines in CI" || status=1
+
+  if ! command -v script >/dev/null 2>&1; then
+    printf '[fixture] redraw: script(1) unavailable, skipping tty ticker\n'
+    return "$status"
+  fi
+
+  # On a tty the ticker redraws in place. Assert stable observable output only:
+  # the timer advances past 00:00, the final line is correct and last, and no
+  # ticker output leaks after the step ends. Exact intermediate frames are not
+  # asserted because they were flaky in CI.
+  tty_file="$1/redraw-tty.out"
+  tty_capture "$tty_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step tick; sleep 3; df_step_end 0; sleep 2; printf \"SENTINEL\\n\"'"
+  tty_out=$(cat "$tty_file")
+
+  assert_contains "tick..." "$tty_out" "redraw: step name present" || status=1
+  assert_contains "done" "$tty_out" "redraw: completion line present" || status=1
+  if ! printf '%s\n' "$tty_out" | LC_ALL=C grep -Eq '\(00:0[1-9]\)'; then
+    printf '[fixture] redraw: timer advances past 00:00 ... FAIL\n' >&2
+    status=1
+  fi
+
+  # Nothing but the sentinel may appear after the completion line: a leaked
+  # ticker would inject another "tick... (MM:SS)" there.
+  tail_out=$(printf '%s\n' "$tty_out" | sed -n '/done/,$p' | sed -n '2,$p')
+  assert_not_contains "tick..." "$tail_out" "redraw: no ticker output after step end" || status=1
+  assert_contains "SENTINEL" "$tty_out" "redraw: sentinel reached" || status=1
+
+  return "$status"
+}
+
 main() {
   temp_dir=$(mktemp -d)
   trap 'rm -rf "$temp_dir"' EXIT
@@ -439,6 +523,8 @@ main() {
   run_case "color: escape bytes vs literal" case_color_escapes "$temp_dir"
   run_case "step: static tty output (start + done)" case_step_tty "$temp_dir"
   run_case "df_run: exit/log/path/tty" case_df_run_contract "$temp_dir"
+  run_case "step: failure latch propagation" case_step_fail_latch "$temp_dir"
+  run_case "step: redraw gating + live timer" case_redraw_gating "$temp_dir"
 
   if [ "$FIXTURE_FAILED" -eq 1 ]; then
     printf '[fixture] RESULT: FAIL\n' >&2
