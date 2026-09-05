@@ -70,7 +70,7 @@ fi
 # Python
 # TODO(#267): the dnf transaction fails to resolve on Fedora CI; tc-devel looks
 # like a typo for tk-devel. Tolerated for now; the failure is still printed.
-run_step "Installing Python runtime/deps" df_run_soft sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel tk-devel tc-devel || df_warn "Python runtime/deps install failed/skipped (see #267)"
+run_step "Installing Python runtime/deps" df_run_soft sudo dnf install -y python2 python3 libssh-devel libgcrypt libgcrypt-devel tk-devel tc-devel || df_warn "Python runtime/deps install failed/skipped"
 run_step "Installing Python build deps" df_run sudo dnf install -y bzip2-devel ncurses-devel libffi-devel readline-devel openssl-devel xz-devel libuuid-devel gdbm-libs libnsl2 || df_fail "Failed to install Python build deps"
 run_step "Installing Python tooling" df_run sudo dnf install -y python3-tmuxp python3-packaging python3-pip python3-virtualenv || df_fail "Failed to install Python tooling"
 

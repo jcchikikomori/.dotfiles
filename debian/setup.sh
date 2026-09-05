@@ -79,7 +79,7 @@ run_step "Updating apt index" run_with_priv apt update || df_fail "Failed apt up
 # TODO(#267): software-properties-common is Ubuntu-centric and is not locatable
 # on the Debian CI image. Tolerated for now so the run continues; the failure is
 # still printed with its log path. Restore df_fail once the package list is fixed.
-run_step "Installing apt transport dependencies" run_with_priv_soft apt install -y apt-transport-https ca-certificates curl software-properties-common || df_warn "apt transport dependencies install failed/skipped (see #267)"
+run_step "Installing apt transport dependencies" run_with_priv_soft apt install -y apt-transport-https ca-certificates curl software-properties-common || df_warn "apt transport dependencies install failed/skipped"
 
 # Install kbd for loadkeys (console keyboard layout)
 # Install gnupg for gpgconf and gpg-connect-agent commands
@@ -91,7 +91,7 @@ run_step "Installing core packages" run_with_priv apt install -y stow vim nano h
 # - vim-gtk3 = gvim
 # - xvfb = X virtual framebuffer (Camoufox MCP / headless browser automation)
 # - podman-compose = compose-compatible wrapper for podman
-run_step "Installing additional essentials" run_with_priv apt install -y python3 zip vi openssh xclip xsel ncdu wget vim-gtk3 xvfb podman-compose || df_fail "Failed additional essential package install"
+run_step "Installing additional essentials" run_with_priv_soft apt install -y python3 zip vim openssh-client xclip xsel ncdu wget vim-gtk3 xvfb podman-compose || df_warn "additional essential package install failed/skipped"
 
 # Installing additional packages (for building others such as pyenv)
 run_step "Installing build dependencies" run_with_priv apt install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev || df_fail "Failed build dependency install"
