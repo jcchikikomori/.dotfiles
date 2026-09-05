@@ -110,6 +110,7 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v4
@@ -330,6 +331,7 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
@@ -444,6 +446,7 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
@@ -552,6 +555,7 @@ jobs:
       SKIP_INSTALL_PROGLANG: false
       DEBIAN_FRONTEND: noninteractive
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout

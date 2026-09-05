@@ -1,5 +1,54 @@
 #!/bin/sh
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DOTFILES_PATH="$SCRIPT_DIR"
+DOTFILES_BIN_DEFAULT="$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
+DOTFILES_BIN_RESOLVED="${DOTFILES_BIN:-$DOTFILES_BIN_DEFAULT}"
+
+if [ ! -r "$DOTFILES_BIN_RESOLVED/dotfiles-lib-output" ]; then
+  echo "[dotfiles:stowme] Error: dotfiles-lib-output not found"
+  exit 1
+fi
+
+# shellcheck source=/dev/null
+. "$DOTFILES_BIN_RESOLVED/dotfiles-lib-output"
+
+STOWME_VERBOSE=0
+DISTRO_ARG=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --verbose|-v)
+      STOWME_VERBOSE=1
+      ;;
+    *)
+      if [ -z "$DISTRO_ARG" ]; then
+        DISTRO_ARG="$1"
+      fi
+      ;;
+  esac
+  shift
+done
+
+DF_PREFIX="stowme"
+if [ "$STOWME_VERBOSE" -eq 1 ]; then
+  df_output_init --verbose
+else
+  df_output_init
+fi
+
+run_step() {
+  label="$1"
+  shift
+  df_step "$label"
+  if "$@"; then
+    df_step_end 0
+    return 0
+  fi
+  code=$?
+  df_step_end "$code"
+  return "$code"
+}
+
 detect_distro() {
   if [ -n "$1" ]; then
     printf '%s\n' "$1"
@@ -63,27 +112,7 @@ detect_distro() {
   fi
 }
 
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-DOTFILES_PATH="$SCRIPT_DIR"
-DETECTED_DISTRO=$(detect_distro "$1")
-
-if [ -t 1 ]; then
-  COLOR_POSITIVE=$(printf '\033[0;32m')
-  COLOR_NEGATIVE=$(printf '\033[0;31m')
-  COLOR_RESET=$(printf '\033[0m')
-else
-  COLOR_POSITIVE=''
-  COLOR_NEGATIVE=''
-  COLOR_RESET=''
-fi
-
-log_positive() {
-  printf '%s%s%s\n' "$COLOR_POSITIVE" "$1" "$COLOR_RESET"
-}
-
-log_error() {
-  printf '%s%s%s\n' "$COLOR_NEGATIVE" "$1" "$COLOR_RESET" >&2
-}
+DETECTED_DISTRO=$(detect_distro "$DISTRO_ARG")
 
 check_submodules() {
   if [ ! -f "$DOTFILES_PATH/.gitmodules" ]; then
@@ -98,13 +127,13 @@ check_submodules() {
     if [ -f "$submodule_path/.git" ]; then
       gitdir_ref=$(cat "$submodule_path/.git" 2>/dev/null)
       if ! echo "$gitdir_ref" | grep -q "^gitdir:"; then
-        log_error "Error: submodule '$submodule_path' is not properly initialized."
-        log_error "Run: git submodule update --init --recursive"
+        df_error "submodule '$submodule_path' is not properly initialized"
+        df_error "Run: git submodule update --init --recursive"
         return 1
       fi
     else
-      log_error "Error: submodule '$submodule_path' is empty or not initialized."
-      log_error "Run: git submodule update --init --recursive"
+      df_error "submodule '$submodule_path' is empty or not initialized"
+      df_error "Run: git submodule update --init --recursive"
       return 1
     fi
   done
@@ -134,7 +163,7 @@ cleanup_stray_vscode_extensions() {
   timestamp=$(date +%Y%m%d-%H%M%S)
   cp -a "$stray_extensions_dir" "$backup_dir/vscode-extensions-stray.$timestamp"
   rm -rf "$stray_extensions_dir"
-  log_positive "Removed stray $stray_extensions_dir (backed up to $backup_dir/vscode-extensions-stray.$timestamp)"
+  df_ok "Removed stray $stray_extensions_dir (backed up to $backup_dir/vscode-extensions-stray.$timestamp)"
 }
 
 resolve_dotstow() {
@@ -200,8 +229,8 @@ restore_external_symlinks() {
 
 # Guard: ensure submodules are initialized before stowing
 if ! check_submodules; then
-  log_error "Submodule check failed. Please initialize submodules first."
-  log_error "Run: git submodule update --init --recursive"
+  df_error "Submodule check failed. Please initialize submodules first."
+  df_error "Run: git submodule update --init --recursive"
   exit 1
 fi
 
@@ -235,26 +264,26 @@ handle_profile_conflict() {
   fi
 }
 
-if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
-  log_error "Error: dotfiles-cleanup failed."
+if ! run_step "Running dotfiles-cleanup" df_run sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup"; then
+  df_error "dotfiles-cleanup failed"
   restore_external_symlinks
   exit 1
 fi
 
-if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin"; then
-  log_error "Error: dotfiles-cleanup-bin failed."
+if ! run_step "Running dotfiles-cleanup-bin" df_run sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-cleanup-bin"; then
+  df_error "dotfiles-cleanup-bin failed"
   restore_external_symlinks
   exit 1
 fi
 
-if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ssh"; then
-  log_error "Error: dotfiles-ssh failed."
+if ! run_step "Running dotfiles-ssh" df_run sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-ssh"; then
+  df_error "dotfiles-ssh failed"
   restore_external_symlinks
   exit 1
 fi
 
-if ! sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-conflicts"; then
-  log_error "Error: conflict helper failed."
+if ! run_step "Running dotfiles-conflicts" df_run sh "$DOTFILES_PATH/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-conflicts"; then
+  df_error "conflict helper failed"
   restore_external_symlinks
   exit 1
 fi
@@ -267,7 +296,7 @@ if [ "$DETECTED_DISTRO" = "rhel" ]; then
 fi
 
 if ! DOTSTOW_BIN=$(resolve_dotstow); then
-  log_error "Error: dotstow command not found in PATH or known install locations."
+  df_error "dotstow command not found in PATH or known install locations"
   if [ "$DETECTED_DISTRO" = "rhel" ]; then
     export LD_PRELOAD=
   fi
@@ -275,7 +304,7 @@ if ! DOTSTOW_BIN=$(resolve_dotstow); then
   exit 1
 fi
 
-log_positive "Stowing dotfiles for distro: $DETECTED_DISTRO"
+df_info "Stowing dotfiles for distro: $DETECTED_DISTRO"
 
 # Handle ~/.profile conflict before stowing
 handle_profile_conflict
@@ -298,8 +327,8 @@ if [ "$DETECTED_DISTRO" = "termux" ]; then
   done
   STOW_PACKAGES=${_filtered_packages# }
 fi
-if ! "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
-  log_error "Error: dotstow stow failed."
+if ! run_step "Stowing dotfiles packages" df_run "$DOTSTOW_BIN" stow $STOW_PACKAGES; then
+  df_error "dotstow stow failed"
   if [ "$DETECTED_DISTRO" = "rhel" ]; then
     export LD_PRELOAD=
   fi
@@ -315,24 +344,15 @@ fi
 restore_external_symlinks
 
 if [ -f "$HOME/.local/share/devtools-opencode/omos.prefs" ] && command -v devtools-opencode > /dev/null 2>&1; then
-  printf '\n'
-  printf 'Restoring oh-my-opencode-slim configuration...\n'
+  df_info "Restoring oh-my-opencode-slim configuration..."
   devtools-opencode omos restore
 fi
 
 # Remind user about EmuDeck sync setup if emudecktools package was stowed.
 if [ "$DETECTED_DISTRO" != "darwin" ] && [ "$DETECTED_DISTRO" != "termux" ]; then
-  printf '\n'
-  printf 'Note: If you stowed the emudecktools package,\n'
-  printf 'run the following to setup automatic syncing with systemd timer:\n'
-  printf '  dotfiles-emudeck\n'
-  printf '\n'
-  printf 'Note: If you use AI coding agents (OpenCode or Claude Code),\n'
-  printf 'run the following to sync shared skills and instructions:\n'
-  printf '  devtools-opencode sync\n'
-  printf '\n'
-  printf 'For OpenCode, install MCP server binaries (pipx, npx, etc.):\n'
-  printf '  devtools-opencode mcp install\n'
+  df_info "Note: If you stowed the emudecktools package, run: dotfiles-emudeck"
+  df_info "Note: If you use AI coding agents, run: devtools-opencode sync"
+  df_info "For OpenCode MCP binaries, run: devtools-opencode mcp install"
 fi
 
 exit 0
