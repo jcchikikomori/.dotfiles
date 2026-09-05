@@ -5,10 +5,10 @@ set -eu
 FIXTURE_FAILED=0
 
 BIN="${DOTFILES_BIN:-}"
+FIXTURE_DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd "$FIXTURE_DIR/../.." && pwd)
 if [ -z "$BIN" ]; then
-  fixture_dir=$(CDPATH= cd "$(dirname "$0")" && pwd)
-  repo_root=$(CDPATH= cd "$fixture_dir/../.." && pwd)
-  BIN="$repo_root/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
+  BIN="$REPO_ROOT/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
 fi
 
 LIB="$BIN/dotfiles-lib-output"
@@ -508,6 +508,58 @@ case_redraw_gating() {
   return "$status"
 }
 
+case_nested_step_tty() {
+  status=0
+
+  harness="$REPO_ROOT/scripts/tests/step-harness.sh"
+  if [ ! -r "$harness" ]; then
+    printf '[fixture] nested: harness not found, skipping\n'
+    return 0
+  fi
+
+  if ! command -v script >/dev/null 2>&1; then
+    printf '[fixture] nested: script(1) unavailable, skipping\n'
+    return 0
+  fi
+
+  # Regression: a parent step must never run a ticker while a child process
+  # prints its own step output to the same terminal. The parent's ticker leaves
+  # the cursor mid-line, so the child's first df_info appends to it, producing
+  # an over-width line that wraps into permanent garbage and shows a frozen
+  # (00:00). Assert no rendered line carries two prefixes.
+  out_file="$1/nested.out"
+  tty_capture "$out_file" "env HARNESS_SLEEP=3 DOTFILES_BIN='$BIN' sh '$harness' outer"
+
+  nested_out=$(cat "$out_file" | tr '\r' '\n')
+
+  dup=$(printf '%s\n' "$nested_out" | LC_ALL=C grep -c '\[dotfiles:.*\[dotfiles:' || true)
+  if [ "$dup" -ne 0 ] 2>/dev/null; then
+    printf '[fixture] nested: no concatenated prefixes ... FAIL: %s line(s)\n' "$dup" >&2
+    status=1
+  fi
+
+  assert_contains "Outer wrapping child..." "$nested_out" "nested: outer step present" || status=1
+  assert_contains "Inner slow work..." "$nested_out" "nested: inner step present" || status=1
+  assert_contains "done" "$nested_out" "nested: completion reached" || status=1
+
+  # The inner (child) step owns the line, so its timer must advance.
+  if ! printf '%s\n' "$nested_out" | LC_ALL=C grep -Eq 'Inner slow work\.\.\. \(00:0[1-9]\)'; then
+    printf '[fixture] nested: inner timer advances ... FAIL\n' >&2
+    status=1
+  fi
+
+  # No rendered line may exceed the terminal width: an over-width line is the
+  # visible symptom of the concatenation bug.
+  width=$(df_width)
+  long=$(printf '%s\n' "$nested_out" | LC_ALL=C awk -v w="$width" 'length($0) > w' | wc -l | tr -d ' ')
+  if [ "$long" -ne 0 ] 2>/dev/null; then
+    printf '[fixture] nested: no over-width lines ... FAIL: %s line(s) exceed %s cols\n' "$long" "$width" >&2
+    status=1
+  fi
+
+  return "$status"
+}
+
 main() {
   temp_dir=$(mktemp -d)
   trap 'rm -rf "$temp_dir"' EXIT
@@ -525,6 +577,7 @@ main() {
   run_case "df_run: exit/log/path/tty" case_df_run_contract "$temp_dir"
   run_case "step: failure latch propagation" case_step_fail_latch "$temp_dir"
   run_case "step: redraw gating + live timer" case_redraw_gating "$temp_dir"
+  run_case "step: nested parent/child tty" case_nested_step_tty "$temp_dir"
 
   if [ "$FIXTURE_FAILED" -eq 1 ]; then
     printf '[fixture] RESULT: FAIL\n' >&2

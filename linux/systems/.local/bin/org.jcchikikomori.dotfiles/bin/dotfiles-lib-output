@@ -433,13 +433,30 @@ df__ticker_stop() {
   return 0
 }
 
-df_step() {
+df__step_begin() {
   DF_OUTPUT_STEP_NAME="$*"
   DF_OUTPUT_STEP_FAILED=0
   DF_OUTPUT_STEP_FAIL_CODE=0
+  DF_OUTPUT_TICKER_PID=""
   df_timer_start
   df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  return 0
+}
+
+df_step() {
+  df__step_begin "$@"
   df__ticker_start
+  return 0
+}
+
+# Ticker-free step, for commands that spawn a child process which writes its
+# own step output to the same terminal. Two tickers on one tty corrupt each
+# other: the parent's ticker leaves the cursor mid-line (no trailing newline),
+# and the child's first df_info appends to that line instead of starting a new
+# one, producing an over-width line that wraps into permanent garbage. The
+# child's own ticker is the only one that may own the line.
+df_step_quiet() {
+  df__step_begin "$@"
   return 0
 }
 

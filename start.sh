@@ -44,6 +44,22 @@ run_step() {
   return "$?"
 }
 
+# Use for commands that spawn a child script which prints its own step output.
+# Identical to run_step but without the live-timer ticker, which would fight
+# the child's ticker for the same terminal line.
+run_child_step() {
+  label="$1"
+  shift
+  df_step_quiet "$label"
+  if "$@"; then
+    code=0
+  else
+    code=$?
+  fi
+  df_step_end "$code"
+  return "$?"
+}
+
 prelim() {
   df_info "Copying/generating files needed to your home directory..."
 
@@ -152,45 +168,45 @@ detect_distro() {
 run_distro_setup() {
   case "$DETECTED_DISTRO" in
     termux)
-      run_step "Executing Termux-related workarounds" sh termux/setup.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
-      run_step "Running bash setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install || return $?
+      run_child_step "Executing Termux-related workarounds" sh termux/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Running bash setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install || return $?
       ;;
     darwin)
-      run_step "Executing macOS-related workarounds" sh darwin/setup.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Executing macOS-related workarounds" sh darwin/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
       ;;
     debian)
-      run_step "Executing Debian-related workarounds" sh debian/setup.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Executing Debian-related workarounds" sh debian/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
       ;;
     ubuntu)
-      run_step "Executing Ubuntu-related workarounds" sh ubuntu/setup.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Executing Ubuntu-related workarounds" sh ubuntu/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
       ;;
     archbtw)
       df_info "Executing Arch-related (btw) workarounds..."
       if [ -n "${CI:-}" ]; then
-        run_step "Executing init.sh (CI/CD mode)" sh arch/init.sh || return $?
+        run_child_step "Executing init.sh (CI/CD mode)" sh arch/init.sh || return $?
       elif [ "$(id -u)" -ne 0 ]; then
-        run_step "Executing init.sh as root" sudo sh arch/init.sh || return $?
+        run_child_step "Executing init.sh as root" sudo sh arch/init.sh || return $?
       fi
-      run_step "Executing Arch setup" sh arch/setup.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Executing Arch setup" sh arch/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
       ;;
     arch)
-      run_step "Executing Arch-related workarounds" sh arch/setup.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Executing Arch-related workarounds" sh arch/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
       ;;
     steamos)
-      run_step "Executing SteamOS-related workarounds" sh steamos/setup.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
-      run_step "Running bash setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install || return $?
+      run_child_step "Executing SteamOS-related workarounds" sh steamos/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Running bash setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install || return $?
       ;;
     rhel)
-      run_step "Executing RHEL-related workarounds" sh rhel/setup.sh || return $?
-      run_step "Installing VSCode" sh rhel/vscode.sh || return $?
-      run_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Executing RHEL-related workarounds" sh rhel/setup.sh || return $?
+      run_child_step "Installing VSCode" sh rhel/vscode.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
       ;;
     *)
       df_fail "Unable to identify the distro to begin! Exiting..."
