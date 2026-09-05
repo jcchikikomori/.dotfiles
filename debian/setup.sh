@@ -11,8 +11,22 @@ fi
 # shellcheck source=/dev/null
 . "$DOTFILES_BIN/dotfiles-lib-output"
 
+DEBIAN_SETUP_VERBOSE=0
+for arg in "$@"; do
+  case "$arg" in
+    --verbose|-v)
+      DEBIAN_SETUP_VERBOSE=1
+      ;;
+  esac
+done
+
 DF_PREFIX="debian-setup"
-df_output_init
+if [ "$DEBIAN_SETUP_VERBOSE" -eq 1 ]; then
+  df_output_init --verbose
+  export DOTFILES_VERBOSE=1
+else
+  df_output_init
+fi
 
 run_step() {
   label="$1"
