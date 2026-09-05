@@ -23,7 +23,6 @@ DF_OUTPUT_VERBOSE=0
 DF_OUTPUT_NO_COLOR=0
 DF_OUTPUT_WIDTH=80
 DF_OUTPUT_TIMER_START=0
-DF_OUTPUT_SPINNER_PID=""
 DF_OUTPUT_STEP_NAME=""
 DF_OUTPUT_LOG_FILE=""
 
@@ -384,103 +383,15 @@ df__fmt_duration() {
   fi
 }
 
-df__spinner_render() {
-  frame="$1"
-  prefix=$(df__fmt_prefix)
-  timer=$(df__fmt_duration "$(df_timer_elapsed)")
-  text="${prefix} ${DF_OUTPUT_STEP_NAME}... (${timer}) ${frame}"
-  text=$(df__log_line "$text")
-  printf '\r%s' "$text"
-}
-
-df_spinner_start() {
-  if ! df_is_tty || df_is_ci || df_is_verbose; then
-    return 0
-  fi
-
-  [ -z "$DF_OUTPUT_STEP_NAME" ] && DF_OUTPUT_STEP_NAME="Working"
-
-  (
-    i=0
-    while :; do
-      if df_is_utf8; then
-        case $i in
-          0) frame='ᗧ·····' ;;
-          1) frame='ᗧ····' ;;
-          2) frame='ᗧ···' ;;
-          3) frame='ᗧ··' ;;
-          4) frame='ᗧ·' ;;
-          5) frame='ᗧ' ;;
-          6) frame='ᗧ·' ;;
-          7) frame='ᗧ··' ;;
-          8) frame='ᗧ···' ;;
-          *) frame='ᗧ····' ;;
-        esac
-      else
-        case $i in
-          0) frame='>.....' ;;
-          1) frame='>....' ;;
-          2) frame='>...' ;;
-          3) frame='>..' ;;
-          4) frame='>.' ;;
-          5) frame='>' ;;
-          6) frame='>.' ;;
-          7) frame='>..' ;;
-          8) frame='>...' ;;
-          *) frame='>....' ;;
-        esac
-      fi
-
-      df__spinner_render "$frame"
-
-      i=$((i + 1))
-      if [ "$i" -ge 10 ] 2>/dev/null; then
-        i=0
-      fi
-      sleep 0.1
-    done
-  ) &
-
-  DF_OUTPUT_SPINNER_PID=$!
-  return 0
-}
-
-df_spinner_stop() {
-  if [ -n "${DF_OUTPUT_SPINNER_PID:-}" ]; then
-    kill "$DF_OUTPUT_SPINNER_PID" 2>/dev/null || true
-    wait "$DF_OUTPUT_SPINNER_PID" 2>/dev/null || true
-    DF_OUTPUT_SPINNER_PID=""
-
-    if df_is_tty && ! df_is_ci && ! df_is_verbose; then
-      width=$(df_width)
-      pad=$((width - 1))
-      if [ "$pad" -lt 1 ] 2>/dev/null; then
-        pad=1
-      fi
-      printf '\r'
-      awk -v n="$pad" 'BEGIN { for (i = 0; i < n; i++) printf " "; }'
-      printf '\r'
-    fi
-  fi
-  return 0
-}
-
 df_step() {
   DF_OUTPUT_STEP_NAME="$*"
   df_timer_start
-  if df_is_tty && ! df_is_ci && ! df_is_verbose; then
-    df_spinner_start
-  else
-    df_info "$DF_OUTPUT_STEP_NAME..."
-  fi
+  df_info "$DF_OUTPUT_STEP_NAME..."
   return 0
 }
 
 df_step_end() {
   status="${1:-0}"
-  df_spinner_stop
-  elapsed=$(df_timer_elapsed)
-  timer=$(df__fmt_duration "$elapsed")
 
   if [ "$status" -eq 0 ] 2>/dev/null; then
     if df_is_utf8; then
@@ -488,8 +399,10 @@ df_step_end() {
     else
       mark='OK done'
     fi
-    df_ok "$DF_OUTPUT_STEP_NAME... $mark ($timer)"
+    df_ok "$DF_OUTPUT_STEP_NAME... $mark"
   else
+    elapsed=$(df_timer_elapsed)
+    timer=$(df__fmt_duration "$elapsed")
     if df_is_utf8; then
       mark='✗ failed'
     else
@@ -524,7 +437,7 @@ df_run() {
   fi
 
   # Default mode: always capture child output to the log file, including TTY
-  # sessions, so spinner/status lines never interleave with child output.
+  # sessions, so step/status lines never interleave with child output.
   # Only --verbose streams directly. Use df_run_interactive for commands that
   # must stay attached to the terminal.
   if df_is_verbose; then
@@ -546,9 +459,6 @@ df_run() {
   fi
 
   if [ "$status" -ne 0 ] 2>/dev/null; then
-    # Clear any active spinner line before printing so the failure message
-    # starts on a fresh line instead of gluing onto the spinner frame.
-    df_spinner_stop
     df_error "command failed (exit $status)"
     df_info "details: $log_file"
   fi
