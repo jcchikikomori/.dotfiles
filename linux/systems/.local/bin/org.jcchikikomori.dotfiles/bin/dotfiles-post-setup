@@ -28,6 +28,36 @@ else
     df_output_init
 fi
 
+run_step() {
+    label="$1"
+    shift
+    df_step "$label"
+    if "$@"; then
+        code=0
+    else
+        code=$?
+    fi
+    # df_step_end returns the effective status: non-zero when $code is non-zero
+    # OR when a df_run inside the step failed but the command swallowed it.
+    df_step_end "$code"
+    return "$?"
+}
+
+# Identical to run_step but without the live-timer ticker, for commands that
+# spawn a child process which prints its own step output (or prompts the user).
+run_step_quiet() {
+    label="$1"
+    shift
+    df_step_quiet "$label"
+    if "$@"; then
+        code=0
+    else
+        code=$?
+    fi
+    df_step_end "$code"
+    return "$?"
+}
+
 WORKFILES_DIR="linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
 WORKDIR=$(mktemp -d)
 CI_MODE="${CI:-false}"
@@ -35,7 +65,7 @@ CI_MODE="${CI:-false}"
 setup_directory() {
     ORIGINAL_DIR=$(pwd)
     trap 'rm -rf "$WORKDIR"' EXIT
-    df_info "Copying files to $WORKDIR ..."
+    df_debug "Copying files to $WORKDIR ..."
     cd $WORKFILES_DIR
     cp -r "dotfiles-dotstow" "$WORKDIR"
     cp -r "dotfiles-python" "$WORKDIR"
@@ -52,7 +82,7 @@ setup_directory() {
     cp -r "dotfiles-git" "$WORKDIR"
     cp -r "dotfiles-nerf" "$WORKDIR"
     cp -r "dotfiles-msfonts" "$WORKDIR"
-    df_info "Changing to $WORKDIR ..."
+    df_debug "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
 
@@ -173,49 +203,63 @@ copy_if_different() {
     cp -f "$src" "$dest"
 }
 
-main() {
-    df_run_soft ls -lah "$WORKDIR" || true
+# Clone only when the destination is missing. Post-setup is re-runnable, and a
+# plain clone into an existing directory fails, which would now surface as a
+# failed step for something that is in fact already installed.
+clone_once() {
+    dest="$1"
+    shift
+    if [ -d "$dest" ]; then
+        df_debug "skip clone: $dest already exists"
+        return 0
+    fi
+    df_run git clone "$@" "$dest"
+}
 
-    df_info 'Setting up git flow...'
-    df_run sh $WORKDIR/dotfiles-git || df_fail "dotfiles-git setup failed"
-
-    df_info "Symlinking state dir..."
-    mkdir -p "$HOME/.local/state/dotstow"
-    ln -snf "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
-
-    df_info 'Symlinking vim rc files...'
+# Wrapper so both vim rc copies run inside a single run_step.
+link_vim_rc() {
     copy_if_different "$HOME/.dotfiles/linux/vim/.vimrc" "$HOME/.vimrc"
     copy_if_different "$HOME/.dotfiles/linux/vim/.virc" "$HOME/.virc"
+}
 
-    df_info 'Installing dotstow...'
-    df_run ./dotfiles-dotstow || df_fail "dotfiles-dotstow install failed"
+# All seven zsh plugin clones in one step. Each df_run failure returns
+# immediately so the step (and its ticker) ends cleanly before set -e aborts.
+install_zsh_plugins() {
+    ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
+    ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
+    df_run git clone https://github.com/bobthecow/git-flow-completion.git "$ZSH_CUSTOM_PLUGINS_DIR/git-flow-completion" || return $?
+    df_run git clone https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-autosuggestions" || return $?
+    df_run git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-syntax-highlighting" || return $?
+    df_run git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting" || return $?
+    df_run git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete" || return $?
+    df_run git clone https://github.com/larkery/zsh-histdb.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb" || return $?
+    df_run git clone https://github.com/MichaelAquilina/zsh-you-should-use.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-you-should-use" || return $?
+}
 
-    df_info 'Setting up bash fzf...'
-    git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true
-    df_run_interactive ~/.fzf/install
+main() {
+    run_step "Setting up git flow" df_run sh "$WORKDIR/dotfiles-git" || df_fail "dotfiles-git setup failed"
 
-    df_info 'Setting up bash fasd...'
-    git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
+    run_step "Symlinking state dir" sh -c 'mkdir -p "$HOME/.local/state/dotstow" && ln -snf "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"'
 
-    df_info 'Setting up Tmux Plugin Manager...'
-    mkdir -p ~/.tmux/plugins
-    git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
+    run_step "Symlinking vim rc files" link_vim_rc
 
-    df_info 'Setting up Starship prompt...'
-    mkdir -p ~/.local/bin/org.jcchikikomori.dotfiles/bin
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin/org.jcchikikomori.dotfiles/bin -f
+    run_step "Installing dotstow" df_run ./dotfiles-dotstow || df_fail "dotfiles-dotstow install failed"
 
-    df_info 'Setting up Antigen...'
-    curl -L https://git.io/antigen >"$HOME/antigen.zsh"
+    run_step "Cloning fzf" clone_once "$HOME/.fzf" --depth 1 https://github.com/junegunn/fzf.git
+    run_step_quiet "Setting up bash fzf" df_run_interactive ~/.fzf/install
+
+    run_step "Setting up bash fasd" clone_once "$HOME/.fasd" --depth 1 https://github.com/clvv/fasd.git
+
+    run_step "Setting up Tmux Plugin Manager" clone_once "$HOME/.tmux/plugins/tpm" --depth 1 https://github.com/tmux-plugins/tpm
+
+    run_step "Setting up Starship prompt" df_run sh -c 'mkdir -p "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin" && curl -fsSL https://starship.rs/install.sh | sh -s -- -b "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin" -f'
+
+    run_step "Setting up Antigen" df_run sh -c 'curl -L https://git.io/antigen >"$HOME/antigen.zsh"'
 
     # https://github.com/alacritty/alacritty-theme
-    df_info 'Setting up Alacritty themes...'
-    mkdir -p ~/.config/alacritty/themes
-    git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
+    run_step "Setting up Alacritty themes" df_run sh -c 'mkdir -p "$HOME/.config/alacritty/themes" && git clone https://github.com/alacritty/alacritty-theme "$HOME/.config/alacritty/themes"'
 
-    df_info 'Setting up some Nerd Fonts...'
-    sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode
-    sh $WORKDIR/dotfiles-nerf --smoke-test
+    run_step "Setting up Nerd Fonts" df_run sh -c "sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode && sh $WORKDIR/dotfiles-nerf --smoke-test"
 
     # Check if running on Termux
     if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
@@ -254,21 +298,11 @@ main() {
         fi
     fi
 
-    df_info 'Setting up oh-my-zsh...'
-    df_run_interactive sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-    df_info 'Installing zsh plugins...'
-    ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
-    ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
-    git clone https://github.com/bobthecow/git-flow-completion.git $ZSH_CUSTOM_PLUGINS_DIR/git-flow-completion
-    git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autosuggestions
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-syntax-highlighting
-    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting
-    git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete
-    git clone https://github.com/larkery/zsh-histdb.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb
-    git clone https://github.com/MichaelAquilina/zsh-you-should-use.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-you-should-use
+    run_step_quiet "Setting up oh-my-zsh" df_run_interactive sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-    df_info 'Setting up ~/.profile.local for user customizations...'
-    setup_profile_local
+    run_step "Installing zsh plugins" install_zsh_plugins
+
+    run_step_quiet "Setting up ~/.profile.local" setup_profile_local
 
     cd "$ORIGINAL_DIR"
     rm -rf "$WORKDIR"
