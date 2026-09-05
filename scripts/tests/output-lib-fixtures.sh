@@ -149,6 +149,29 @@ EOF
   chmod +x "$mock_dir/stty" "$mock_dir/tmux" "$mock_dir/tput" "$mock_dir/uname"
 }
 
+# script(1) invocation differs between GNU util-linux (-c <command>) and
+# BSD/macOS (command passed as positional args after the typescript file).
+# Probe once at startup and reuse so tty-capture cases run on both flavors.
+SCRIPT_STYLE=""
+
+detect_script_style() {
+  if script -qec "true" /dev/null >/dev/null 2>&1; then
+    SCRIPT_STYLE=gnu
+  else
+    SCRIPT_STYLE=bsd
+  fi
+}
+
+tty_capture() {
+  out_file="$1"
+  command_string="$2"
+  if [ "$SCRIPT_STYLE" = "gnu" ]; then
+    script -qec "$command_string" /dev/null > "$out_file" 2>&1
+  else
+    script -q /dev/null sh -c "$command_string" > "$out_file" 2>&1
+  fi
+}
+
 case_smoke() {
   out_file="$1"
   status=0
@@ -253,6 +276,38 @@ case_byte_clean_modes() {
   return "$status"
 }
 
+case_elapsed_format() {
+  status=0
+
+  d=$(DF_PREFIX=fixture sh -c '. "$1"; printf "%s\n" "$(df__fmt_duration 0)"' sh "$LIB")
+  assert_eq "00:00" "$d" "elapsed: 0s" || status=1
+
+  d=$(DF_PREFIX=fixture sh -c '. "$1"; printf "%s\n" "$(df__fmt_duration 5)"' sh "$LIB")
+  assert_eq "00:05" "$d" "elapsed: 5s" || status=1
+
+  d=$(DF_PREFIX=fixture sh -c '. "$1"; printf "%s\n" "$(df__fmt_duration 65)"' sh "$LIB")
+  assert_eq "01:05" "$d" "elapsed: 65s" || status=1
+
+  d=$(DF_PREFIX=fixture sh -c '. "$1"; printf "%s\n" "$(df__fmt_duration 600)"' sh "$LIB")
+  assert_eq "10:00" "$d" "elapsed: 600s" || status=1
+
+  d=$(DF_PREFIX=fixture sh -c '. "$1"; printf "%s\n" "$(df__fmt_duration 7200)"' sh "$LIB")
+  assert_eq "120:00" "$d" "elapsed: 7200s" || status=1
+
+  d=$(DF_PREFIX=fixture sh -c '. "$1"; printf "%s\n" "$(df__fmt_duration "")"' sh "$LIB")
+  assert_eq "00:00" "$d" "elapsed: empty" || status=1
+
+  step_line=$(CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; df_step_end 0' sh "$LIB")
+  if printf '%s\n' "$step_line" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    :
+  else
+    printf '[fixture] step-end: MM:SS status timer ... FAIL: [%s]\n' "$step_line" >&2
+    status=1
+  fi
+
+  return "$status"
+}
+
 case_color_escapes() {
   status=0
   if ! command -v script >/dev/null 2>&1; then
@@ -261,7 +316,7 @@ case_color_escapes() {
   fi
 
   esc_file="$1/color-esc.out"
-  script -qec "env DF_PREFIX=fixture CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_ok colored'" /dev/null > "$esc_file" 2>&1
+  tty_capture "$esc_file" "env DF_PREFIX=fixture CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_ok colored'"
 
   assert_has_esc "$esc_file" "color: real ESC bytes emitted" || status=1
   esc_out=$(cat "$esc_file")
@@ -269,7 +324,7 @@ case_color_escapes() {
   assert_not_contains '\033' "$esc_out" "color: no literal backslash-033" || status=1
 
   plain_file="$1/color-plain.out"
-  script -qec "env DF_PREFIX=fixture CI=false DOTFILES_VERBOSE=0 DOTFILES_NO_COLOR=1 sh -c '. \"$LIB\"; df_output_init; df_ok plain'" /dev/null > "$plain_file" 2>&1
+  tty_capture "$plain_file" "env DF_PREFIX=fixture CI=false DOTFILES_VERBOSE=0 DOTFILES_NO_COLOR=1 sh -c '. \"$LIB\"; df_output_init; df_ok plain'"
 
   assert_no_esc "$plain_file" "color: no-color emits no ESC" || status=1
 
@@ -286,11 +341,17 @@ case_spinner_frames() {
   utf_file="$1/spinner-utf.out"
   ascii_file="$1/spinner-ascii.out"
 
-  script -qec "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 0.4; df_step_end 0'" /dev/null > "$utf_file" 2>&1
+  tty_capture "$utf_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   utf_out=$(cat "$utf_file")
   assert_contains "ᗧ" "$utf_out" "spinner: utf8 frame" || status=1
+  if printf '%s\n' "$utf_out" | LC_ALL=C grep -Eq '[0-9]+:[0-9]{2}'; then
+    :
+  else
+    printf '[fixture] spinner: MM:SS timer ... FAIL\n' >&2
+    status=1
+  fi
 
-  script -qec "env DF_PREFIX=fixture LC_ALL=C CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 0.4; df_step_end 0'" /dev/null > "$ascii_file" 2>&1
+  tty_capture "$ascii_file" "env DF_PREFIX=fixture LC_ALL=C CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   ascii_out=$(cat "$ascii_file")
   assert_contains ">" "$ascii_out" "spinner: ascii frame" || status=1
 
@@ -321,7 +382,7 @@ case_df_run_contract() {
 
   if command -v script >/dev/null 2>&1; then
     tty_out="$1/df-run-tty.out"
-    script -qec "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture sh -c '. \"$LIB\"; df_output_init; df_run sh -c \"echo tty-suppressed\"'" /dev/null > "$tty_out" 2>&1
+    tty_capture "$tty_out" "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture sh -c '. \"$LIB\"; df_output_init; df_run sh -c \"echo tty-suppressed\"'"
     tty_content=$(cat "$tty_out")
     assert_not_contains "tty-suppressed" "$tty_content" "df_run: tty default suppresses" || status=1
   fi
@@ -338,11 +399,14 @@ main() {
   temp_dir=$(mktemp -d)
   trap 'rm -rf "$temp_dir"' EXIT
 
+  detect_script_style
+
   run_case "smoke: source + init + df_info" case_smoke "$temp_dir/smoke.out"
   run_case "df_width: fallback chain" case_width_fallback "$temp_dir"
   run_case "df_truncate: boundary + suffix" case_truncate_boundary
   run_case "df_is_utf8: locale + darwin" case_utf8_detection "$temp_dir"
   run_case "byte-clean: CI + piped" case_byte_clean_modes "$temp_dir"
+  run_case "elapsed: MM:SS format" case_elapsed_format
   run_case "color: escape bytes vs literal" case_color_escapes "$temp_dir"
   run_case "spinner: frame assertions" case_spinner_frames "$temp_dir"
   run_case "df_run: exit/log/path/tty" case_df_run_contract "$temp_dir"

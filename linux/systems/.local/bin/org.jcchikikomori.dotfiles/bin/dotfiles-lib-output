@@ -370,10 +370,25 @@ df_timer_elapsed() {
   printf '%s\n' "$elapsed"
 }
 
+df__fmt_duration() {
+  total="$1"
+  if [ -z "$total" ] || ! [ "$total" -ge 0 ] 2>/dev/null; then
+    total=0
+  fi
+  mins=$((total / 60))
+  secs=$((total % 60))
+  if [ "$mins" -lt 10 ] 2>/dev/null; then
+    printf '%02d:%02d' "$mins" "$secs"
+  else
+    printf '%d:%02d' "$mins" "$secs"
+  fi
+}
+
 df__spinner_render() {
   frame="$1"
   prefix=$(df__fmt_prefix)
-  text="${prefix} ${DF_OUTPUT_STEP_NAME}... ${frame}"
+  timer=$(df__fmt_duration "$(df_timer_elapsed)")
+  text="${prefix} ${DF_OUTPUT_STEP_NAME}... ${frame} (${timer})"
   text=$(df__log_line "$text")
   printf '\r%s' "$text"
 }
@@ -465,6 +480,7 @@ df_step_end() {
   status="${1:-0}"
   df_spinner_stop
   elapsed=$(df_timer_elapsed)
+  timer=$(df__fmt_duration "$elapsed")
 
   if [ "$status" -eq 0 ] 2>/dev/null; then
     if df_is_utf8; then
@@ -472,14 +488,14 @@ df_step_end() {
     else
       mark='OK done'
     fi
-    df_ok "$DF_OUTPUT_STEP_NAME... $mark (${elapsed}s)"
+    df_ok "$DF_OUTPUT_STEP_NAME... $mark ($timer)"
   else
     if df_is_utf8; then
       mark='✗ failed'
     else
       mark='FAIL failed'
     fi
-    df_error "$DF_OUTPUT_STEP_NAME... $mark (${elapsed}s)"
+    df_error "$DF_OUTPUT_STEP_NAME... $mark ($timer)"
   fi
 
   return 0

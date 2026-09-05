@@ -11,8 +11,21 @@ fi
 # shellcheck source=/dev/null
 . "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
 
+CLEANUP_VERBOSE=0
+for arg in "$@"; do
+  case "$arg" in
+    --verbose|-v)
+      CLEANUP_VERBOSE=1
+      ;;
+  esac
+done
+
 DF_PREFIX="cleanup"
-df_output_init
+if [ "$CLEANUP_VERBOSE" -eq 1 ]; then
+  df_output_init --verbose
+else
+  df_output_init
+fi
 
 DOTSTOW_BIN=$(command -v dotstow 2>/dev/null)
 if [ -z "$DOTSTOW_BIN" ] && [ -x "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin/dotstow" ]; then
