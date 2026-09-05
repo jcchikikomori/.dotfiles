@@ -353,9 +353,11 @@ case_step_tty() {
   ascii_file="$1/step-ascii.out"
 
   tty_capture "$utf_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
-  utf_out=$(cat "$utf_file")
-  utf_start=$(printf '%s\n' "$utf_out" | sed -n '1p')
-  utf_done=$(printf '%s\n' "$utf_out" | sed -n '2p')
+  # On a tty the start frame and its redraws share ONE physical line, separated
+  # by CR, so split on CR as well as LF to inspect individual frames.
+  utf_out=$(tr '\r' '\n' < "$utf_file")
+  utf_start=$(printf '%s\n' "$utf_out" | LC_ALL=C grep -F 'spin...' | sed -n '1p')
+  utf_done=$(printf '%s\n' "$utf_out" | LC_ALL=C grep -F 'spin...' | sed -n '$p')
   assert_contains "spin" "$utf_start" "step-utf: step name" || status=1
   assert_contains "spin..." "$utf_start" "step-utf: start line" || status=1
   assert_contains "(00:00)" "$utf_start" "step-utf: in-progress MM:SS" || status=1
@@ -369,9 +371,9 @@ case_step_tty() {
   assert_not_contains '\033' "$utf_out" "step-utf: no literal backslash-033" || status=1
 
   tty_capture "$ascii_file" "env DF_PREFIX=fixture LC_ALL=C CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
-  ascii_out=$(cat "$ascii_file")
-  ascii_start=$(printf '%s\n' "$ascii_out" | sed -n '1p')
-  ascii_done=$(printf '%s\n' "$ascii_out" | sed -n '2p')
+  ascii_out=$(tr '\r' '\n' < "$ascii_file")
+  ascii_start=$(printf '%s\n' "$ascii_out" | LC_ALL=C grep -F 'spin...' | sed -n '1p')
+  ascii_done=$(printf '%s\n' "$ascii_out" | LC_ALL=C grep -F 'spin...' | sed -n '$p')
   assert_contains "spin" "$ascii_start" "step-ascii: step name" || status=1
   assert_contains "spin..." "$ascii_start" "step-ascii: start line" || status=1
   assert_contains "(00:00)" "$ascii_start" "step-ascii: in-progress MM:SS" || status=1
@@ -383,6 +385,14 @@ case_step_tty() {
   fi
   assert_not_contains ">" "$ascii_out" "step-ascii: no spinner frames" || status=1
   assert_not_contains '\033' "$ascii_out" "step-ascii: no literal backslash-033" || status=1
+
+  # Regression: the start frame must NOT be terminated by a newline when the
+  # ticker will animate, otherwise the timer counts on the line BELOW a frozen
+  # "(00:00)" line. Assert the start frame and the done line land on the same
+  # physical line (i.e. no LF between them).
+  first_physical=$(sed -n '1p' "$utf_file")
+  assert_contains "(00:00)" "$first_physical" "step-utf: start frame on line 1" || status=1
+  assert_contains "done" "$first_physical" "step-utf: done shares line 1 (no LF after start)" || status=1
 
   return "$status"
 }
