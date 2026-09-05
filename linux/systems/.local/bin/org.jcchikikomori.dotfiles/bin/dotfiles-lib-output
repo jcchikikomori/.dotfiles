@@ -258,7 +258,9 @@ df__color_wrap() {
   color="$1"
   text="$2"
   if [ "$DF_OUTPUT_TTY" -eq 1 ] && [ "$DF_OUTPUT_NO_COLOR" -eq 0 ]; then
-    printf '%s%s%s' "$color" "$text" '\033[0m'
+    # %b interprets the backslash escape sequences in the color and reset
+    # operands so real ESC bytes are emitted, never literal "\033" strings.
+    printf '%b%s%b' "$color" "$text" '\033[0m'
   else
     printf '%s' "$text"
   fi
@@ -505,7 +507,11 @@ df_run() {
     return 0
   fi
 
-  if df_is_verbose || [ -t 0 ]; then
+  # Default mode: always capture child output to the log file, including TTY
+  # sessions, so spinner/status lines never interleave with child output.
+  # Only --verbose streams directly. Use df_run_interactive for commands that
+  # must stay attached to the terminal.
+  if df_is_verbose; then
     if "$@"; then
       return 0
     fi
@@ -524,6 +530,9 @@ df_run() {
   fi
 
   if [ "$status" -ne 0 ] 2>/dev/null; then
+    # Clear any active spinner line before printing so the failure message
+    # starts on a fresh line instead of gluing onto the spinner frame.
+    df_spinner_stop
     df_error "command failed (exit $status)"
     df_info "details: $log_file"
   fi
