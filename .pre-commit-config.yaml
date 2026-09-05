@@ -26,3 +26,9 @@ repos:
     rev: 26.5.1
     hooks:
     -   id: black
+-   repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+    -   id: shellcheck
+        args: ["-s", "sh"]
+        files: ^linux/systems/\.local/bin/org\.jcchikikomori\.dotfiles/bin/dotfiles-lib-output$
