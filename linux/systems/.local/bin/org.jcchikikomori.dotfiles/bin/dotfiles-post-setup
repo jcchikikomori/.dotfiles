@@ -1,12 +1,71 @@
 #!/bin/sh
 
+set -eu
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ ! -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
+    echo "[dotfiles:post-setup] Error: dotfiles-lib-output not found" >&2
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+. "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+
+POST_SETUP_VERBOSE=0
+for arg in "$@"; do
+    case "$arg" in
+        --verbose|-v)
+            POST_SETUP_VERBOSE=1
+            ;;
+    esac
+done
+
+DF_PREFIX="post-setup"
+if [ "$POST_SETUP_VERBOSE" -eq 1 ]; then
+    df_output_init --verbose
+    export DOTFILES_VERBOSE=1
+else
+    df_output_init
+fi
+
+run_step() {
+    label="$1"
+    shift
+    df_step "$label"
+    if "$@"; then
+        code=0
+    else
+        code=$?
+    fi
+    # df_step_end returns the effective status: non-zero when $code is non-zero
+    # OR when a df_run inside the step failed but the command swallowed it.
+    df_step_end "$code"
+    return "$?"
+}
+
+# Identical to run_step but without the live-timer ticker, for commands that
+# spawn a child process which prints its own step output (or prompts the user).
+run_step_quiet() {
+    label="$1"
+    shift
+    df_step_quiet "$label"
+    if "$@"; then
+        code=0
+    else
+        code=$?
+    fi
+    df_step_end "$code"
+    return "$?"
+}
+
 WORKFILES_DIR="linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
 WORKDIR=$(mktemp -d)
+CI_MODE="${CI:-false}"
 
 setup_directory() {
     ORIGINAL_DIR=$(pwd)
     trap 'rm -rf "$WORKDIR"' EXIT
-    echo "Copying files to $WORKDIR ..."
+    df_debug "Copying files to $WORKDIR ..."
     cd $WORKFILES_DIR
     cp -r "dotfiles-dotstow" "$WORKDIR"
     cp -r "dotfiles-python" "$WORKDIR"
@@ -23,7 +82,7 @@ setup_directory() {
     cp -r "dotfiles-git" "$WORKDIR"
     cp -r "dotfiles-nerf" "$WORKDIR"
     cp -r "dotfiles-msfonts" "$WORKDIR"
-    echo "Changing to $WORKDIR ..."
+    df_debug "Changing to $WORKDIR ..."
     cd "$WORKDIR"
 }
 
@@ -44,31 +103,33 @@ prompt_installation() {
     local default_choice="y"
 
     if [ -n "${SKIP_INSTALL_PROGLANG}" ]; then
-        echo "Unattended mode: Skipping $name installation"
+        df_info "Unattended mode: Skipping $name installation"
         return
     fi
 
-    echo "Do you want to install $name? (y/n): " >&2
+    printf '%s' "Do you want to install $name? (y/n): " >&2
     read choice
     if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
-        echo "Executing $name..."
+        df_info "Executing $name..."
         if [ "$script" = "dotfiles-python" ]; then
-            $WORKDIR/$script install
+            df_run_interactive "$WORKDIR/$script" install
         elif [ "$script" = "dotfiles-php" ]; then
-            $WORKDIR/$script install
+            df_run_interactive "$WORKDIR/$script" install
         elif [ "$script" = "dotfiles-ruby" ]; then
-            $WORKDIR/$script install
+            df_run_interactive "$WORKDIR/$script" install
         elif [ "$script" = "dotfiles-copyparty" ]; then
-            $WORKDIR/$script install
+            df_run_interactive "$WORKDIR/$script" install
         elif [ "$script" = "dotfiles-mpv" ]; then
-            $WORKDIR/$script install
+            df_run_interactive "$WORKDIR/$script" install
         elif [ "$script" = "dotfiles-neovim" ]; then
-            $WORKDIR/$script install
+            df_run_interactive "$WORKDIR/$script" install
+        elif [ "$script" = "devtools-opencode install" ]; then
+            df_run_interactive devtools-opencode install
         else
-            $WORKDIR/$script
+            df_run_interactive "$WORKDIR/$script"
         fi
     else
-        echo "Skipped. You can install $name later."
+        df_info "Skipped. You can install $name later."
     fi
 }
 
@@ -78,7 +139,7 @@ setup_profile_local() {
 
     # Check if already exists
     if [ -f "$profile_local" ]; then
-        echo "[INFO] ~/.profile.local already exists, skipping"
+        df_info "~/.profile.local already exists, skipping"
         return 0
     fi
 
@@ -88,19 +149,19 @@ setup_profile_local() {
         local example_file="$dotfiles_dir/.profile.local.example"
         if [ -f "$example_file" ]; then
             cp "$example_file" "$profile_local"
-            echo "[INFO] Created ~/.profile.local from example (CI mode)"
+            df_info "Created ~/.profile.local from example (CI mode)"
         else
-            echo "[WARN] Example file not found: $example_file"
-            echo "[WARN] Skipping ~/.profile.local creation"
+            df_warn "Example file not found: $example_file"
+            df_warn "Skipping ~/.profile.local creation"
         fi
         return 0
     fi
 
     # Interactive mode - ask user
     echo ""
-    echo "Would you like to create ~/.profile.local for your customizations?"
-    echo "This file will NOT be managed by dotfiles and persists across updates."
-    echo "Your ~/.profile will source it automatically."
+    df_info "Would you like to create ~/.profile.local for your customizations?"
+    df_info "This file will NOT be managed by dotfiles and persists across updates."
+    df_info "Your ~/.profile will source it automatically."
     printf "%s [y/N] " "Create ~/.profile.local?"
     read -r choice
     case "$choice" in
@@ -109,71 +170,109 @@ setup_profile_local() {
             local example_file="$dotfiles_dir/.profile.local.example"
             if [ -f "$example_file" ]; then
                 cp "$example_file" "$profile_local"
-                echo "Created ~/.profile.local from example"
-                echo "  Edit $profile_local to add your tokens."
+                df_info "Created ~/.profile.local from example"
+                df_info "  Edit $profile_local to add your tokens."
             else
-                echo "Warning: Example file not found: $example_file"
-                echo "  You can create ~/.profile.local manually."
+                df_warn "Example file not found: $example_file"
+                df_info "  You can create ~/.profile.local manually."
             fi
             ;;
         *)
-            echo "Skipped. You can create it manually later."
-            echo "  Example: cp ~/.dotfiles/.profile.local.example ~/.profile.local"
+            df_info "Skipped. You can create it manually later."
+            df_info "  Example: cp ~/.dotfiles/.profile.local.example ~/.profile.local"
             ;;
     esac
 }
 
+# Copy only when src and dest are not already the same file. Stow symlinks the
+# repo copy into $HOME, so a plain `cp -f` errors with "are the same file".
+copy_if_different() {
+    src="$1"
+    dest="$2"
+
+    [ -e "$src" ] || return 0
+
+    src_real=$(readlink -f "$src" 2>/dev/null || printf '%s' "$src")
+    dest_real=$(readlink -f "$dest" 2>/dev/null || printf '%s' "$dest")
+
+    if [ "$src_real" = "$dest_real" ]; then
+        df_debug "skip copy: $dest already points at $src"
+        return 0
+    fi
+
+    cp -f "$src" "$dest"
+}
+
+# Clone only when the destination is missing. Post-setup is re-runnable, and a
+# plain clone into an existing directory fails, which would now surface as a
+# failed step for something that is in fact already installed.
+clone_once() {
+    dest="$1"
+    shift
+    if [ -d "$dest" ]; then
+        df_debug "skip clone: $dest already exists"
+        return 0
+    fi
+    df_run git clone "$@" "$dest"
+}
+
+# Wrapper so both vim rc copies run inside a single run_step.
+link_vim_rc() {
+    copy_if_different "$HOME/.dotfiles/linux/vim/.vimrc" "$HOME/.vimrc"
+    copy_if_different "$HOME/.dotfiles/linux/vim/.virc" "$HOME/.virc"
+}
+
+# All seven zsh plugin clones in one step. Each df_run failure returns
+# immediately so the step (and its ticker) ends cleanly before set -e aborts.
+install_zsh_plugins() {
+    ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
+    ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
+    df_run git clone https://github.com/bobthecow/git-flow-completion.git "$ZSH_CUSTOM_PLUGINS_DIR/git-flow-completion" || return $?
+    df_run git clone https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-autosuggestions" || return $?
+    df_run git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-syntax-highlighting" || return $?
+    df_run git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting" || return $?
+    df_run git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete" || return $?
+    df_run git clone https://github.com/larkery/zsh-histdb.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb" || return $?
+    df_run git clone https://github.com/MichaelAquilina/zsh-you-should-use.git "$ZSH_CUSTOM_PLUGINS_DIR/zsh-you-should-use" || return $?
+}
+
 main() {
-    ls -lah "$WORKDIR"
+    run_step "Setting up git flow" df_run sh "$WORKDIR/dotfiles-git" || df_fail "dotfiles-git setup failed"
 
-    echo 'Setting up git flow...'
-    sh $WORKDIR/dotfiles-git
+    run_step "Symlinking state dir" sh -c 'mkdir -p "$HOME/.local/state/dotstow" && ln -snf "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"'
 
-    echo "Symlinking state dir..."
-    mkdir -p "$HOME/.local/state/dotstow"
-    ln -s "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"
+    run_step "Symlinking vim rc files" link_vim_rc
 
-    echo 'Symlinking vim rc files...'
-    cp -f $HOME/.dotfiles/linux/vim/.vimrc ~/.vimrc
-    cp -f $HOME/.dotfiles/linux/vim/.virc ~/.virc
+    run_step "Installing dotstow" df_run ./dotfiles-dotstow || df_fail "dotfiles-dotstow install failed"
 
-    echo 'Installing dotstow...'
-    ./dotfiles-dotstow
+    run_step "Cloning fzf" clone_once "$HOME/.fzf" --depth 1 https://github.com/junegunn/fzf.git
+    run_step_quiet "Setting up bash fzf" df_run_interactive ~/.fzf/install
 
-    echo 'Setting up bash fzf...'
-    git clone -q --depth 1 https://github.com/junegunn/fzf.git ~/.fzf || true
-    ~/.fzf/install
+    run_step "Setting up bash fasd" clone_once "$HOME/.fasd" --depth 1 https://github.com/clvv/fasd.git
 
-    echo 'Setting up bash fasd...'
-    git clone -q --depth 1 https://github.com/clvv/fasd.git ~/.fasd || true
+    run_step "Setting up Tmux Plugin Manager" clone_once "$HOME/.tmux/plugins/tpm" --depth 1 https://github.com/tmux-plugins/tpm
 
-    echo 'Setting up Tmux Plugin Manager...'
-    mkdir -p ~/.tmux/plugins
-    git clone -q --depth 1 https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm || true
+    run_step "Setting up Starship prompt" df_run sh -c 'mkdir -p "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin" && curl -fsSL https://starship.rs/install.sh | sh -s -- -b "$HOME/.local/bin/org.jcchikikomori.dotfiles/bin" -f'
 
-    echo 'Setting up Starship prompt...'
-    mkdir -p ~/.local/bin/org.jcchikikomori.dotfiles/bin
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -b ~/.local/bin/org.jcchikikomori.dotfiles/bin -f
-
-    echo 'Setting up Antigen...'
-    curl -L https://git.io/antigen >"$HOME/antigen.zsh"
+    run_step "Setting up Antigen" df_run sh -c 'curl -L https://git.io/antigen >"$HOME/antigen.zsh"'
 
     # https://github.com/alacritty/alacritty-theme
-    echo 'Setting up Alacritty themes...'
-    mkdir -p ~/.config/alacritty/themes
-    git clone https://github.com/alacritty/alacritty-theme ~/.config/alacritty/themes
+    run_step "Setting up Alacritty themes" df_run sh -c 'mkdir -p "$HOME/.config/alacritty/themes" && git clone https://github.com/alacritty/alacritty-theme "$HOME/.config/alacritty/themes"'
 
-    echo 'Setting up some Nerd Fonts...'
-    sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode
-    sh $WORKDIR/dotfiles-nerf --smoke-test
+    # Fonts are cosmetic, and dotfiles-nerf resolves assets through the
+    # unauthenticated GitHub releases API, which rate-limits on shared CI
+    # runners. A font download must not be able to abort the whole setup.
+    run_step "Setting up Nerd Fonts" df_run_soft sh -c "sh $WORKDIR/dotfiles-nerf JetBrainsMono FiraCode && sh $WORKDIR/dotfiles-nerf --smoke-test" || df_warn "Nerd Fonts install failed/skipped"
 
     # Check if running on Termux
-    if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+    # PREFIX is only set under Termux, and set -u makes a bare $PREFIX abort
+    # everywhere else.
+    if [ -n "${PREFIX:-}" ] && echo "${PREFIX:-}" | grep -q "com.termux"; then
         echo ""
-        echo "=== Termux Environment Detected ==="
-        echo "Only Python (pyenv) is officially supported on Linux distributions."
-        echo "Other language managers (Ruby, PHP, Java, NodeJS) may have compatibility issues."
-        echo "You can install them manually later if needed."
+        df_info "=== Termux Environment Detected ==="
+        df_info "Only Python (pyenv) is officially supported on Linux distributions."
+        df_info "Other language managers (Ruby, PHP, Java, NodeJS) may have compatibility issues."
+        df_info "You can install them manually later if needed."
         echo ""
         prompt_installation "python" "dotfiles-python"
         prompt_installation "pre-commit" "dotfiles-python--pre-commit"
@@ -194,42 +293,32 @@ main() {
         prompt_installation "Vim with plugins" "dotfiles-vim"
     fi
 
-    if [ -z "$PREFIX" ] || ! echo "$PREFIX" | grep -q "com.termux"; then
+    if [ -z "${PREFIX:-}" ] || ! echo "${PREFIX:-}" | grep -q "com.termux"; then
         DOTFILES_DIR="${DOTFILES_PATH:-$HOME/.dotfiles}"
         if command -v devtools-opencode > /dev/null 2>&1; then
             prompt_installation "opencode AI coding agent" "devtools-opencode install"
         else
-            echo "Warning: devtools-opencode not found on PATH. Skipping."
-            echo "  Make sure the systems stow package is installed."
+            df_warn "devtools-opencode not found on PATH. Skipping."
+            df_info "  Make sure the systems stow package is installed."
         fi
     fi
 
-    echo 'Setting up oh-my-zsh...'
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-    echo 'Installing zsh plugins...'
-    local ZSH_CUSTOM_DIR=$HOME/.oh-my-zsh/custom
-    local ZSH_CUSTOM_PLUGINS_DIR=$ZSH_CUSTOM_DIR/plugins
-    git clone https://github.com/bobthecow/git-flow-completion.git $ZSH_CUSTOM_PLUGINS_DIR/git-flow-completion
-    git clone https://github.com/zsh-users/zsh-autosuggestions.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autosuggestions
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-syntax-highlighting
-    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git $ZSH_CUSTOM_PLUGINS_DIR/fast-syntax-highlighting
-    git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-autocomplete
-    git clone https://github.com/larkery/zsh-histdb.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-histdb
-    git clone https://github.com/MichaelAquilina/zsh-you-should-use.git $ZSH_CUSTOM_PLUGINS_DIR/zsh-you-should-use
+    run_step_quiet "Setting up oh-my-zsh" df_run_interactive sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
-    echo 'Setting up ~/.profile.local for user customizations...'
-    setup_profile_local
+    run_step "Installing zsh plugins" install_zsh_plugins
+
+    run_step_quiet "Setting up ~/.profile.local" setup_profile_local
 
     cd "$ORIGINAL_DIR"
     rm -rf "$WORKDIR"
 }
 
-echo 'Setting up scripts...'
+df_info 'Setting up scripts...'
 setup_directory
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to complete setting up scripts! Exiting..." >&2
+    df_error "Failed to complete setting up scripts! Exiting..."
     exit 1
 fi
 
-echo 'Executing post-setup...'
+df_info 'Executing post-setup...'
 main

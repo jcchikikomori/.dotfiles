@@ -1,174 +1,227 @@
 #!/bin/sh
 
-echo "Welcome! Beginning setup..."
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+DOTFILES_BIN_DEFAULT="$SCRIPT_DIR/linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin"
+DOTFILES_BIN_RESOLVED="${DOTFILES_BIN:-$DOTFILES_BIN_DEFAULT}"
 
-prelim() {
-  echo "Copying/generating files needed to your home directory..."
-
-  export DOTFILES_PATH=$(pwd)
-  echo $DOTFILES_PATH >>.currentdir
-
-  export DOTFILES_USERNAME=$(whoami)
-  echo $DOTFILES_USERNAME >>.currentuser
-
-  # mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
-  # echo "Copying scripts to ~/bin..."
-  # cp -rf ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/* $HOME/.local/bin/org.jcchikikomori.dotfiles/bin/
-
-  echo "Preliminary setup done! Proceeding with the rest of the setup..."
-}
-
-# Generate .bashrc from system (/etc/skel/.bashrc)
-generate_bashrc() {
-  echo "Generating .bashrc from system..."
-  if [ -f /etc/skel/.bashrc ]; then
-    cp -f /etc/skel/.bashrc $HOME/.bashrc
-    echo "Generated .bashrc from system."
-  else
-    echo "System .bashrc not found. Skipping generation."
-  fi
-}
-
-# Execute preliminary setup
-generate_bashrc
-prelim
-
-# OS-related workarounds
-export DETECTED_DISTRO="unknown"
-# Ensure config directory exists
-mkdir -p $HOME/.config
-touch $HOME/.dotfiles-distro
-
-# Check for Termux environment first (before /etc/os-release)
-if [ -n "$PREFIX" ] && [ -d "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
-  echo "You are using Termux (Android)"
-  export DETECTED_DISTRO="termux"
-  echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
-# Check macOS (Darwin) before Linux-specific detection.
-elif [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
-  echo "You are using macOS"
-  export DETECTED_DISTRO="darwin"
-  echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
-# begin detection
-elif [ -f /etc/os-release ]; then
-  . /etc/os-release
-  case $ID in
-  ubuntu)
-    echo "You are using Ubuntu"
-    export DETECTED_DISTRO="ubuntu"
-    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
-    ;;
-  debian)
-    echo "You are using Debian"
-    export DETECTED_DISTRO="debian"
-    export DEBIAN_FRONTEND=noninteractive
-    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
-    ;;
-  arch|garuda|manjaro|cachyos)
-    if [[ $NAME == *"Arch Linux"* ]]; then
-      echo "You are using Arch Linux Barebones"
-      export DETECTED_DISTRO="archbtw"
-    else
-      echo "You are using Arch Linux"
-      export DETECTED_DISTRO="arch"
-    fi
-    export MAKEFLAGS="-j$(nproc)"
-    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
-    ;;
-  steamos)
-    echo "You are using SteamOS"
-    export DETECTED_DISTRO="steamos"
-    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
-    ;;
-  fedora|centos|rhel)
-    echo "You are using Fedora/CentOS/RHEL"
-    # Ensure include the installed libraries from system before compiling software
-    export PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH}"
-    # Ensure path for GO programming language
-    export GOPATH="${HOME}/go"
-    export DETECTED_DISTRO="rhel"
-    echo $DETECTED_DISTRO >> $HOME/.dotfiles-distro
-    ;;
-  bazzite)
-    echo "You are using Bazzite Linux. Please install using distrobox. Exiting..."
-    exit 1
-    ;;
-  *)
-    echo "You are using Unknown OS. Exiting..."
-    exit 1
-    ;;
-  esac
-elif [ -f /etc/redhat-release ]; then
-  echo "You are using $(cat /etc/redhat-release)"
-  export DETECTED_DISTRO="rhel"
-elif [ -f /etc/debian_version ]; then
-  echo "You are using Debian-based distro"
-  export DETECTED_DISTRO="debian"
-else
-  echo "Unable to identify the OS. Exiting..."
+if [ ! -r "$DOTFILES_BIN_RESOLVED/dotfiles-lib-output" ]; then
+  echo "[dotfiles:start] Error: dotfiles-lib-output not found"
   exit 1
 fi
 
-if [ -n "$DETECTED_DISTRO" ]; then
-  echo "Detected distro: $DETECTED_DISTRO"
-  case $DETECTED_DISTRO in
-  termux)
-    echo "Executing Termux-related workarounds..."
-    sh termux/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install
-    ;;
-  darwin)
-    echo "Executing macOS-related workarounds..."
-    sh darwin/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    ;;
-  debian)
-    echo "Executing Debian-related workarounds..."
-    sh debian/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    ;;
-  ubuntu)
-    echo "Executing Ubuntu-related workarounds..."
-    sh ubuntu/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    ;;
-  archbtw)
-    echo "Executing Arch-related (btw) workarounds..."
-    if [ -n "$CI" ]; then
-      echo "Executing init.sh (CI/CD mode)..."
-      sh arch/init.sh
-    elif [ "$(id -u)" -ne 0 ]; then
-      echo "Executing init.sh as root..."
-      sudo sh arch/init.sh
-    fi
-    sh arch/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    ;;
-  arch)
-    echo "Executing Arch-related workarounds..."
-    sh arch/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    ;;
-  steamos)
-    echo "Executing SteamOS-related workarounds..."
-    sh steamos/setup.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install
-    ;;
-  rhel)
-    echo "Executing RHEL-related workarounds..."
-    sh rhel/setup.sh
-    echo "Installing VSCode..."
-    sh rhel/vscode.sh
-    sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup
-    ;;
-  *)
-    echo "Unable to identify the distro to begin! Exiting..."
-    exit 1
-    ;;
+# shellcheck source=/dev/null
+. "$DOTFILES_BIN_RESOLVED/dotfiles-lib-output"
+
+START_VERBOSE=0
+for arg in "$@"; do
+  case "$arg" in
+    --verbose|-v)
+      START_VERBOSE=1
+      ;;
   esac
+done
+
+DF_PREFIX="start"
+if [ "$START_VERBOSE" -eq 1 ]; then
+  df_output_init --verbose
+  export DOTFILES_VERBOSE=1
 else
-  echo "Unable to identify the distro. Exiting..."
-  exit 1
+  df_output_init
+fi
+
+run_step() {
+  label="$1"
+  shift
+  df_step "$label"
+  if "$@"; then
+    code=0
+  else
+    code=$?
+  fi
+  # df_step_end returns the effective status: non-zero when $code is non-zero
+  # OR when a df_run inside the step failed but the command swallowed it.
+  df_step_end "$code"
+  return "$?"
+}
+
+# Use for commands that spawn a child script which prints its own step output.
+# Identical to run_step but without the live-timer ticker, which would fight
+# the child's ticker for the same terminal line.
+run_child_step() {
+  label="$1"
+  shift
+  df_step_quiet "$label"
+  if "$@"; then
+    code=0
+  else
+    code=$?
+  fi
+  df_step_end "$code"
+  return "$?"
+}
+
+prelim() {
+  df_info "Copying/generating files needed to your home directory..."
+
+  DOTFILES_PATH=$(pwd)
+  echo "$DOTFILES_PATH" >> .currentdir
+
+  DOTFILES_USERNAME=$(whoami)
+  echo "$DOTFILES_USERNAME" >> .currentuser
+
+  df_info "Preliminary setup done! Proceeding with the rest of the setup..."
+}
+
+generate_bashrc() {
+  df_info "Generating .bashrc from system..."
+  if [ -f /etc/skel/.bashrc ]; then
+    cp -f /etc/skel/.bashrc "$HOME/.bashrc"
+    df_info "Generated .bashrc from system."
+  else
+    df_info "System .bashrc not found. Skipping generation."
+  fi
+}
+
+detect_distro() {
+  DETECTED_DISTRO="unknown"
+  mkdir -p "$HOME/.config"
+  touch "$HOME/.dotfiles-distro"
+
+  if [ -n "${PREFIX:-}" ] && [ -d "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
+    df_info "You are using Termux (Android)"
+    DETECTED_DISTRO="termux"
+    echo "$DETECTED_DISTRO" >> "$HOME/.dotfiles-distro"
+    return 0
+  fi
+
+  if [ "$(uname -s 2>/dev/null)" = "Darwin" ]; then
+    df_info "You are using macOS"
+    DETECTED_DISTRO="darwin"
+    echo "$DETECTED_DISTRO" >> "$HOME/.dotfiles-distro"
+    return 0
+  fi
+
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    case "$ID" in
+      ubuntu)
+        df_info "You are using Ubuntu"
+        DETECTED_DISTRO="ubuntu"
+        ;;
+      debian)
+        df_info "You are using Debian"
+        DETECTED_DISTRO="debian"
+        DEBIAN_FRONTEND=noninteractive
+        export DEBIAN_FRONTEND
+        ;;
+      arch|garuda|manjaro|cachyos)
+        case "$NAME" in
+          *"Arch Linux"*)
+            df_info "You are using Arch Linux Barebones"
+            DETECTED_DISTRO="archbtw"
+            ;;
+          *)
+            df_info "You are using Arch Linux"
+            DETECTED_DISTRO="arch"
+            ;;
+        esac
+        MAKEFLAGS="-j$(nproc)"
+        export MAKEFLAGS
+        ;;
+      steamos)
+        df_info "You are using SteamOS"
+        DETECTED_DISTRO="steamos"
+        ;;
+      fedora|centos|rhel)
+        df_info "You are using Fedora/CentOS/RHEL"
+        PKG_CONFIG_PATH="/usr/lib64/pkgconfig:${PKG_CONFIG_PATH:-}"
+        GOPATH="${HOME}/go"
+        DETECTED_DISTRO="rhel"
+        export PKG_CONFIG_PATH GOPATH
+        ;;
+      bazzite)
+        df_fail "You are using Bazzite Linux. Please install using distrobox. Exiting..."
+        ;;
+      *)
+        df_fail "You are using Unknown OS. Exiting..."
+        ;;
+    esac
+    echo "$DETECTED_DISTRO" >> "$HOME/.dotfiles-distro"
+    return 0
+  fi
+
+  if [ -f /etc/redhat-release ]; then
+    df_info "You are using $(cat /etc/redhat-release)"
+    DETECTED_DISTRO="rhel"
+    return 0
+  fi
+
+  if [ -f /etc/debian_version ]; then
+    df_info "You are using Debian-based distro"
+    DETECTED_DISTRO="debian"
+    return 0
+  fi
+
+  df_fail "Unable to identify the OS. Exiting..."
+}
+
+run_distro_setup() {
+  case "$DETECTED_DISTRO" in
+    termux)
+      run_child_step "Executing Termux-related workarounds" sh termux/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Running bash setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install || return $?
+      ;;
+    darwin)
+      run_child_step "Executing macOS-related workarounds" sh darwin/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      ;;
+    debian)
+      run_child_step "Executing Debian-related workarounds" sh debian/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      ;;
+    ubuntu)
+      run_child_step "Executing Ubuntu-related workarounds" sh ubuntu/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      ;;
+    archbtw)
+      df_info "Executing Arch-related (btw) workarounds..."
+      if [ -n "${CI:-}" ]; then
+        run_child_step "Executing init.sh (CI/CD mode)" sh arch/init.sh || return $?
+      elif [ "$(id -u)" -ne 0 ]; then
+        run_child_step "Executing init.sh as root" sudo sh arch/init.sh || return $?
+      fi
+      run_child_step "Executing Arch setup" sh arch/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      ;;
+    arch)
+      run_child_step "Executing Arch-related workarounds" sh arch/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      ;;
+    steamos)
+      run_child_step "Executing SteamOS-related workarounds" sh steamos/setup.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      run_child_step "Running bash setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-bash install || return $?
+      ;;
+    rhel)
+      run_child_step "Executing RHEL-related workarounds" sh rhel/setup.sh || return $?
+      run_child_step "Installing VSCode" sh rhel/vscode.sh || return $?
+      run_child_step "Running post-setup" sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-post-setup || return $?
+      ;;
+    *)
+      df_fail "Unable to identify the distro to begin! Exiting..."
+      ;;
+  esac
+}
+
+df_info "Welcome! Beginning setup..."
+run_step "Generate .bashrc" generate_bashrc || exit $?
+run_step "Preliminary setup" prelim || exit $?
+run_step "Detect operating system" detect_distro || exit $?
+
+if [ -n "${DETECTED_DISTRO:-}" ]; then
+  df_info "Detected distro: $DETECTED_DISTRO"
+  run_distro_setup || exit $?
+else
+  df_fail "Unable to identify the distro. Exiting..."
 fi

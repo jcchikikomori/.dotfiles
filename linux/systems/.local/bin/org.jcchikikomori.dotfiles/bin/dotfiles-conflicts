@@ -25,12 +25,36 @@
 
 set -u
 
-DOTFILES_PATH=${DOTFILES_PATH:-"$HOME/.dotfiles"}
-STRICT=0
-
-if [ "${1-}" = "--strict" ]; then
-  STRICT=1
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ ! -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
+  echo "[dotfiles:conflicts] Error: dotfiles-lib-output not found" >&2
+  exit 1
 fi
+
+# shellcheck source=/dev/null
+. "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+
+CONFLICTS_VERBOSE=0
+STRICT=0
+for arg in "$@"; do
+  case "$arg" in
+    --strict)
+      STRICT=1
+      ;;
+    --verbose|-v)
+      CONFLICTS_VERBOSE=1
+      ;;
+  esac
+done
+
+DF_PREFIX="conflicts"
+if [ "$CONFLICTS_VERBOSE" -eq 1 ]; then
+  df_output_init --verbose
+else
+  df_output_init
+fi
+
+DOTFILES_PATH=${DOTFILES_PATH:-"$HOME/.dotfiles"}
 
 if [ ! -d "$DOTFILES_PATH" ]; then
   SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -114,7 +138,7 @@ status_line() {
 
 BLOCKING=0
 
-echo '[dotfiles-conflicts] Checking stow target conflicts (neovim)'
+df_info 'Checking stow target conflicts (neovim)'
 
 for target in \
   "$HOME/.config/nvim"
@@ -124,7 +148,7 @@ do
   fi
 done
 
-echo '[dotfiles-conflicts] Checking stow target conflicts (wireplumber)'
+df_info 'Checking stow target conflicts (wireplumber)'
 
 for target in \
   "$HOME/.config/wireplumber" \
@@ -135,7 +159,7 @@ do
   fi
 done
 
-echo '[dotfiles-conflicts] Checking stow target conflicts (opencode)'
+df_info 'Checking stow target conflicts (opencode)'
 
 for target in \
   "$HOME/.config/opencode" \
@@ -148,7 +172,7 @@ do
   fi
 done
 
-echo '[dotfiles-conflicts] Checking stow target conflicts (emudeck systemd)'
+df_info 'Checking stow target conflicts (emudeck systemd)'
 
 # GitHub #91: Prevent conflicts with emudeck-sync systemd services.
 # If user created these files manually during testing, stow will refuse to link.
@@ -163,8 +187,8 @@ do
 done
 
 if [ "$BLOCKING" -eq 1 ]; then
-  echo '[dotfiles-conflicts] Blocking conflicts found.'
-  echo '[dotfiles-conflicts] Recommended: backup/remove conflicting targets, then run stow again.'
+  df_warn 'Blocking conflicts found.'
+  df_warn 'Recommended: backup/remove conflicting targets, then run stow again.'
   if [ "$STRICT" -eq 1 ]; then
     exit 1
   fi

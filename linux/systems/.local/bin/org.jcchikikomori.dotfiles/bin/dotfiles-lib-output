@@ -1,0 +1,691 @@
+# dotfiles-lib-output
+#
+# Sourced POSIX-sh output library for dotfiles scripts.
+#
+# Sourcing contract:
+#   . "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+#   df_output_init [--verbose] [--no-color]
+#
+# Init ordering:
+#   Call df_output_init once in the top-level script after sourcing this file
+#   and before calling any df_* function.
+#
+# set -e guard pattern for child commands:
+#   df_run command arg1 arg2 || df_fail "command failed" $?
+
+# Internal cached state (populated by df_output_init)
+DF_OUTPUT_INITIALIZED=0
+DF_OUTPUT_PREFIX=""
+DF_OUTPUT_TTY=0
+DF_OUTPUT_CI=0
+DF_OUTPUT_UTF8=0
+DF_OUTPUT_VERBOSE=0
+DF_OUTPUT_NO_COLOR=0
+DF_OUTPUT_WIDTH=80
+DF_OUTPUT_TIMER_START=0
+DF_OUTPUT_STEP_NAME=""
+DF_OUTPUT_LOG_FILE=""
+DF_OUTPUT_TICKER_PID=""
+DF_OUTPUT_STEP_FAILED=0
+DF_OUTPUT_STEP_FAIL_CODE=0
+
+df__bool_true() {
+  case "$1" in
+    1|true|TRUE|yes|YES|on|ON)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+df_script_dir() {
+  script="$0"
+  case "$script" in
+    */*)
+      path="$script"
+      ;;
+    *)
+      path=$(command -v "$script" 2>/dev/null || printf '%s' "$script")
+      ;;
+  esac
+  dir=$(dirname "$path")
+  (CDPATH=; cd "$dir" 2>/dev/null && pwd) || pwd
+}
+
+df__basename() {
+  name=$(basename "$1")
+  name=${name%.sh}
+  case "$name" in
+    dotfiles-*)
+      name=${name#dotfiles-}
+      ;;
+  esac
+  [ -n "$name" ] || name="script"
+  printf '%s' "$name"
+}
+
+df__is_ci_env() {
+  if df__bool_true "${CI:-}" || [ -n "${GITHUB_ACTIONS:-}" ]; then
+    return 0
+  fi
+  return 1
+}
+
+df__is_utf8_env() {
+  locale_all="${LC_ALL:-}"
+  locale_type="${LC_CTYPE:-}"
+  locale_lang="${LANG:-}"
+
+  # LC_ALL has highest precedence.
+  if [ -n "$locale_all" ]; then
+    if printf '%s' "$locale_all" | grep -Eq '[Uu][Tt][Ff]-?8'; then
+      return 0
+    fi
+    case "$locale_all" in
+      C|POSIX)
+        return 1
+        ;;
+    esac
+  fi
+
+  if [ -n "$locale_type" ] || [ -n "$locale_lang" ]; then
+    locale_joined="$locale_type $locale_lang"
+    if printf '%s' "$locale_joined" | grep -Eq '[Uu][Tt][Ff]-?8'; then
+      return 0
+    fi
+    if printf '%s' "$locale_joined" | grep -Eq '(^|[[:space:]])(C|POSIX)($|[[:space:]])'; then
+      return 1
+    fi
+  fi
+
+  if [ "$(uname -s 2>/dev/null || printf unknown)" = "Darwin" ]; then
+    return 0
+  fi
+
+  return 1
+}
+
+df__detect_width() {
+  width=""
+
+  stty_size=$(stty size 2>/dev/null || true)
+  if [ -n "$stty_size" ]; then
+    width=$(printf '%s' "$stty_size" | awk '{print $2}')
+  fi
+
+  if [ -z "$width" ] || [ "$width" -le 0 ] 2>/dev/null; then
+    if [ -n "${TMUX:-}" ] && command -v tmux >/dev/null 2>&1; then
+      tmux_width=$(tmux display -p '#{pane_width}' 2>/dev/null || true)
+      if [ -n "$tmux_width" ]; then
+        width="$tmux_width"
+      fi
+    fi
+  fi
+
+  if [ -z "$width" ] || [ "$width" -le 0 ] 2>/dev/null; then
+    tput_width=$(tput cols 2>/dev/null || true)
+    if [ -n "$tput_width" ]; then
+      width="$tput_width"
+    fi
+  fi
+
+  if [ -z "$width" ] || [ "$width" -le 0 ] 2>/dev/null; then
+    width=80
+  fi
+
+  printf '%s\n' "$width"
+}
+
+df_width() {
+  if [ "$DF_OUTPUT_INITIALIZED" -eq 1 ]; then
+    printf '%s\n' "$DF_OUTPUT_WIDTH"
+    return 0
+  fi
+  df__detect_width
+}
+
+df__byte_len() {
+  printf '%s' "$1" | wc -c | tr -d ' '
+}
+
+df__cut_bytes() {
+  text="$1"
+  count="$2"
+  [ "$count" -gt 0 ] 2>/dev/null || {
+    printf ''
+    return 0
+  }
+  printf '%s' "$text" | dd bs=1 count="$count" 2>/dev/null
+}
+
+df_truncate() {
+  text="$1"
+  max="$2"
+
+  if [ -z "$max" ] || [ "$max" -le 0 ] 2>/dev/null; then
+    printf ''
+    return 0
+  fi
+
+  len=$(df__byte_len "$text")
+  if [ "$len" -le "$max" ] 2>/dev/null; then
+    printf '%s' "$text"
+    return 0
+  fi
+
+  if df_is_utf8; then
+    suffix='…'
+  else
+    suffix='...'
+  fi
+  suffix_len=$(df__byte_len "$suffix")
+
+  if [ "$max" -le "$suffix_len" ] 2>/dev/null; then
+    if [ "$max" -ge 1 ] 2>/dev/null; then
+      # Never emit a partial multi-byte suffix: cut the ASCII suffix freely,
+      # but only return the UTF-8 ellipsis when it fits entirely.
+      if df_is_utf8 && [ "$max" -lt "$suffix_len" ] 2>/dev/null; then
+        printf ''
+      else
+        df__cut_bytes "$suffix" "$max"
+      fi
+    else
+      printf ''
+    fi
+    return 0
+  fi
+
+  body_max=$((max - suffix_len))
+  body=$(df__cut_bytes "$text" "$body_max")
+
+  if df_is_utf8; then
+    # If the byte immediately after the cut point is a UTF-8 continuation
+    # byte (0x80-0xBF), the cut split a multi-byte glyph: trim its partial
+    # tail (continuation bytes) plus its lead byte so no partial glyph
+    # remains. A non-continuation byte there means the cut landed on a glyph
+    # boundary and the body is already clean.
+    next_byte=$(printf '%s' "$text" | dd bs=1 skip="$body_max" count=1 2>/dev/null | od -An -tu1 | awk '{print $1}')
+    if [ -n "$next_byte" ] && [ "$next_byte" -ge 128 ] 2>/dev/null && [ "$next_byte" -le 191 ] 2>/dev/null; then
+      while :; do
+        body_len=$(df__byte_len "$body")
+        [ "$body_len" -gt 0 ] || break
+        last_byte=$(printf '%s' "$body" | od -An -tu1 | awk '{for(i=1;i<=NF;i++)b=$i} END{print b}')
+        case "$last_byte" in
+          '' )
+            break
+            ;;
+        esac
+        if [ "$last_byte" -ge 128 ] 2>/dev/null && [ "$last_byte" -le 191 ] 2>/dev/null; then
+          next_len=$((body_len - 1))
+          body=$(df__cut_bytes "$body" "$next_len")
+        else
+          break
+        fi
+      done
+      body_len=$(df__byte_len "$body")
+      if [ "$body_len" -gt 0 ] 2>/dev/null; then
+        last_byte=$(printf '%s' "$body" | od -An -tu1 | awk '{for(i=1;i<=NF;i++)b=$i} END{print b}')
+        case "$last_byte" in
+          '' )
+            ;;
+          *)
+            if [ "$last_byte" -ge 192 ] 2>/dev/null; then
+              next_len=$((body_len - 1))
+              body=$(df__cut_bytes "$body" "$next_len")
+            fi
+            ;;
+        esac
+      fi
+    fi
+  fi
+
+  printf '%s%s' "$body" "$suffix"
+}
+
+df__fmt_prefix() {
+  printf '[dotfiles:%s]' "$DF_OUTPUT_PREFIX"
+}
+
+df__redraw_enabled() {
+  [ "$DF_OUTPUT_TTY" -eq 1 ] || return 1
+  [ "$DF_OUTPUT_CI" -eq 0 ] || return 1
+  [ "$DF_OUTPUT_VERBOSE" -eq 0 ] || return 1
+  return 0
+}
+
+# Wipe the in-place redraw line so a permanent log line never appends to, or
+# leaves residue from, the ticker's carriage-return output.
+df__clear_redraw_line() {
+  [ -n "$DF_OUTPUT_TICKER_PID" ] || return 0
+  printf '\r%b' '\033[K'
+  return 0
+}
+
+df__stderr() {
+  df__clear_redraw_line
+  printf '%s\n' "$1" >&2
+}
+
+df__stdout() {
+  df__clear_redraw_line
+  printf '%s\n' "$1"
+}
+
+df__color_wrap() {
+  color="$1"
+  text="$2"
+  if [ "$DF_OUTPUT_TTY" -eq 1 ] && [ "$DF_OUTPUT_NO_COLOR" -eq 0 ]; then
+    # %b interprets the backslash escape sequences in the color and reset
+    # operands so real ESC bytes are emitted, never literal "\033" strings.
+    printf '%b%s%b' "$color" "$text" '\033[0m'
+  else
+    printf '%s' "$text"
+  fi
+}
+
+df__log_line() {
+  line="$1"
+  max=""
+  width=$(df_width)
+  if [ "$DF_OUTPUT_TTY" -eq 1 ]; then
+    if [ "$width" -lt 40 ] 2>/dev/null; then
+      printf '%s' "$line"
+      return 0
+    fi
+    max=$((width - 1))
+    if [ "$max" -gt 199 ] 2>/dev/null; then
+      max=199
+    fi
+  else
+    max=${DOTFILES_MAX_LINE:-120}
+  fi
+  df_truncate "$line" "$max"
+}
+
+df_is_tty() {
+  [ "$DF_OUTPUT_TTY" -eq 1 ]
+}
+
+df_is_ci() {
+  [ "$DF_OUTPUT_CI" -eq 1 ]
+}
+
+df_is_utf8() {
+  [ "$DF_OUTPUT_UTF8" -eq 1 ]
+}
+
+df_is_verbose() {
+  [ "$DF_OUTPUT_VERBOSE" -eq 1 ]
+}
+
+df_log() {
+  level="$1"
+  shift
+  msg="$*"
+
+  if [ "$level" = "debug" ] && ! df_is_verbose; then
+    return 0
+  fi
+
+  prefix=$(df__fmt_prefix)
+  line="${prefix} ${msg}"
+  line=$(df__log_line "$line")
+
+  case "$level" in
+    error)
+      out=$(df__color_wrap '\033[31m' "$line")
+      df__stderr "$out"
+      ;;
+    warn)
+      out=$(df__color_wrap '\033[33m' "$line")
+      df__stdout "$out"
+      ;;
+    ok)
+      out=$(df__color_wrap '\033[32m' "$line")
+      df__stdout "$out"
+      ;;
+    *)
+      df__stdout "$line"
+      ;;
+  esac
+
+  return 0
+}
+
+df_info() {
+  df_log info "$*"
+}
+
+df_ok() {
+  df_log ok "$*"
+}
+
+df_warn() {
+  df_log warn "$*"
+}
+
+df_error() {
+  df_log error "Error: $*"
+}
+
+df_debug() {
+  df_log debug "$*"
+}
+
+df_timer_start() {
+  DF_OUTPUT_TIMER_START=$(date +%s 2>/dev/null || printf '0')
+  return 0
+}
+
+df_timer_elapsed() {
+  now=$(date +%s 2>/dev/null || printf '0')
+  start=${DF_OUTPUT_TIMER_START:-0}
+  elapsed=$((now - start))
+  if [ "$elapsed" -lt 0 ] 2>/dev/null; then
+    elapsed=0
+  fi
+  printf '%s\n' "$elapsed"
+}
+
+df__fmt_duration() {
+  total="$1"
+  if [ -z "$total" ] || ! [ "$total" -ge 0 ] 2>/dev/null; then
+    total=0
+  fi
+  mins=$((total / 60))
+  secs=$((total % 60))
+  if [ "$mins" -lt 10 ] 2>/dev/null; then
+    printf '%02d:%02d' "$mins" "$secs"
+  else
+    printf '%d:%02d' "$mins" "$secs"
+  fi
+}
+
+df__step_progress_line() {
+  prefix=$(df__fmt_prefix)
+  line="${prefix} ${DF_OUTPUT_STEP_NAME}... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  df__log_line "$line"
+}
+
+df__ticker_start() {
+  DF_OUTPUT_TICKER_PID=""
+  df__redraw_enabled || return 0
+
+  (
+    while :; do
+      sleep 1
+      printf '\r%s%b' "$(df__step_progress_line)" '\033[K'
+    done
+  ) 2>/dev/null &
+  DF_OUTPUT_TICKER_PID=$!
+  return 0
+}
+
+# Safe to call at any time, including from an exit trap mid-step.
+df__ticker_stop() {
+  [ -n "$DF_OUTPUT_TICKER_PID" ] || return 0
+  kill "$DF_OUTPUT_TICKER_PID" 2>/dev/null || true
+  wait "$DF_OUTPUT_TICKER_PID" 2>/dev/null || true
+  DF_OUTPUT_TICKER_PID=""
+  printf '\r%b' '\033[K'
+  return 0
+}
+
+df__step_begin() {
+  DF_OUTPUT_STEP_NAME="$*"
+  DF_OUTPUT_STEP_FAILED=0
+  DF_OUTPUT_STEP_FAIL_CODE=0
+  DF_OUTPUT_TICKER_PID=""
+  df_timer_start
+  return 0
+}
+
+df__step_frame() {
+  printf '\r%s%b' "$(df__step_progress_line)" '\033[K'
+  return 0
+}
+
+df_step() {
+  df__step_begin "$@"
+
+  if df__redraw_enabled; then
+    # The first frame must be written IN PLACE, with no trailing newline, so
+    # the ticker keeps updating this same line. Emitting a normal df_info line
+    # here would terminate it with \n and push the cursor down, leaving a
+    # permanent "(00:00)" line above a counter animating on the line below it.
+    df__step_frame
+    df__ticker_start
+  else
+    df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  fi
+
+  return 0
+}
+
+# Ticker-free step, for commands that spawn a child process which writes its
+# own step output to the same terminal. Two tickers on one tty corrupt each
+# other: the parent's ticker leaves the cursor mid-line (no trailing newline),
+# and the child's first df_info appends to that line instead of starting a new
+# one, producing an over-width line that wraps into permanent garbage. The
+# child's own ticker is the only one that may own the line.
+df_step_quiet() {
+  df__step_begin "$@"
+  df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  return 0
+}
+
+df__step_fail_latch() {
+  DF_OUTPUT_STEP_FAILED=1
+  DF_OUTPUT_STEP_FAIL_CODE="${1:-1}"
+  return 0
+}
+
+# Propagation contract: df_step_end returns the EFFECTIVE status, which is
+# non-zero when the caller passed a non-zero status OR when any df_run /
+# df_run_interactive inside the step failed (the latch). Callers that wrap
+# steps must propagate this return value; passing a hard-coded 0 is no longer
+# enough to force a success mark.
+df_step_end() {
+  status="${1:-0}"
+
+  df__ticker_stop
+
+  if [ "$status" -eq 0 ] 2>/dev/null && [ "$DF_OUTPUT_STEP_FAILED" -eq 1 ]; then
+    status="$DF_OUTPUT_STEP_FAIL_CODE"
+    [ "$status" -ne 0 ] 2>/dev/null || status=1
+  fi
+
+  if [ "$status" -eq 0 ] 2>/dev/null; then
+    if df_is_utf8; then
+      mark='✓ done'
+    else
+      mark='OK done'
+    fi
+    df_ok "$DF_OUTPUT_STEP_NAME... $mark"
+  else
+    elapsed=$(df_timer_elapsed)
+    timer=$(df__fmt_duration "$elapsed")
+    if df_is_utf8; then
+      mark='✗ failed'
+    else
+      mark='FAIL failed'
+    fi
+    df_error "$DF_OUTPUT_STEP_NAME... $mark ($timer)"
+  fi
+
+  DF_OUTPUT_STEP_FAILED=0
+  DF_OUTPUT_STEP_FAIL_CODE=0
+
+  return "$status"
+}
+
+df_log_path() {
+  if [ -n "${DOTFILES_LOG_FILE:-}" ]; then
+    printf '%s\n' "$DOTFILES_LOG_FILE"
+    return 0
+  fi
+
+  if [ -n "$DF_OUTPUT_LOG_FILE" ]; then
+    printf '%s\n' "$DF_OUTPUT_LOG_FILE"
+    return 0
+  fi
+
+  script_name=$(df__basename "$0")
+  log_dir="${DOTFILES_LOG_DIR:-/tmp/org.jcchikikomori.dotfiles}"
+  DF_OUTPUT_LOG_FILE="${log_dir}/${script_name}.$$.log"
+  printf '%s\n' "$DF_OUTPUT_LOG_FILE"
+}
+
+df_run() {
+  if [ "$#" -eq 0 ]; then
+    return 0
+  fi
+
+  # Default mode: always capture child output to the log file, including TTY
+  # sessions, so step/status lines never interleave with child output.
+  # Only --verbose streams directly. Use df_run_interactive for commands that
+  # must stay attached to the terminal.
+  if df_is_verbose; then
+    if "$@"; then
+      return 0
+    fi
+    status=$?
+    df__step_fail_latch "$status"
+    return "$status"
+  fi
+
+  log_file=$(df_log_path)
+  log_dir=$(dirname "$log_file")
+  mkdir -p "$log_dir" 2>/dev/null || true
+  : > "$log_file" 2>/dev/null || true
+
+  if "$@" >"$log_file" 2>&1; then
+    status=0
+  else
+    status=$?
+  fi
+
+  if [ "$status" -ne 0 ] 2>/dev/null; then
+    df__step_fail_latch "$status"
+    df_error "command failed (exit $status)"
+    df_info "details: $log_file"
+  fi
+
+  return "$status"
+}
+
+df_run_interactive() {
+  if [ "$#" -eq 0 ]; then
+    return 0
+  fi
+  if "$@"; then
+    return 0
+  fi
+  status=$?
+  df__step_fail_latch "$status"
+  return "$status"
+}
+
+# Same as df_run, but a failure never marks the surrounding step as failed.
+# Use only for genuinely optional/diagnostic commands.
+df_run_soft() {
+  prev_failed="$DF_OUTPUT_STEP_FAILED"
+  prev_code="$DF_OUTPUT_STEP_FAIL_CODE"
+  if df_run "$@"; then
+    status=0
+  else
+    status=$?
+  fi
+  DF_OUTPUT_STEP_FAILED="$prev_failed"
+  DF_OUTPUT_STEP_FAIL_CODE="$prev_code"
+  return "$status"
+}
+
+df_fail() {
+  msg="${1:-failed}"
+  code="${2:-1}"
+  df_error "$msg"
+  exit "$code"
+}
+
+df_hr() {
+  char="${1:-}"
+  if [ -z "$char" ]; then
+    if df_is_utf8; then
+      char='─'
+    else
+      char='-'
+    fi
+  fi
+
+  width=$(df_width)
+  if [ "$width" -lt 1 ] 2>/dev/null; then
+    width=1
+  fi
+
+  awk -v n="$width" -v c="$char" 'BEGIN { for (i = 0; i < n; i++) printf "%s", c; printf "\n"; }'
+  return 0
+}
+
+df_output_init() {
+  cli_verbose=0
+  cli_no_color=0
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --verbose)
+        cli_verbose=1
+        ;;
+      --no-color)
+        cli_no_color=1
+        ;;
+    esac
+    shift
+  done
+
+  if [ -n "${DF_PREFIX:-}" ]; then
+    DF_OUTPUT_PREFIX="$DF_PREFIX"
+  else
+    DF_OUTPUT_PREFIX=$(df__basename "$0")
+  fi
+
+  if [ -t 1 ]; then
+    DF_OUTPUT_TTY=1
+  else
+    DF_OUTPUT_TTY=0
+  fi
+
+  if df__is_ci_env; then
+    DF_OUTPUT_CI=1
+  else
+    DF_OUTPUT_CI=0
+  fi
+
+  if [ "$cli_verbose" -eq 1 ]; then
+    DF_OUTPUT_VERBOSE=1
+  elif df__bool_true "${DOTFILES_VERBOSE:-}"; then
+    DF_OUTPUT_VERBOSE=1
+  else
+    DF_OUTPUT_VERBOSE=0
+  fi
+
+  if [ "$cli_no_color" -eq 1 ] || df__bool_true "${DOTFILES_NO_COLOR:-}" || [ -n "${NO_COLOR:-}" ]; then
+    DF_OUTPUT_NO_COLOR=1
+  else
+    DF_OUTPUT_NO_COLOR=0
+  fi
+
+  if df__is_utf8_env; then
+    DF_OUTPUT_UTF8=1
+  else
+    DF_OUTPUT_UTF8=0
+  fi
+
+  DF_OUTPUT_WIDTH=$(df__detect_width)
+  DF_OUTPUT_INITIALIZED=1
+
+  df_log_path >/dev/null 2>&1 || true
+  return 0
+}

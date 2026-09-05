@@ -29,6 +29,17 @@ jobs:
             mkdir -p $HOME/.local/state/dotstow
             mkdir -p $HOME/.local/bin/org.jcchikikomori.dotfiles/bin
             cp -r $PWD/* $HOME/.dotfiles/
+      - name: Run output-lib fixtures (termux simulation)
+        uses: addnab/docker-run-action@v3
+        with:
+          image: termux/termux-docker:latest
+          run: |
+            pkg update -y
+            pkg install -y git coreutils grep gawk util-linux
+            mkdir -p $HOME/.dotfiles
+            cp -r $PWD/* $HOME/.dotfiles/
+            cd $HOME/.dotfiles
+            CI=true sh scripts/tests/output-lib-fixtures.sh
       - name: Verify Termux detection
         run: |
           cd $HOME/.dotfiles

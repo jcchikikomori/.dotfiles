@@ -19,6 +19,7 @@
 # Options:
 #   --ci                 CI mode: assume non-interactive, skip confirmations
 #   --dry-run            Show what would be done without executing
+#   --verbose            Stream child command output
 # =============================================================================
 
 set -e
@@ -39,22 +40,20 @@ DOTFILES_PYTHON_CONFIG_DIR="${DOTFILES_PYTHON_CONFIG_DIR:-$HOME/.config/dotfiles
 # CI/Dry-run modes
 CI_MODE="${CI:-false}"
 DRY_RUN=false
+VERBOSE_MODE=false
 
 # -----------------------------------------------------------------------------
 # Utility Functions
 # -----------------------------------------------------------------------------
 
-log_info() {
-    echo "[INFO] $1"
-}
-
-log_warn() {
-    echo "[WARN] $1"
-}
-
-log_error() {
-    echo "[ERROR] $1" >&2
-}
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
+    # shellcheck source=/dev/null
+    . "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+else
+    printf '[dotfiles:python] Error: dotfiles-lib-output not found\n' >&2
+    exit 1
+fi
 
 confirm() {
     if [ "$CI_MODE" = "true" ] || [ "$DRY_RUN" = "true" ]; then
@@ -71,7 +70,7 @@ confirm() {
 ensure_backup_dir() {
     if [ ! -d "$BACKUP_DIR" ]; then
         if [ "$DRY_RUN" = "true" ]; then
-            log_info "[DRY-RUN] Would create backup directory: $BACKUP_DIR"
+            df_info "[DRY-RUN] Would create backup directory: $BACKUP_DIR"
         else
             mkdir -p "$BACKUP_DIR"
         fi
@@ -85,7 +84,7 @@ backup_path() {
     local backup_subdir="$BACKUP_DIR/python-cleanup-$timestamp"
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would backup $path to $backup_subdir/"
+        df_info "[DRY-RUN] Would backup $path to $backup_subdir/"
         return 0
     fi
 
@@ -93,7 +92,7 @@ backup_path() {
     mkdir -p "$backup_subdir"
     if [ -e "$path" ]; then
         cp -a "$path" "$backup_subdir/"
-        log_info "Backed up $path to $backup_subdir/"
+        df_info "Backed up $path to $backup_subdir/"
     fi
 }
 
@@ -101,13 +100,13 @@ remove_path() {
     local path="$1"
     if [ "$DRY_RUN" = "true" ]; then
         if [ -e "$path" ]; then
-            log_info "[DRY-RUN] Would remove: $path"
+            df_info "[DRY-RUN] Would remove: $path"
         fi
     else
         if [ -e "$path" ]; then
             backup_path "$path"
             rm -rf "$path"
-            log_info "Removed: $path"
+            df_info "Removed: $path"
         fi
     fi
 }
@@ -119,12 +118,12 @@ remove_path() {
 
 ensure_config_dir() {
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would create config directory: $DOTFILES_PYTHON_CONFIG_DIR"
+        df_info "[DRY-RUN] Would create config directory: $DOTFILES_PYTHON_CONFIG_DIR"
         return 0
     fi
     if [ ! -d "$DOTFILES_PYTHON_CONFIG_DIR" ]; then
         mkdir -p "$DOTFILES_PYTHON_CONFIG_DIR"
-        log_info "Created config directory: $DOTFILES_PYTHON_CONFIG_DIR"
+        df_info "Created config directory: $DOTFILES_PYTHON_CONFIG_DIR"
     fi
 }
 
@@ -136,25 +135,25 @@ add_to_profile_local() {
 
     # If profile.local doesn't exist, skip
     if [ ! -f "$profile_local" ]; then
-        log_info "Note: $profile_local not found, skipping auto-add for $manager_name"
+        df_info "Note: $profile_local not found, skipping auto-add for $manager_name"
         return 0
     fi
 
     # Check if already present
     if grep -q "$(basename "$init_file")" "$profile_local" 2>/dev/null; then
-        log_info "$manager_name already configured in $profile_local"
+        df_info "$manager_name already configured in $profile_local"
         return 0
     fi
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would add $manager_name to $profile_local"
+        df_info "[DRY-RUN] Would add $manager_name to $profile_local"
         return 0
     fi
 
     # Append to profile.local
     printf '\n# %s Python environment\n' "$manager_name" >> "$profile_local"
     printf '[ -f %s ] && . %s\n' "$init_file" "$init_file" >> "$profile_local"
-    log_info "Added $manager_name to $profile_local"
+    df_info "Added $manager_name to $profile_local"
 }
 
 # Add global venv activation to ~/.profile.local
@@ -164,18 +163,18 @@ add_venv_activation_to_profile_local() {
 
     # If profile.local doesn't exist, skip
     if [ ! -f "$profile_local" ]; then
-        log_info "Note: $profile_local not found, skipping venv auto-activation"
+        df_info "Note: $profile_local not found, skipping venv auto-activation"
         return 0
     fi
 
     # Check if already present
     if grep -q "\.venv/global/bin/activate" "$profile_local" 2>/dev/null; then
-        log_info "Global venv already configured in $profile_local"
+        df_info "Global venv already configured in $profile_local"
         return 0
     fi
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would add global venv activation to $profile_local"
+        df_info "[DRY-RUN] Would add global venv activation to $profile_local"
         return 0
     fi
 
@@ -184,7 +183,7 @@ add_venv_activation_to_profile_local() {
     printf 'if [ -d "%s" ]; then\n' "$HOME/.venv" >> "$profile_local"
     printf '    source "%s"\n' "$venv_activate" >> "$profile_local"
     printf 'fi\n' >> "$profile_local"
-    log_info "Added global venv activation to $profile_local"
+    df_info "Added global venv activation to $profile_local"
 }
 
 # Remove a Python manager init from ~/.profile.local
@@ -198,7 +197,7 @@ remove_from_profile_local() {
 
     if [ "$DRY_RUN" = "true" ]; then
         if grep -q "$marker" "$profile_local" 2>/dev/null; then
-            log_info "[DRY-RUN] Would remove '$marker' from $profile_local"
+            df_info "[DRY-RUN] Would remove '$marker' from $profile_local"
         fi
         return 0
     fi
@@ -208,7 +207,7 @@ remove_from_profile_local() {
     temp_file="$(mktemp)"
     if grep -v "$marker" "$profile_local" > "$temp_file"; then
         mv "$temp_file" "$profile_local"
-        log_info "Removed '$marker' from $profile_local"
+        df_info "Removed '$marker' from $profile_local"
     else
         rm -f "$temp_file"
     fi
@@ -221,13 +220,13 @@ create_init_file() {
     local description="$2"
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would create: $init_file"
+        df_info "[DRY-RUN] Would create: $init_file"
         return 0
     fi
 
     ensure_config_dir
     touch "$init_file"
-    log_info "Created $description: $init_file"
+    df_info "Created $description: $init_file"
 }
 
 # Read-only: Show Python-related entries in profile
@@ -298,25 +297,25 @@ get_pipx_venvs() {
 # Command: cleanup
 # -----------------------------------------------------------------------------
 cmd_cleanup() {
-    log_info "Starting Python environment cleanup..."
+    df_info "Starting Python environment cleanup..."
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Running in dry-run mode - no changes will be made"
+        df_info "[DRY-RUN] Running in dry-run mode - no changes will be made"
     fi
 
     # Check system python first
     local system_py="/usr/bin/python3"
     if [ ! -x "$system_py" ] && [ ! -f "$system_py" ]; then
-        log_error "System Python $system_py not found or not executable!"
-        log_error "Aborting cleanup to prevent system damage."
+        df_error "System Python $system_py not found or not executable!"
+        df_error "Aborting cleanup to prevent system damage."
         exit 1
     fi
-    log_info "System Python check: OK ($system_py is present)"
+    df_info "System Python check: OK ($system_py is present)"
 
     # Confirmation
     if [ "$DRY_RUN" = "false" ]; then
         echo ""
-        log_warn "This will remove the following from your HOME directory:"
+        df_warn "This will remove the following from your HOME directory:"
         echo "  - $PYENV_ROOT"
         echo "  - $HOME/.local/share/pipx"
         echo "  - Homebrew Python (if found)"
@@ -325,7 +324,7 @@ cmd_cleanup() {
         echo "  - $HOME/.venv (global venv)"
         echo "  - $DOTFILES_PYTHON_CONFIG_DIR/"
         echo ""
-        log_warn "NOTE: This script will NOT modify $PROFILE_FILE."
+        df_warn "NOTE: This script will NOT modify $PROFILE_FILE."
         echo "      Python entries in $PROFILE_FILE must be removed manually."
         echo ""
         confirm "Are you sure you want to proceed?"
@@ -354,10 +353,10 @@ cmd_cleanup() {
     if [ -d "$HOME/.local/bin" ]; then
         if [ "$DRY_RUN" = "true" ]; then
             for f in "$HOME"/.local/bin/python-argcomplete-*; do
-                [ -e "$f" ] && log_info "[DRY-RUN] Would remove: $f"
+                [ -e "$f" ] && df_info "[DRY-RUN] Would remove: $f"
             done
             for f in "$HOME"/.local/bin/register-python-argcomplete; do
-                [ -e "$f" ] && log_info "[DRY-RUN] Would remove: $f"
+                [ -e "$f" ] && df_info "[DRY-RUN] Would remove: $f"
             done
         else
             rm -f "$HOME/.local/bin"/python-argcomplete-* 2>/dev/null || true
@@ -398,13 +397,13 @@ cmd_cleanup() {
     # Python-related entries must be removed manually
 
     echo ""
-    log_info "Cleanup complete!"
+    df_info "Cleanup complete!"
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "(dry-run - no actual changes made)"
+        df_info "(dry-run - no actual changes made)"
     fi
     echo ""
-    log_info "IMPORTANT: To complete cleanup, manually remove Python entries from $PROFILE_FILE"
-    log_info "Run 'dotfiles-python status' to see what entries exist in $PROFILE_FILE"
+    df_info "IMPORTANT: To complete cleanup, manually remove Python entries from $PROFILE_FILE"
+    df_info "Run 'dotfiles-python status' to see what entries exist in $PROFILE_FILE"
 }
 
 # -----------------------------------------------------------------------------
@@ -500,7 +499,7 @@ cmd_status() {
 # -----------------------------------------------------------------------------
 cmd_install() {
     local method="${1:-${PYTHON_INSTALL_METHOD:-pyenv}}"
-    log_info "Install method: $method"
+    df_info "Install method: $method"
     case "$method" in
         uv)
             cmd_install_uv
@@ -515,8 +514,8 @@ cmd_install() {
             cmd_install_conda
             ;;
         *)
-            log_error "Unknown PYTHON_INSTALL_METHOD: $method"
-            log_error "Supported methods: pyenv, uv, homebrew, conda"
+            df_error "Unknown PYTHON_INSTALL_METHOD: $method"
+            df_error "Supported methods: pyenv, uv, homebrew, conda"
             exit 1
             ;;
     esac
@@ -526,13 +525,13 @@ cmd_install() {
 # Command: install-pyenv
 # -----------------------------------------------------------------------------
 cmd_install_pyenv() {
-    log_info "Installing Python via pyenv (source compilation)..."
+    df_info "Installing Python via pyenv (source compilation)..."
 
     # Check for Termux
     if [ -n "$PREFIX" ] && echo "$PREFIX" | grep -q "com.termux"; then
-        log_info "Termux environment detected - using pkg"
+        df_info "Termux environment detected - using pkg"
         if ! command -v pkg >/dev/null 2>&1; then
-            log_error "pkg not found in Termux"
+            df_error "pkg not found in Termux"
             exit 1
         fi
         pkg install -y python python-tkinter python-numpy electrum asciinema matplotlib python-cryptography python2 2>/dev/null || true
@@ -545,20 +544,20 @@ cmd_install_pyenv() {
     # Remove existing pyenv
     if [ -d "$PYENV_ROOT" ]; then
         if [ "$DRY_RUN" = "true" ]; then
-            log_info "[DRY-RUN] Would remove existing $PYENV_ROOT"
+            df_info "[DRY-RUN] Would remove existing $PYENV_ROOT"
         else
-            log_info "Removing existing pyenv installation..."
+            df_info "Removing existing pyenv installation..."
             rm -rf "$PYENV_ROOT"
         fi
     fi
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would install pyenv from pyenv.run"
+        df_info "[DRY-RUN] Would install pyenv from pyenv.run"
         return 0
     fi
 
     # Install pyenv
-    curl https://pyenv.run | bash
+    df_run sh -c 'curl https://pyenv.run | bash' || df_fail "Failed to install pyenv bootstrap"
 
     # Load ccache if available
     if command -v ccache >/dev/null 2>&1; then
@@ -575,20 +574,20 @@ cmd_install_pyenv() {
     eval "$(pyenv init --path)"
     eval "$(pyenv init -)"
 
-    log_info "Installing Python 3.11.4 via pyenv (this may take a while)..."
-    pyenv install 3.11.4 -v
+    df_info "Installing Python 3.11.4 via pyenv (this may take a while)..."
+    df_run pyenv install 3.11.4 -v || df_fail "Failed to install Python 3.11.4 via pyenv"
     pyenv global 3.11.4
     pyenv rehash
 
     # Install pipx
-    log_info "Installing pipx..."
-    pip install --user pipx
+    df_info "Installing pipx..."
+    df_run pip install --user pipx || df_fail "Failed to install pipx"
     export PATH="$HOME/.local/bin:$PATH"
     pipx ensurepath
 
     # Create init file instead of modifying .profile
     ensure_config_dir
-    log_info "Creating pyenv init file: $DOTFILES_PYTHON_CONFIG_DIR/env-pyenv"
+    df_info "Creating pyenv init file: $DOTFILES_PYTHON_CONFIG_DIR/env-pyenv"
     if [ "$DRY_RUN" = "false" ]; then
         cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-pyenv" << 'PYENV_EOF'
 # pyenv initialization
@@ -601,9 +600,9 @@ PYENV_EOF
     fi
 
     echo ""
-    log_info "pyenv installation complete!"
+    df_info "pyenv installation complete!"
     echo ""
-    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    df_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
     echo ""
     echo "  # Load pyenv from dotfiles-python"
     echo "  [ -f ~/.config/dotfiles-python/env-pyenv ] && . ~/.config/dotfiles-python/env-pyenv"
@@ -614,7 +613,7 @@ PYENV_EOF
 # Command: install-homebrew
 # -----------------------------------------------------------------------------
 cmd_install_homebrew() {
-    log_info "Installing Python via Homebrew..."
+    df_info "Installing Python via Homebrew..."
 
     # Check Homebrew
     local hb_found=""
@@ -626,25 +625,25 @@ cmd_install_homebrew() {
     done
 
     if [ -z "$hb_found" ]; then
-        log_error "Homebrew not found at $HOMEBREW_ROOT or $HOMEBREW_ALT"
-        log_error "Please install Homebrew first: https://brew.sh"
+        df_error "Homebrew not found at $HOMEBREW_ROOT or $HOMEBREW_ALT"
+        df_error "Please install Homebrew first: https://brew.sh"
         return 1
     fi
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would install python@3.11, python@3.12, python@3.13 via Homebrew"
+        df_info "[DRY-RUN] Would install python@3.11, python@3.12, python@3.13 via Homebrew"
         return 0
     fi
 
     export PATH="$hb_found/bin:$PATH"
 
     # Install Python versions
-    log_info "Installing python@3.11, python@3.12, python@3.13..."
-    brew install python@3.11 python@3.12 python@3.13 2>/dev/null || true
+    df_info "Installing python@3.11, python@3.12, python@3.13..."
+    df_run brew install python@3.11 python@3.12 python@3.13 2>/dev/null || true
 
     # Create init file instead of modifying .profile
     ensure_config_dir
-    log_info "Creating Homebrew init file: $DOTFILES_PYTHON_CONFIG_DIR/env-homebrew"
+    df_info "Creating Homebrew init file: $DOTFILES_PYTHON_CONFIG_DIR/env-homebrew"
     if [ "$DRY_RUN" = "false" ]; then
         cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-homebrew" << HOMEBREW_EOF
 # Homebrew Python initialization
@@ -656,9 +655,9 @@ HOMEBREW_EOF
     fi
 
     echo ""
-    log_info "Homebrew Python installation complete!"
+    df_info "Homebrew Python installation complete!"
     echo ""
-    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    df_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
     echo ""
     echo "  # Load Homebrew Python from dotfiles-python"
     echo "  [ -f ~/.config/dotfiles-python/env-homebrew ] && . ~/.config/dotfiles-python/env-homebrew"
@@ -669,24 +668,24 @@ HOMEBREW_EOF
 # Command: install-uv
 # -----------------------------------------------------------------------------
 cmd_install_uv() {
-    log_info "Installing Python via uv (recommended for Steam Deck)..."
+    df_info "Installing Python via uv (recommended for Steam Deck)..."
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would:"
-        log_info "  1. Install uv to $HOME/.local/bin/uv"
-        log_info "  2. Set UV_PYTHON_INSTALL_DIR=$UV_INSTALL_DIR"
-        log_info "  3. Install Python 3.11, 3.12"
-        log_info "  4. Create global venv at $HOME/.venv/global"
-        log_info "  5. Create init file at $DOTFILES_PYTHON_CONFIG_DIR/env-uv"
+        df_info "[DRY-RUN] Would:"
+        df_info "  1. Install uv to $HOME/.local/bin/uv"
+        df_info "  2. Set UV_PYTHON_INSTALL_DIR=$UV_INSTALL_DIR"
+        df_info "  3. Install Python 3.11, 3.12"
+        df_info "  4. Create global venv at $HOME/.venv/global"
+        df_info "  5. Create init file at $DOTFILES_PYTHON_CONFIG_DIR/env-uv"
         return 0
     fi
 
     # Install uv
-    log_info "Installing uv..."
+    df_info "Installing uv..."
     if command -v curl >/dev/null 2>&1; then
-        curl -LsSf https://astral.sh/uv/install.sh | sh
+        df_run sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh' || df_fail "Failed to install uv"
     else
-        log_error "curl is required to install uv"
+        df_error "curl is required to install uv"
         return 1
     fi
 
@@ -697,7 +696,7 @@ cmd_install_uv() {
 
     # Create init file instead of modifying .profile
     ensure_config_dir
-    log_info "Creating uv init file: $DOTFILES_PYTHON_CONFIG_DIR/env-uv"
+    df_info "Creating uv init file: $DOTFILES_PYTHON_CONFIG_DIR/env-uv"
     cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-uv" << UV_EOF
 # uv Python manager initialization
 # Generated by dotfiles-python
@@ -707,23 +706,23 @@ export PATH="\$HOME/.local/bin:\$PATH"
 UV_EOF
 
     # Install Python versions
-    log_info "Installing Python 3.11 and 3.12..."
-    uv python install 3.11 3.12
+    df_info "Installing Python 3.11 and 3.12..."
+    df_run uv python install 3.11 3.12 || df_fail "Failed to install Python via uv"
 
     # Create global venv
-    log_info "Creating global venv at $HOME/.venv/global..."
+    df_info "Creating global venv at $HOME/.venv/global..."
     mkdir -p "$HOME/.venv"
-    uv venv "$HOME/.venv/global" --python 3.12
-    uv pip install --python "$HOME/.venv/global/bin/python" pip pipx
+    df_run uv venv "$HOME/.venv/global" --python 3.12 || df_fail "Failed to create global uv venv"
+    df_run uv pip install --python "$HOME/.venv/global/bin/python" pip pipx || df_fail "Failed to install venv packages via uv"
 
     echo ""
-    log_info "uv installation complete!"
+    df_info "uv installation complete!"
     echo ""
-    log_info "Global venv created at: $HOME/.venv/global"
+    df_info "Global venv created at: $HOME/.venv/global"
     echo "  To activate immediately:"
     echo "  source $HOME/.venv/global/bin/activate"
     echo ""
-    log_info "$DOTFILES_PYTHON_CONFIG_DIR/env-uv will be loaded automatically on your next shell restart."
+    df_info "$DOTFILES_PYTHON_CONFIG_DIR/env-uv will be loaded automatically on your next shell restart."
     echo ""
 }
 
@@ -731,37 +730,37 @@ UV_EOF
 # Command: install-conda
 # -----------------------------------------------------------------------------
 cmd_install_conda() {
-    log_info "Installing Miniconda..."
+    df_info "Installing Miniconda..."
 
     if [ "$DRY_RUN" = "true" ]; then
-        log_info "[DRY-RUN] Would:"
-        log_info "  1. Download Miniconda to $CONDA_ROOT"
-        log_info "  2. Create init file at $DOTFILES_PYTHON_CONFIG_DIR/env-conda"
-        log_info "  3. Create default environment"
+        df_info "[DRY-RUN] Would:"
+        df_info "  1. Download Miniconda to $CONDA_ROOT"
+        df_info "  2. Create init file at $DOTFILES_PYTHON_CONFIG_DIR/env-conda"
+        df_info "  3. Create default environment"
         return 0
     fi
 
     # Check for existing installation
     if [ -d "$CONDA_ROOT" ]; then
-        log_warn "Miniconda already exists at $CONDA_ROOT"
+        df_warn "Miniconda already exists at $CONDA_ROOT"
         confirm "Overwrite existing installation?"
     fi
 
     # Download Miniconda
-    log_info "Downloading Miniconda..."
+    df_info "Downloading Miniconda..."
     if ! command -v curl >/dev/null 2>&1; then
-        log_error "curl is required to download Miniconda"
+        df_error "curl is required to download Miniconda"
         return 1
     fi
 
     mkdir -p "$(dirname "$CONDA_ROOT")"
-    curl -LsSf https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda-installer.sh
+    df_run curl -LsSf https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda-installer.sh || df_fail "Failed to download Miniconda installer"
     sh /tmp/miniconda-installer.sh -b -p "$CONDA_ROOT"
     rm -f /tmp/miniconda-installer.sh
 
     # Create init file instead of modifying .profile
     ensure_config_dir
-    log_info "Creating conda init file: $DOTFILES_PYTHON_CONFIG_DIR/env-conda"
+    df_info "Creating conda init file: $DOTFILES_PYTHON_CONFIG_DIR/env-conda"
     cat > "$DOTFILES_PYTHON_CONFIG_DIR/env-conda" << CONDA_EOF
 # Miniconda conda initialization
 # Generated by dotfiles-python
@@ -785,13 +784,13 @@ CONDA_EOF
     . "$CONDA_ROOT/etc/profile.d/conda.sh" 2>/dev/null || true
 
     # Create default environment
-    log_info "Creating default conda environment..."
-    conda create -y -n base python=3.11 2>/dev/null || true
+    df_info "Creating default conda environment..."
+    df_run conda create -y -n base python=3.11 2>/dev/null || true
 
     echo ""
-    log_info "Miniconda installation complete!"
+    df_info "Miniconda installation complete!"
     echo ""
-    log_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
+    df_info "IMPORTANT: Add this to your shell config (~/.bashrc, ~/.zshrc, etc.):"
     echo ""
     echo "  # Load conda from dotfiles-python"
     echo "  [ -f ~/.config/dotfiles-python/env-conda ] && . ~/.config/dotfiles-python/env-conda"
@@ -806,7 +805,7 @@ cmd_update() {
     local manager
     manager="$(get_active_manager)"
 
-    log_info "Updating Python (detected manager: $manager)..."
+    df_info "Updating Python (detected manager: $manager)..."
 
     case "$manager" in
         pyenv)
@@ -814,11 +813,11 @@ cmd_update() {
                 target_version="3.11.4"
             fi
             if "$PYENV_ROOT/bin/pyenv" versions --bare | grep -q "^${target_version}$"; then
-                log_info "Setting Python $target_version as global..."
+                df_info "Setting Python $target_version as global..."
                 "$PYENV_ROOT/bin/pyenv" global "$target_version"
                 "$PYENV_ROOT/bin/pyenv" rehash
             else
-                log_error "Python $target_version not found. Install it first."
+                df_error "Python $target_version not found. Install it first."
                 return 1
             fi
             ;;
@@ -826,31 +825,31 @@ cmd_update() {
             if [ -z "$target_version" ]; then
                 target_version="3.11"
             fi
-            log_info "Updating conda..."
-            "$CONDA_ROOT/bin/conda" update -y python -c "conda-forge"
+            df_info "Updating conda..."
+            df_run "$CONDA_ROOT/bin/conda" update -y python -c "conda-forge" || df_fail "Failed to update conda Python"
             ;;
         uv)
             if [ -z "$target_version" ]; then
                 target_version="3.12"
             fi
-            log_info "Installing/updating Python $target_version via uv..."
-            uv python install "$target_version"
+            df_info "Installing/updating Python $target_version via uv..."
+            df_run uv python install "$target_version" || df_fail "Failed to install/update Python $target_version via uv"
             ;;
         homebrew)
             if [ -z "$target_version" ]; then
                 target_version="3.12"
             fi
-            log_info "Updating Homebrew Python..."
-            brew upgrade "python@$target_version" 2>/dev/null || brew upgrade python
+            df_info "Updating Homebrew Python..."
+            df_run brew upgrade "python@$target_version" 2>/dev/null || df_run brew upgrade python || df_fail "Failed to upgrade Homebrew Python"
             ;;
         *)
-            log_error "No active Python manager detected. Cannot update."
-            log_error "Run '$0 status' to see current setup."
+            df_error "No active Python manager detected. Cannot update."
+            df_error "Run '$0 status' to see current setup."
             return 1
             ;;
     esac
 
-    log_info "Update complete!"
+    df_info "Update complete!"
 }
 
 # -----------------------------------------------------------------------------
@@ -869,13 +868,17 @@ main() {
                 DRY_RUN=true
                 shift
                 ;;
+            --verbose)
+                VERBOSE_MODE=true
+                shift
+                ;;
             --)
                 shift
                 break
                 ;;
             -*)
-                log_error "Unknown option: $1"
-                echo "Usage: $0 <command> [--ci] [--dry-run]"
+                df_error "Unknown option: $1"
+                echo "Usage: $0 <command> [--ci] [--dry-run] [--verbose]"
                 exit 1
                 ;;
             *)
@@ -903,6 +906,7 @@ main() {
         echo "Options:"
         echo "  --ci                 CI mode: skip confirmations"
         echo "  --dry-run            Show what would be done"
+        echo "  --verbose            Stream child command output"
         exit 1
     fi
 
@@ -922,8 +926,12 @@ main() {
                 DRY_RUN=true
                 shift
                 ;;
+            --verbose)
+                VERBOSE_MODE=true
+                shift
+                ;;
             -*)
-                log_error "Unknown option: $1"
+                df_error "Unknown option: $1"
                 exit 1
                 ;;
             *)
@@ -931,6 +939,12 @@ main() {
                 ;;
         esac
     done
+
+    if [ "$VERBOSE_MODE" = "true" ]; then
+        df_output_init --verbose
+    else
+        df_output_init
+    fi
 
     case "$command" in
         cleanup)
@@ -946,7 +960,7 @@ main() {
             cmd_update "$@"
             ;;
         *)
-            log_error "Unknown command: $command"
+            df_error "Unknown command: $command"
             echo "Run '$0' without arguments to see available commands."
             exit 1
             ;;

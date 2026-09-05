@@ -6,6 +6,97 @@ on:
       - master
   workflow_dispatch:
 jobs:
+  output-lib-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck util-linux
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          dash -n "$BIN/dotfiles-lib-output"
+          bash --posix -n "$BIN/dotfiles-lib-output"
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (ubuntu)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
+  output-lib-arch:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install git for checkout
+        run: |
+          pacman -Sy --noconfirm git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          pacman -Sy --noconfirm shellcheck util-linux
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (arch)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
+  output-lib-fedora:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install git for checkout
+        run: |
+          dnf install -y git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          dnf install -y shellcheck util-linux
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (fedora)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
+  output-lib-darwin:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          brew install shellcheck
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (darwin)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
   ubuntu:
     runs-on: ubuntu-latest
     strategy:
@@ -19,6 +110,7 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v4
@@ -239,6 +331,7 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
@@ -353,6 +446,7 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
@@ -461,6 +555,7 @@ jobs:
       SKIP_INSTALL_PROGLANG: false
       DEBIAN_FRONTEND: noninteractive
       CI: true
+      DOTFILES_VERBOSE: "1"
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
