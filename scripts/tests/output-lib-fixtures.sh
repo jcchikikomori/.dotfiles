@@ -297,11 +297,16 @@ case_elapsed_format() {
   d=$(DF_PREFIX=fixture sh -c '. "$1"; printf "%s\n" "$(df__fmt_duration "")"' sh "$LIB")
   assert_eq "00:00" "$d" "elapsed: empty" || status=1
 
-  step_line=$(CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; df_step_end 0' sh "$LIB")
-  assert_contains "work..." "$step_line" "step-end: success line" || status=1
-  assert_contains "done" "$step_line" "step-end: done mark" || status=1
-  if printf '%s\n' "$step_line" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
-    printf '[fixture] step-end: success has no MM:SS ... FAIL: [%s]\n' "$step_line" >&2
+  step_out=$(CI=true DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_step "work"; df_step_end 0' sh "$LIB")
+  step_start=$(printf '%s\n' "$step_out" | sed -n '1p')
+  step_done=$(printf '%s\n' "$step_out" | sed -n '2p')
+
+  assert_contains "work..." "$step_start" "step-end: start line" || status=1
+  assert_contains "(00:00)" "$step_start" "step-end: in-progress MM:SS" || status=1
+  assert_contains "work..." "$step_done" "step-end: success line" || status=1
+  assert_contains "done" "$step_done" "step-end: done mark" || status=1
+  if printf '%s\n' "$step_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] step-end: success has no MM:SS ... FAIL: [%s]\n' "$step_done" >&2
     status=1
   fi
 
@@ -338,9 +343,10 @@ case_step_tty() {
     return 0
   fi
 
-  # No animated spinner frames: step output is static start + completion lines
-  # without a success timer. Assert the stable, persistable tty output: step
-  # name, start/completion lines, absence of frame glyphs, and no
+  # No animated spinner frames: step output is static start + completion lines.
+  # In-progress line includes MM:SS; success line omits it. Assert the stable,
+  # persistable tty output: step name, start/completion lines, absence of frame
+  # glyphs, and no
   # literal backslash escape artifacts. Both locale runs are kept to exercise
   # the utf8 and C mark paths.
   utf_file="$1/step-utf.out"
@@ -348,11 +354,14 @@ case_step_tty() {
 
   tty_capture "$utf_file" "env DF_PREFIX=fixture LC_ALL=en_US.UTF-8 CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   utf_out=$(cat "$utf_file")
-  assert_contains "spin" "$utf_out" "step-utf: step name" || status=1
-  assert_contains "spin..." "$utf_out" "step-utf: start line" || status=1
-  assert_contains "✓" "$utf_out" "step-utf: utf8 done mark" || status=1
-  assert_contains "done" "$utf_out" "step-utf: completion line" || status=1
-  if printf '%s\n' "$utf_out" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+  utf_start=$(printf '%s\n' "$utf_out" | sed -n '1p')
+  utf_done=$(printf '%s\n' "$utf_out" | sed -n '2p')
+  assert_contains "spin" "$utf_start" "step-utf: step name" || status=1
+  assert_contains "spin..." "$utf_start" "step-utf: start line" || status=1
+  assert_contains "(00:00)" "$utf_start" "step-utf: in-progress MM:SS" || status=1
+  assert_contains "✓" "$utf_done" "step-utf: utf8 done mark" || status=1
+  assert_contains "done" "$utf_done" "step-utf: completion line" || status=1
+  if printf '%s\n' "$utf_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
     printf '[fixture] step-utf: no success MM:SS timer ... FAIL\n' >&2
     status=1
   fi
@@ -361,11 +370,14 @@ case_step_tty() {
 
   tty_capture "$ascii_file" "env DF_PREFIX=fixture LC_ALL=C CI=false DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step spin; sleep 1.0; df_step_end 0'"
   ascii_out=$(cat "$ascii_file")
-  assert_contains "spin" "$ascii_out" "step-ascii: step name" || status=1
-  assert_contains "spin..." "$ascii_out" "step-ascii: start line" || status=1
-  assert_contains "OK" "$ascii_out" "step-ascii: ascii done mark" || status=1
-  assert_contains "done" "$ascii_out" "step-ascii: completion line" || status=1
-  if printf '%s\n' "$ascii_out" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+  ascii_start=$(printf '%s\n' "$ascii_out" | sed -n '1p')
+  ascii_done=$(printf '%s\n' "$ascii_out" | sed -n '2p')
+  assert_contains "spin" "$ascii_start" "step-ascii: step name" || status=1
+  assert_contains "spin..." "$ascii_start" "step-ascii: start line" || status=1
+  assert_contains "(00:00)" "$ascii_start" "step-ascii: in-progress MM:SS" || status=1
+  assert_contains "OK" "$ascii_done" "step-ascii: ascii done mark" || status=1
+  assert_contains "done" "$ascii_done" "step-ascii: completion line" || status=1
+  if printf '%s\n' "$ascii_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
     printf '[fixture] step-ascii: no success MM:SS timer ... FAIL\n' >&2
     status=1
   fi
