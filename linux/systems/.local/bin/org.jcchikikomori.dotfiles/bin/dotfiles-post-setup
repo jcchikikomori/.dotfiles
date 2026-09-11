@@ -97,37 +97,68 @@ setup_directory() {
 #     fi
 # }
 
+# Installers invoked with an explicit `install` subcommand. Everything else is
+# run bare.
+POST_SETUP_INSTALL_ARG="dotfiles-python dotfiles-php dotfiles-ruby dotfiles-copyparty dotfiles-mpv dotfiles-neovim"
+
+# Installers safe to run with their output captured to the log file, i.e. they
+# never call sudo, never prompt, and never open a full-screen TUI. Anything not
+# listed here keeps the terminal attached so password prompts, questions and
+# TUIs still reach the user. Audited for #260; re-audit before adding an entry.
+POST_SETUP_QUIET="dotfiles-python--pre-commit dotfiles-python--commitizen dotfiles-java-sdkman dotfiles-msfonts"
+
+in_word_list() {
+    needle="$1"
+    haystack="$2"
+    for item in $haystack; do
+        if [ "$item" = "$needle" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Dispatch a single installer. Quiet-listed scripts get the full loading-step
+# treatment (spinner + timer, output to the log). The rest run under a
+# ticker-free step so their own prompts and output own the terminal.
+run_installer() {
+    local name="$1"
+    local script="$2"
+
+    # devtools-opencode is resolved from PATH, not staged into $WORKDIR, and
+    # prompts for API keys, so it always stays attached.
+    if [ "$script" = "devtools-opencode install" ]; then
+        run_step_quiet "Installing $name" df_run_interactive devtools-opencode install
+        return "$?"
+    fi
+
+    if in_word_list "$script" "$POST_SETUP_INSTALL_ARG"; then
+        set -- "$WORKDIR/$script" install
+    else
+        set -- "$WORKDIR/$script"
+    fi
+
+    if in_word_list "$script" "$POST_SETUP_QUIET"; then
+        run_step "Installing $name" df_run "$@"
+    else
+        run_step_quiet "Installing $name" df_run_interactive "$@"
+    fi
+    return "$?"
+}
+
 prompt_installation() {
     local name=$1
     local script=$2
-    local default_choice="y"
 
     if [ -n "${SKIP_INSTALL_PROGLANG}" ]; then
         df_info "Unattended mode: Skipping $name installation"
-        return
+        return 0
     fi
 
     printf '%s' "Do you want to install $name? (y/n): " >&2
     read choice
     if [ "$choice" = "y" ] || [ "$choice" = "Y" ]; then
-        df_info "Executing $name..."
-        if [ "$script" = "dotfiles-python" ]; then
-            df_run_interactive "$WORKDIR/$script" install
-        elif [ "$script" = "dotfiles-php" ]; then
-            df_run_interactive "$WORKDIR/$script" install
-        elif [ "$script" = "dotfiles-ruby" ]; then
-            df_run_interactive "$WORKDIR/$script" install
-        elif [ "$script" = "dotfiles-copyparty" ]; then
-            df_run_interactive "$WORKDIR/$script" install
-        elif [ "$script" = "dotfiles-mpv" ]; then
-            df_run_interactive "$WORKDIR/$script" install
-        elif [ "$script" = "dotfiles-neovim" ]; then
-            df_run_interactive "$WORKDIR/$script" install
-        elif [ "$script" = "devtools-opencode install" ]; then
-            df_run_interactive devtools-opencode install
-        else
-            df_run_interactive "$WORKDIR/$script"
-        fi
+        run_installer "$name" "$script"
     else
         df_info "Skipped. You can install $name later."
     fi

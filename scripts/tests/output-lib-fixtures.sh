@@ -409,8 +409,16 @@ case_df_run_contract() {
 
   out=$(cat "$out_file")
   assert_contains "code=7" "$out" "df_run: exit code" || status=1
-  assert_not_contains "child-output" "$out" "df_run: default no stdout leak" || status=1
+  # The child here exits non-zero, so its output is now deliberately dumped as
+  # failure evidence (#267). Silence is asserted on the succeeding command
+  # below, and exhaustively in case_failure_evidence.
+  assert_contains "child-output" "$out" "df_run: failing child output dumped" || status=1
   log_path=$(printf '%s\n' "$out" | awk -F= '/^path=/{print $2}' | sed -n '1p')
+
+  ok_out="$1/df-run-ok.out"
+  DOTFILES_LOG_DIR="$logs" DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_run sh -c "echo quiet-child-output"' sh "$LIB" > "$ok_out" 2>&1
+  ok_content=$(cat "$ok_out")
+  assert_not_contains "quiet-child-output" "$ok_content" "df_run: default no stdout leak on success" || status=1
 
   if [ -z "$log_path" ] || [ ! -f "$log_path" ]; then
     printf '[fixture] df_run: log path ... FAIL: missing file\n' >&2
@@ -432,6 +440,114 @@ case_df_run_contract() {
   DOTFILES_LOG_DIR="$logs" DOTFILES_VERBOSE=1 DF_PREFIX=fixture sh -c '. "$1"; df_output_init; df_run sh -c "echo verbose-stream"' sh "$LIB" > "$verbose_out" 2>&1
   verbose_content=$(cat "$verbose_out")
   assert_contains "verbose-stream" "$verbose_content" "df_run: verbose streams" || status=1
+
+  return "$status"
+}
+
+# Regression guard for #260 ("I can see noises from other scripts"): in default
+# (non-verbose) mode a step must emit its own prefixed line and nothing else.
+# Child stdout AND stderr belong in the log file, never on the terminal.
+# CI=true is set explicitly because CI is the mode the complaint was raised
+# against, and it is the mode where the redraw/ticker path is disabled.
+case_default_mode_child_silence() {
+  status=0
+  logs="$1/silence-logs"
+  mkdir -p "$logs"
+
+  sentinel="CHILD-NOISE-SENTINEL"
+  child='. "$1"; df_output_init; df_step "installing thing"; df_run sh -c "echo \"$SENTINEL\"; echo \"$SENTINEL-err\" >&2"; df_step_end 0; printf "path=%s\n" "$(df_log_path)"'
+
+  quiet_out="$1/silence-quiet.out"
+  DOTFILES_LOG_DIR="$logs" CI=true DF_PREFIX=fixture SENTINEL="$sentinel" \
+    sh -c "$child" sh "$LIB" > "$quiet_out" 2>&1
+
+  quiet_content=$(cat "$quiet_out")
+  assert_not_contains "$sentinel" "$quiet_content" "silence: no child stdout/stderr leak" || status=1
+  # Guard against passing simply because the step produced no output at all.
+  assert_contains "installing thing" "$quiet_content" "silence: step line still rendered" || status=1
+  assert_contains "done" "$quiet_content" "silence: step still completes" || status=1
+
+  log_path=$(printf '%s\n' "$quiet_content" | awk -F= '/^path=/{print $2}' | sed -n '1p')
+  if [ -z "$log_path" ] || [ ! -f "$log_path" ]; then
+    printf '[fixture] silence: log path ... FAIL: missing file\n' >&2
+    status=1
+  else
+    log_content=$(cat "$log_path")
+    assert_contains "$sentinel" "$log_content" "silence: child stdout captured to log" || status=1
+    assert_contains "$sentinel-err" "$log_content" "silence: child stderr captured to log" || status=1
+  fi
+
+  # The suppression must be conditional: --verbose still streams everything.
+  verbose_out="$1/silence-verbose.out"
+  DOTFILES_LOG_DIR="$logs" CI=true DOTFILES_VERBOSE=1 DF_PREFIX=fixture SENTINEL="$sentinel" \
+    sh -c "$child" sh "$LIB" > "$verbose_out" 2>&1
+
+  verbose_content=$(cat "$verbose_out")
+  assert_contains "$sentinel" "$verbose_content" "silence: verbose still streams child" || status=1
+
+  return "$status"
+}
+
+# Regression guard for #267: quiet-by-default must not hide failure evidence.
+# A "details: /tmp/..." path is worthless once an ephemeral CI runner is torn
+# down, so a failing command has to dump its output while the job is alive AND
+# leave a preserved file for the artifact upload. A succeeding command must
+# still emit nothing.
+case_failure_evidence() {
+  status=0
+  logs="$1/failure-logs"
+  mkdir -p "$logs"
+
+  fail_out="$1/failure-evidence.out"
+  DOTFILES_LOG_DIR="$logs" CI=true DF_PREFIX=fixture \
+    sh -c '. "$1"; df_output_init; df_run sh -c "echo EVIDENCE-STDOUT; echo EVIDENCE-STDERR >&2; exit 9" || true; df_run sh -c "echo QUIET-SUCCESS" || true' sh "$LIB" > "$fail_out" 2>&1
+
+  fail_content=$(cat "$fail_out")
+  assert_contains "EVIDENCE-STDOUT" "$fail_content" "evidence: failing stdout dumped" || status=1
+  assert_contains "EVIDENCE-STDERR" "$fail_content" "evidence: failing stderr dumped" || status=1
+  assert_contains "log tail" "$fail_content" "evidence: tail banner emitted" || status=1
+  assert_not_contains "QUIET-SUCCESS" "$fail_content" "evidence: success stays silent" || status=1
+
+  # Every dumped line must stay inside the [dotfiles:*] contract, because
+  # ci-smoke-debian.sh rejects any unprefixed default-mode line.
+  unprefixed=$(printf '%s\n' "$fail_content" | grep -vE '^[[:space:]]*$' | grep -vcE '^\[dotfiles:[a-z0-9-]+\]' || true)
+  if [ "$unprefixed" -ne 0 ] 2>/dev/null; then
+    printf '[fixture] evidence: prefixed lines only ... FAIL: %s unprefixed line(s)\n' "$unprefixed" >&2
+    status=1
+  fi
+
+  # The preserved file must survive df_run truncating the working log.
+  preserved=$(find "$logs/failures" -type f -name '*.log' 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$preserved" -lt 1 ] 2>/dev/null; then
+    printf '[fixture] evidence: preserved failure file ... FAIL: none found\n' >&2
+    status=1
+  else
+    preserved_content=$(cat "$logs"/failures/*.log 2>/dev/null)
+    assert_contains "EVIDENCE-STDOUT" "$preserved_content" "evidence: preserved file keeps output" || status=1
+    assert_not_contains "QUIET-SUCCESS" "$preserved_content" "evidence: success not preserved" || status=1
+  fi
+
+  # Two failures must not collide onto one preserved file.
+  multi_logs="$1/failure-logs-multi"
+  mkdir -p "$multi_logs"
+  DOTFILES_LOG_DIR="$multi_logs" CI=true DF_PREFIX=fixture \
+    sh -c '. "$1"; df_output_init; df_run sh -c "echo FIRST; exit 1" || true; df_run sh -c "echo SECOND; exit 2" || true' sh "$LIB" > "$1/failure-multi.out" 2>&1
+
+  multi_count=$(find "$multi_logs/failures" -type f -name '*.log' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "2" "$multi_count" "evidence: one preserved file per failure" || status=1
+
+  # The tail is bounded, and the bound is overridable.
+  bound_logs="$1/failure-logs-bound"
+  mkdir -p "$bound_logs"
+  bound_out="$1/failure-bound.out"
+  DOTFILES_LOG_DIR="$bound_logs" CI=true DF_PREFIX=fixture DOTFILES_FAIL_TAIL_LINES=5 \
+    sh -c '. "$1"; df_output_init; df_run sh -c "i=1; while [ \$i -le 40 ]; do echo BOUNDED-\$i; i=\$((i + 1)); done; exit 1" || true' sh "$LIB" > "$bound_out" 2>&1
+
+  bound_content=$(cat "$bound_out")
+  bound_lines=$(printf '%s\n' "$bound_content" | grep -c 'BOUNDED-' || true)
+  assert_eq "5" "$bound_lines" "evidence: tail respects DOTFILES_FAIL_TAIL_LINES" || status=1
+  assert_contains "BOUNDED-40" "$bound_content" "evidence: tail keeps the last lines" || status=1
+  assert_not_contains "BOUNDED-1 " "$bound_content" "evidence: tail drops the head" || status=1
 
   return "$status"
 }
@@ -587,6 +703,8 @@ main() {
   run_case "color: escape bytes vs literal" case_color_escapes "$temp_dir"
   run_case "step: static tty output (start + done)" case_step_tty "$temp_dir"
   run_case "df_run: exit/log/path/tty" case_df_run_contract "$temp_dir"
+  run_case "default mode: child output stays silent" case_default_mode_child_silence "$temp_dir"
+  run_case "failure: tail dumped + log preserved" case_failure_evidence "$temp_dir"
   run_case "step: failure latch propagation" case_step_fail_latch "$temp_dir"
   run_case "step: redraw gating + live timer" case_redraw_gating "$temp_dir"
   run_case "step: nested parent/child tty" case_nested_step_tty "$temp_dir"

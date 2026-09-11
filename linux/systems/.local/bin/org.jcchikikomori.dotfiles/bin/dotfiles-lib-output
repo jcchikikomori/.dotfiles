@@ -28,6 +28,7 @@ DF_OUTPUT_LOG_FILE=""
 DF_OUTPUT_TICKER_PID=""
 DF_OUTPUT_STEP_FAILED=0
 DF_OUTPUT_STEP_FAIL_CODE=0
+DF_OUTPUT_FAIL_SEQ=0
 
 df__bool_true() {
   case "$1" in
@@ -538,6 +539,63 @@ df_log_path() {
   printf '%s\n' "$DF_OUTPUT_LOG_FILE"
 }
 
+# Build the path for a preserved failure log, and create its directory.
+#
+# df_run truncates the working log on every call, so without this an artifact
+# upload would only ever capture the last command that ran. Failures get their
+# own sequence-numbered file that nothing later overwrites. Pure apart from the
+# mkdir, so it is safe to call from a command substitution (the sequence number
+# is incremented by the caller, which is not in a subshell).
+df__failure_log_path() {
+  src="$1"
+  seq="$2"
+  fail_dir="$(dirname "$src")/failures"
+  mkdir -p "$fail_dir" 2>/dev/null || return 1
+  script_name=$(df__basename "$0")
+  printf '%s\n' "${fail_dir}/${script_name}.$$.${seq}.log"
+}
+
+# Print a bounded tail of a log file through df_info.
+#
+# On an ephemeral CI runner a "details: /tmp/..." path is worthless once the job
+# ends, so the evidence has to reach stdout while the job is still alive (see
+# #267). Every line goes through df_info to stay inside the [dotfiles:*] output
+# contract, and CSI/CR bytes from the child are stripped so a raw escape can
+# never rewrite the prefix.
+df__emit_log_tail() {
+  file="$1"
+  [ -f "$file" ] || return 0
+
+  max=${DOTFILES_FAIL_TAIL_LINES:-50}
+  case "$max" in
+    ''|*[!0-9]*)
+      max=50
+      ;;
+  esac
+  [ "$max" -gt 0 ] 2>/dev/null || return 0
+
+  total=$(wc -l < "$file" 2>/dev/null | tr -d ' ')
+  [ -n "$total" ] || total=0
+  [ "$total" -gt 0 ] 2>/dev/null || return 0
+
+  if [ "$total" -gt "$max" ] 2>/dev/null; then
+    df_info "--- log tail (last $max of $total lines) ---"
+  else
+    df_info "--- log tail ($total lines) ---"
+  fi
+
+  esc=$(printf '\033')
+  tail -n "$max" "$file" 2>/dev/null \
+    | LC_ALL=C sed "s/${esc}\[[0-9;]*[A-Za-z]//g" \
+    | LC_ALL=C tr -d '\015' \
+    | while IFS= read -r tail_line; do
+        df_info "| $tail_line"
+      done
+
+  df_info "--- end log tail ---"
+  return 0
+}
+
 df_run() {
   if [ "$#" -eq 0 ]; then
     return 0
@@ -571,6 +629,16 @@ df_run() {
     df__step_fail_latch "$status"
     df_error "command failed (exit $status)"
     df_info "details: $log_file"
+
+    # Increment here, not inside the command substitution below: a subshell
+    # would discard the new value and every failure would reuse sequence 1.
+    DF_OUTPUT_FAIL_SEQ=$((DF_OUTPUT_FAIL_SEQ + 1))
+    fail_file=$(df__failure_log_path "$log_file" "$DF_OUTPUT_FAIL_SEQ" 2>/dev/null || printf '')
+    if [ -n "$fail_file" ] && cp "$log_file" "$fail_file" 2>/dev/null; then
+      df_info "saved: $fail_file"
+    fi
+
+    df__emit_log_tail "$log_file"
   fi
 
   return "$status"
