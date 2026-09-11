@@ -257,12 +257,12 @@ handle_profile_conflict() {
     timestamp="$(date +%Y%m%d-%H%M%S)"
     local backup_file="$backup_dir/.profile.backup.$timestamp"
 
-    printf 'Backing up existing ~/.profile to %s\n' "$backup_file"
+    df_info "Backing up existing ~/.profile to $backup_file"
     cp -a "$profile_file" "$backup_file"
 
     # Remove the original so stow can create symlink
     rm "$profile_file"
-    printf 'Removed original ~/.profile (stow will replace with symlink)\n'
+    df_info "Removed original ~/.profile (stow will replace with symlink)"
   fi
 }
 
@@ -346,8 +346,10 @@ fi
 restore_external_symlinks
 
 if [ -f "$HOME/.local/share/devtools-opencode/omos.prefs" ] && command -v devtools-opencode > /dev/null 2>&1; then
-  df_info "Restoring oh-my-opencode-slim configuration..."
-  devtools-opencode omos restore
+  # devtools-opencode ships in the devtools package and still prints raw output,
+  # so it is wrapped here rather than left to stream over the step lines.
+  # `omos restore` is non-interactive (backup + restore state, no prompts).
+  run_step "Restoring oh-my-opencode-slim configuration" df_run devtools-opencode omos restore || true
 fi
 
 # Remind user about EmuDeck sync setup if emudecktools package was stowed.
