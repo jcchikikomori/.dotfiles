@@ -71,7 +71,7 @@ run_step "Installing rclone" df_run sudo apt-get install -y rclone || df_fail "F
 # current crates - xdvdfs-cli requires Rust edition 2024, rustc >= 1.85) + exiftool
 run_step "Installing rust/exiftool prerequisites" df_run sudo apt-get install -y libimage-exiftool-perl || df_fail "Failed exiftool prerequisite install"
 if ! command -v cargo >/dev/null 2>&1; then
-  run_step "Installing rustup" sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable" || df_fail "Failed rustup install"
+  run_step "Installing rustup" df_run sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable" || df_fail "Failed rustup install"
 fi
 export PATH="$HOME/.cargo/bin:$PATH"
 

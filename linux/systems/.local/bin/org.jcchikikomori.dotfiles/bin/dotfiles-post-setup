@@ -277,7 +277,10 @@ main() {
     run_step "Installing dotstow" df_run ./dotfiles-dotstow || df_fail "dotfiles-dotstow install failed"
 
     run_step "Cloning fzf" clone_once "$HOME/.fzf" --depth 1 https://github.com/junegunn/fzf.git
-    run_step_quiet "Setting up bash fzf" df_run_interactive ~/.fzf/install
+    # --all is the "yes to everything" path (--key-bindings --completion
+    # --update-rc), which removes the three prompts and lets the install run
+    # under df_run instead of streaming over the loading screen.
+    run_step "Setting up bash fzf" df_run ~/.fzf/install --all
 
     run_step "Setting up bash fasd" clone_once "$HOME/.fasd" --depth 1 https://github.com/clvv/fasd.git
 
@@ -334,7 +337,20 @@ main() {
         fi
     fi
 
-    run_step_quiet "Setting up oh-my-zsh" df_run_interactive sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    # --unattended sets RUNZSH=no, CHSH=no and OVERWRITE_CONFIRMATION=no, which
+    # removes every prompt so the install can run under df_run. The empty ""
+    # argument is required: it becomes $0 for the downloaded script, and without
+    # it --unattended lands in $0 and is silently ignored. This is the idiom
+    # documented in the installer itself.
+    #
+    # Trade-off: CHSH=no means the default shell is no longer switched to zsh
+    # automatically. That is deliberate - chsh prompts for a password, and a
+    # password prompt underneath df_run would be invisible and look like a hang.
+    run_step "Setting up oh-my-zsh" df_run sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+
+    if [ "$(basename "${SHELL:-}")" != "zsh" ]; then
+        df_info "Note: default shell unchanged. To switch: chsh -s \"\$(command -v zsh)\""
+    fi
 
     run_step "Installing zsh plugins" install_zsh_plugins
 
