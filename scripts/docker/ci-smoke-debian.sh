@@ -39,19 +39,7 @@ cat "$STOW_OUT"
 
 # Regression guard for #260: in default (non-verbose) mode every line must be a
 # prefixed step line. An unprefixed line is child output that escaped df_run.
-if ! grep -q "\[dotfiles:stowme\]" "$STOW_OUT"; then
-  echo "ERROR: stowme.sh produced no prefixed step output" >&2
-  exit 1
-fi
-
-UNPREFIXED=$(grep -vE '^[[:space:]]*$' "$STOW_OUT" | grep -vE '^\[dotfiles:[a-z0-9-]+\]' || true)
-if [ -n "$UNPREFIXED" ]; then
-  echo "ERROR: unprefixed output leaked from stowme.sh in default mode:" >&2
-  printf '%s\n' "$UNPREFIXED" >&2
-  exit 1
-fi
-
-echo "stowme.sh default-mode output contract passed (prefixed lines only)."
+sh scripts/tests/assert-output-contract.sh "$STOW_OUT" "stowme.sh"
 
 # Verify the symlink was correctly restored after stowing.
 if [ -L "$HOME_DIR/.ghcup" ] && [ "$(readlink "$HOME_DIR/.ghcup")" = "/usr/local/.ghcup" ]; then

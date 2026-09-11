@@ -132,8 +132,22 @@ jobs:
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
+        # Redirect rather than pipe to tee: the debian job runs in a container
+        # where the step shell is `sh -e` (dash), which rejects `set -o
+        # pipefail`. Capturing the status explicitly keeps a failing start.sh
+        # from being masked, without depending on a non-POSIX shell option.
         run: |
-          ./start.sh
+          rc=0
+          ./start.sh >/tmp/start-output.txt 2>&1 || rc=$?
+          cat /tmp/start-output.txt
+          exit "$rc"
+      # Regression guard for #260: start.sh drives {distro}/setup.sh and
+      # dotfiles-post-setup, and a command that misses df_run streams raw
+      # output over the loading screen. Only the audited apt-based jobs are
+      # covered; arch/fedora/darwin follow once each is audited (#269).
+      - name: Assert start.sh output contract
+        run: |
+          sh scripts/tests/assert-output-contract.sh /tmp/start-output.txt "start.sh"
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
@@ -593,8 +607,22 @@ jobs:
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
+        # Redirect rather than pipe to tee: the debian job runs in a container
+        # where the step shell is `sh -e` (dash), which rejects `set -o
+        # pipefail`. Capturing the status explicitly keeps a failing start.sh
+        # from being masked, without depending on a non-POSIX shell option.
         run: |
-          ./start.sh
+          rc=0
+          ./start.sh >/tmp/start-output.txt 2>&1 || rc=$?
+          cat /tmp/start-output.txt
+          exit "$rc"
+      # Regression guard for #260: start.sh drives {distro}/setup.sh and
+      # dotfiles-post-setup, and a command that misses df_run streams raw
+      # output over the loading screen. Only the audited apt-based jobs are
+      # covered; arch/fedora/darwin follow once each is audited (#269).
+      - name: Assert start.sh output contract
+        run: |
+          sh scripts/tests/assert-output-contract.sh /tmp/start-output.txt "start.sh"
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
