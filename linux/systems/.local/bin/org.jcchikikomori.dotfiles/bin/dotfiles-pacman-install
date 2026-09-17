@@ -2,13 +2,36 @@
 
 # Shared pacman install helper for Arch-based systems.
 # Source this file to get is_forced_package(), pacman_install(), and
-# confirm_aur_install() functions. The sourcing script must define log_info()
-# before calling confirm_aur_install().
+# confirm_aur_install() functions.
 
 # Space-separated package list to force install on file conflicts.
 # Example: PACMAN_FORCE_CONFLICT_PACKAGES="python3 openssh" dotfiles-arch setup
 PACMAN_FORCE_CONFLICT_PACKAGES="${PACMAN_FORCE_CONFLICT_PACKAGES:-}"
 PACMAN_OVERWRITE_GLOB="${PACMAN_OVERWRITE_GLOB:-*}"
+
+df_pacman_info() {
+  if command -v df_info >/dev/null 2>&1; then
+    df_info "$*"
+  else
+    echo "$*"
+  fi
+}
+
+df_pacman_run() {
+  if command -v df_run >/dev/null 2>&1; then
+    df_run "$@"
+  else
+    "$@"
+  fi
+}
+
+df_pacman_run_interactive() {
+  if command -v df_run_interactive >/dev/null 2>&1; then
+    df_run_interactive "$@"
+  else
+    "$@"
+  fi
+}
 
 is_forced_package() {
   package_name="$1"
@@ -36,12 +59,14 @@ pacman_install() {
   done
 
   if [ -n "$regular_packages" ]; then
-    sudo pacman $pacman_args $regular_packages || return 1
+    # shellcheck disable=SC2086
+    df_pacman_run sudo pacman $pacman_args $regular_packages || return 1
   fi
 
   if [ -n "$forced_packages" ]; then
-    echo "Installing forced packages with overwrite glob: $PACMAN_OVERWRITE_GLOB"
-    sudo pacman $pacman_args --overwrite "$PACMAN_OVERWRITE_GLOB" $forced_packages || return 1
+    df_pacman_info "Installing forced packages with overwrite glob: $PACMAN_OVERWRITE_GLOB"
+    # shellcheck disable=SC2086
+    df_pacman_run sudo pacman $pacman_args --overwrite "$PACMAN_OVERWRITE_GLOB" $forced_packages || return 1
   fi
 }
 
@@ -55,18 +80,18 @@ confirm_aur_install() {
     return 0
   fi
 
-  echo ""
-  echo "WARNING: Installing AUR package: $package_name"
-  echo "Source: AUR (Arch User Repository)"
-  echo "Supply chain risk: AUR packages are maintained by volunteers and may become"
-  echo "orphaned, compromised, or contain malicious code. See:"
-  echo "  https://archlinux.org/news/active-aur-malicious-packages-incident/"
-  echo ""
-  printf "Continue with installation? [Y/n] "
+  df_pacman_run_interactive printf "\n"
+  df_pacman_run_interactive printf "WARNING: Installing AUR package: %s\n" "$package_name"
+  df_pacman_run_interactive printf "Source: AUR (Arch User Repository)\n"
+  df_pacman_run_interactive printf "Supply chain risk: AUR packages are maintained by volunteers and may become\n"
+  df_pacman_run_interactive printf "orphaned, compromised, or contain malicious code. See:\n"
+  df_pacman_run_interactive printf "  https://archlinux.org/news/active-aur-malicious-packages-incident/\n"
+  df_pacman_run_interactive printf "\n"
+  df_pacman_run_interactive printf "Continue with installation? [Y/n] "
   read -r confirm || confirm=n
   case "$confirm" in
     [nN]|[nN][oO])
-      log_info "Skipping $package_name (user declined)"
+      df_pacman_info "Skipping $package_name (user declined)"
       return 1
       ;;
   esac
