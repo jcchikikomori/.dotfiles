@@ -5,7 +5,103 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      verbose:
+        description: "Stream full command output (DOTFILES_VERBOSE=1)"
+        type: boolean
+        default: false
 jobs:
+  output-lib-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck util-linux
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          dash -n "$BIN/dotfiles-lib-output"
+          bash --posix -n "$BIN/dotfiles-lib-output"
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (ubuntu)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
+  output-lib-arch:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install git for checkout
+        run: |
+          pacman -Sy --noconfirm git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          pacman -Sy --noconfirm shellcheck util-linux
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (arch)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
+  output-lib-fedora:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install git for checkout
+        run: |
+          dnf install -y git
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          dnf install -y shellcheck util-linux
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (fedora)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
+  output-lib-darwin:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install output-lib test deps
+        run: |
+          brew install shellcheck
+      - name: Validate output library syntax
+        run: |
+          BIN=linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin
+          sh -n "$BIN/dotfiles-lib-output"
+          sh -n scripts/tests/output-lib-fixtures.sh
+      - name: Run output-lib fixtures (darwin)
+        env:
+          CI: true
+        run: |
+          sh scripts/tests/output-lib-fixtures.sh
+
   ubuntu:
     runs-on: ubuntu-latest
     strategy:
@@ -19,6 +115,10 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: ${{ inputs.verbose && '1' || '' }}
+      # Pinned so failure logs written by df_run land inside the path the
+      # "Upload logs as artifact" step already collects (see #267).
+      DOTFILES_LOG_DIR: /tmp/org.jcchikikomori.dotfiles
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - uses: actions/checkout@v4
@@ -32,8 +132,22 @@ jobs:
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
+        # Redirect rather than pipe to tee: the debian job runs in a container
+        # where the step shell is `sh -e` (dash), which rejects `set -o
+        # pipefail`. Capturing the status explicitly keeps a failing start.sh
+        # from being masked, without depending on a non-POSIX shell option.
         run: |
-          ./start.sh
+          rc=0
+          ./start.sh >/tmp/start-output.txt 2>&1 || rc=$?
+          cat /tmp/start-output.txt
+          exit "$rc"
+      # Regression guard for #260: start.sh drives {distro}/setup.sh and
+      # dotfiles-post-setup, and a command that misses df_run streams raw
+      # output over the loading screen. Only the audited apt-based jobs are
+      # covered; arch/fedora/darwin follow once each is audited (#269).
+      - name: Assert start.sh output contract
+        run: |
+          sh scripts/tests/assert-output-contract.sh /tmp/start-output.txt "start.sh"
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim
@@ -191,6 +305,9 @@ jobs:
     env:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
+      # Pinned so failure logs written by df_run land inside the path the
+      # "Upload logs as artifact" step already collects (see #267).
+      DOTFILES_LOG_DIR: /tmp/org.jcchikikomori.dotfiles
     steps:
       - uses: actions/checkout@v4
         with:
@@ -239,6 +356,10 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: ${{ inputs.verbose && '1' || '' }}
+      # Pinned so failure logs written by df_run land inside the path the
+      # "Upload logs as artifact" step already collects (see #267).
+      DOTFILES_LOG_DIR: /tmp/org.jcchikikomori.dotfiles
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
@@ -353,6 +474,10 @@ jobs:
       SKIP_SETTING_USER: true
       SKIP_INSTALL_PROGLANG: false
       CI: true
+      DOTFILES_VERBOSE: ${{ inputs.verbose && '1' || '' }}
+      # Pinned so failure logs written by df_run land inside the path the
+      # "Upload logs as artifact" step already collects (see #267).
+      DOTFILES_LOG_DIR: /tmp/org.jcchikikomori.dotfiles
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
@@ -461,6 +586,10 @@ jobs:
       SKIP_INSTALL_PROGLANG: false
       DEBIAN_FRONTEND: noninteractive
       CI: true
+      DOTFILES_VERBOSE: ${{ inputs.verbose && '1' || '' }}
+      # Pinned so failure logs written by df_run land inside the path the
+      # "Upload logs as artifact" step already collects (see #267).
+      DOTFILES_LOG_DIR: /tmp/org.jcchikikomori.dotfiles
       PYTHON_INSTALL_METHOD: ${{ matrix.python_method }}
     steps:
       - name: Install git for checkout
@@ -478,8 +607,22 @@ jobs:
           mkdir -p $HOME/logs
           cp -r $PWD/* $HOME/.dotfiles/
       - name: Getting Started
+        # Redirect rather than pipe to tee: the debian job runs in a container
+        # where the step shell is `sh -e` (dash), which rejects `set -o
+        # pipefail`. Capturing the status explicitly keeps a failing start.sh
+        # from being masked, without depending on a non-POSIX shell option.
         run: |
-          ./start.sh
+          rc=0
+          ./start.sh >/tmp/start-output.txt 2>&1 || rc=$?
+          cat /tmp/start-output.txt
+          exit "$rc"
+      # Regression guard for #260: start.sh drives {distro}/setup.sh and
+      # dotfiles-post-setup, and a command that misses df_run streams raw
+      # output over the loading screen. Only the audited apt-based jobs are
+      # covered; arch/fedora/darwin follow once each is audited (#269).
+      - name: Assert start.sh output contract
+        run: |
+          sh scripts/tests/assert-output-contract.sh /tmp/start-output.txt "start.sh"
       - name: Execute post-setup (vim)
         run: |
           ./linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-vim

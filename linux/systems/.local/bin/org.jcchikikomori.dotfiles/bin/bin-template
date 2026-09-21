@@ -2,15 +2,107 @@
 
 set -eu
 
-# THIS IS A BINARY/BASH SCRIPT TEMPLATE
+# THIS IS A SCRIPT TEMPLATE — copy it when adding a new dotfiles-* utility.
+#
+# Output conventions (see dotfiles-lib-output):
+#   - Never print raw command output. Wrap commands in df_run so their output is
+#     captured to a log and only surfaced when they fail.
+#   - Wrap each unit of work in run_step so it renders as:
+#         [dotfiles:example] Doing the thing... (00:03)   <- live, in place
+#         [dotfiles:example] Doing the thing... OK done
+#     and on failure:
+#         [dotfiles:example] Doing the thing... FAIL failed (00:03)
+#   - Reserve the terminal for prompts. Only genuinely interactive commands use
+#     df_run_interactive, and those run under run_step_quiet so the live timer
+#     does not fight the prompt for the same line.
 
-if [ "$1" = "install" ]; then
-  echo "[bin-template] Install Test"
-elif [ "$1" = "update" ]; then
-  echo "[bin-template] Update Test"
-else
-  echo "Usage: bin-template {install|update}"
-  echo "  install: Badabing badaboom"
-  echo "  update: Whoopididoop"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ ! -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
+  echo "[dotfiles:bin-template] Error: dotfiles-lib-output not found" >&2
   exit 1
 fi
+
+# shellcheck source=/dev/null
+. "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+
+# Prefix shown in every line this script prints: [dotfiles:bin-template]
+DF_PREFIX="bin-template"
+
+VERBOSE=0
+for arg in "$@"; do
+  case "$arg" in
+    --verbose|-v) VERBOSE=1 ;;
+  esac
+done
+
+if [ "$VERBOSE" -eq 1 ]; then
+  df_output_init --verbose
+  export DOTFILES_VERBOSE=1
+else
+  df_output_init
+fi
+
+# Run a labelled step with the live timer. df_step_end returns the effective
+# status: non-zero when the command failed, OR when a df_run inside the step
+# failed but the command swallowed it.
+run_step() {
+  label="$1"
+  shift
+  df_step "$label"
+  if "$@"; then
+    code=0
+  else
+    code=$?
+  fi
+  df_step_end "$code"
+  return "$?"
+}
+
+# Identical to run_step but without the ticker. Use for commands that prompt the
+# user, or that spawn a child script printing its own step output.
+run_step_quiet() {
+  label="$1"
+  shift
+  df_step_quiet "$label"
+  if "$@"; then
+    code=0
+  else
+    code=$?
+  fi
+  df_step_end "$code"
+  return "$?"
+}
+
+install_action() {
+  # df_run keeps stdout/stderr out of the way unless the command fails.
+  run_step "Installing something" df_run sh -c 'true' || df_fail "install failed"
+
+  # A step whose failure should not abort the run: df_run_soft never latches.
+  run_step "Optional extra" df_run_soft sh -c 'true' || df_warn "optional extra skipped"
+
+  # Only for commands that actually ask the user something.
+  # run_step_quiet "Configuring interactively" df_run_interactive some-installer
+
+  df_info "Install complete."
+}
+
+update_action() {
+  run_step "Updating something" df_run sh -c 'true' || df_fail "update failed"
+  df_info "Update complete."
+}
+
+usage() {
+  df_info "Usage: bin-template {install|update} [--verbose]"
+  df_info "  install: Badabing badaboom"
+  df_info "  update:  Whoopididoop"
+  df_info "  --verbose: stream command output instead of capturing it"
+}
+
+case "${1:-}" in
+  install) install_action ;;
+  update)  update_action ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

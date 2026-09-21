@@ -27,7 +27,19 @@ ln -snf /usr/local/.ghcup "$HOME_DIR/.ghcup"
 echo "Simulated ~/.ghcup -> /usr/local/.ghcup symlink created."
 
 # Exercise the same path used in CI workflows in non-interactive mode.
-yes y | sh debian/stowme.sh
+# Captured rather than streamed so the default-mode output contract below can
+# be asserted end-to-end.
+STOW_OUT="${HOME_DIR}/stowme-output.txt"
+if ! yes y | sh debian/stowme.sh >"$STOW_OUT" 2>&1; then
+  cat "$STOW_OUT" >&2
+  echo "ERROR: stowme.sh failed" >&2
+  exit 1
+fi
+cat "$STOW_OUT"
+
+# Regression guard for #260: in default (non-verbose) mode every line must be a
+# prefixed step line. An unprefixed line is child output that escaped df_run.
+sh scripts/tests/assert-output-contract.sh "$STOW_OUT" "stowme.sh"
 
 # Verify the symlink was correctly restored after stowing.
 if [ -L "$HOME_DIR/.ghcup" ] && [ "$(readlink "$HOME_DIR/.ghcup")" = "/usr/local/.ghcup" ]; then
@@ -36,6 +48,26 @@ else
   echo "ERROR: ~/.ghcup symlink was not restored after stowing!" >&2
   exit 1
 fi
+
+# Verify migrated output contract under CI mode:
+# - prefixed output format [dotfiles:<script>]
+# - no carriage return bytes
+# - no ANSI escape bytes
+PY_STATUS_OUT="${HOME_DIR}/python-status-output.txt"
+CI=true DOTFILES_VERBOSE=1 sh linux/systems/.local/bin/org.jcchikikomori.dotfiles/bin/dotfiles-python status >"$PY_STATUS_OUT" 2>&1
+grep -q "\[dotfiles:python\]" "$PY_STATUS_OUT"
+
+if LC_ALL=C grep -q "$(printf '\r')" "$PY_STATUS_OUT"; then
+  echo "ERROR: found carriage return bytes in CI output" >&2
+  exit 1
+fi
+
+if LC_ALL=C grep -q "$(printf '\033')" "$PY_STATUS_OUT"; then
+  echo "ERROR: found ANSI escape bytes in CI output" >&2
+  exit 1
+fi
+
+echo "CI output contract check passed (prefix + no CR/ANSI)."
 
 # Copyparty non-systemd fallback lifecycle (issue #212 regression).
 # This container has no systemd user bus, so dotfiles-copyparty must fall back

@@ -22,15 +22,39 @@
 
 set -u
 
-DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.dotfiles}"
-STRICT=0
-
-if [ "${1-}" = "--strict" ]; then
-  STRICT=1
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ ! -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
+  echo "[dotfiles:conflicts-comprehensive] Error: dotfiles-lib-output not found" >&2
+  exit 1
 fi
 
+# shellcheck source=/dev/null
+. "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+
+CONFLICTS_COMPREHENSIVE_VERBOSE=0
+STRICT=0
+for arg in "$@"; do
+  case "$arg" in
+    --strict)
+      STRICT=1
+      ;;
+    --verbose|-v)
+      CONFLICTS_COMPREHENSIVE_VERBOSE=1
+      ;;
+  esac
+done
+
+DF_PREFIX="conflicts-comprehensive"
+if [ "$CONFLICTS_COMPREHENSIVE_VERBOSE" -eq 1 ]; then
+  df_output_init --verbose
+else
+  df_output_init
+fi
+
+DOTFILES_PATH="${DOTFILES_PATH:-$HOME/.dotfiles}"
+
 if [ ! -d "$DOTFILES_PATH" ]; then
-  printf 'ERROR: DOTFILES_PATH not found: %s\n' "$DOTFILES_PATH" >&2
+  df_error "DOTFILES_PATH not found: $DOTFILES_PATH"
   exit 1
 fi
 
@@ -111,8 +135,8 @@ status_line() {
 
 BLOCKING=0
 
-echo "[dotfiles-conflicts-comprehensive] Scanning all packages for conflicts..."
-echo ""
+df_info "Scanning all packages for conflicts..."
+printf '\n'
 
 # Scan all distro-specific systems packages
 for distro in linux darwin debian ubuntu arch steamos rhel termux; do
@@ -121,7 +145,7 @@ for distro in linux darwin debian ubuntu arch steamos rhel termux; do
     continue
   fi
 
-  printf '[dotfiles-conflicts-comprehensive] Package: %s/systems\n' "$distro"
+  df_info "Package: $distro/systems"
 
   # Find all files (not directories) that would be stowed
   find "$package_dir" -type f 2>/dev/null | sort | while read -r file; do
@@ -139,26 +163,26 @@ for distro in linux darwin debian ubuntu arch steamos rhel termux; do
   done
 done
 
-echo ""
+printf '\n'
 
 if [ "$BLOCKING" -eq 1 ]; then
-  echo "[dotfiles-conflicts-comprehensive] BLOCKING conflicts found!"
-  echo ""
-  echo "Recommended cleanup workflow:"
-  echo "  1. Backup the conflicting files:"
-  echo "     cp -r ~/.config/<dir> ~/backup-<dir>-\$(date +%Y%m%d)"
-  echo "  2. Remove the conflicting files:"
-  echo "     rm -f ~/.config/<file>"
-  echo "  3. Re-run this script to verify CLEAN status:"
-  echo "     dotfiles-conflicts-comprehensive"
-  echo "  4. Re-run stow:"
-  echo "     stowme.sh"
-  echo ""
+  df_warn "BLOCKING conflicts found!"
+  printf '\n'
+  df_info "Recommended cleanup workflow:"
+  df_info "  1. Backup the conflicting files:"
+  df_info "     cp -r ~/.config/<dir> ~/backup-<dir>-\$(date +%Y%m%d)"
+  df_info "  2. Remove the conflicting files:"
+  df_info "     rm -f ~/.config/<file>"
+  df_info "  3. Re-run this script to verify CLEAN status:"
+  df_info "     dotfiles-conflicts-comprehensive"
+  df_info "  4. Re-run stow:"
+  df_info "     stowme.sh"
+  printf '\n'
   if [ "$STRICT" -eq 1 ]; then
     exit 1
   fi
 else
-  echo "[dotfiles-conflicts-comprehensive] All targets are SAFE or CLEAN!"
+  df_ok "All targets are SAFE or CLEAN!"
 fi
 
 exit 0

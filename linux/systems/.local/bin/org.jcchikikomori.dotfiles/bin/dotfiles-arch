@@ -6,17 +6,31 @@ set -eu
 # Works on all Arch-based systems (including SteamOS when combined with
 # dotfiles-steamdeck for SteamOS-specific handling).
 
-# Source shared pacman install helper
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-. "$SCRIPT_DIR/dotfiles-pacman-install"
+
+# Source output library and initialize before other sourced helpers.
+if [ -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
+  # shellcheck source=/dev/null
+  . "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output"
+else
+  printf '[dotfiles:arch] Error: dotfiles-lib-output not found\n' >&2
+  exit 1
+fi
+
 . "$SCRIPT_DIR/dotfiles-steamos-readonly"
 
-log_info() {
-  echo "[dotfiles-arch] $1"
-}
+ARCH_VERBOSE=0
 
-log_error() {
-  echo "[dotfiles-arch] ERROR: $1" >&2
+detect_verbose_flag() {
+  for arg in "$@"; do
+    case "$arg" in
+      --verbose|-v)
+        ARCH_VERBOSE=1
+        return 0
+        ;;
+    esac
+  done
+  return 0
 }
 
 # Check if a package is already installed
@@ -27,7 +41,7 @@ is_installed() {
 # Fix pacman keyring (generic Arch version based on steamos/setup.sh)
 fix_keyring() {
   require_writeable_rootfs
-  log_info "Checking pacman keyring status..."
+  df_info "Checking pacman keyring status..."
 
   KEYRING_OK=0
   if sudo pacman-key --list-keys 2>/dev/null | grep -q "^pub"; then
@@ -35,11 +49,11 @@ fix_keyring() {
   fi
 
   if [ "$KEYRING_OK" -eq 1 ]; then
-    log_info "Pacman keyring looks healthy. Skipping keyring fix."
+    df_info "Pacman keyring looks healthy. Skipping keyring fix."
     return 0
   fi
 
-  log_info "Fixing pacman keyring..."
+  df_info "Fixing pacman keyring..."
 
   # Clean everything
   sudo rm -rf /etc/pacman.d/gnupg/
@@ -65,23 +79,23 @@ fix_keyring() {
   sudo mv -f /etc/pacman.conf.bak /etc/pacman.conf
   trap - EXIT
 
-  log_info "Keyring fix complete."
+  df_info "Keyring fix complete."
 }
 
 # Add Chaotic AUR and CachyOS repositories
 setup_repositories() {
   require_writeable_rootfs
-  log_info "Setting up third-party repositories..."
+  df_info "Setting up third-party repositories..."
 
   repos_changed=0
 
   # Chaotic AUR
   if ! grep -q "\[chaotic-aur\]" /etc/pacman.conf; then
-    log_info "Importing Chaotic AUR keys..."
+    df_info "Importing Chaotic AUR keys..."
     echo "y" | sudo pacman-key --recv-key 3056513887B78AEB --keyserver hkp://keyserver.ubuntu.com:80
-    log_info "Signing Chaotic AUR keys..."
+    df_info "Signing Chaotic AUR keys..."
     echo "y" | sudo pacman-key --lsign-key 3056513887B78AEB
-    log_info "Installing Chaotic AUR keyring and mirrorlist..."
+    df_info "Installing Chaotic AUR keyring and mirrorlist..."
     sudo pacman -U --noconfirm --noprogressbar \
       'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst' \
       'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-mirrorlist.pkg.tar.zst'
@@ -91,16 +105,16 @@ setup_repositories() {
 Include = /etc/pacman.d/chaotic-mirrorlist" | sudo tee -a /etc/pacman.conf >/dev/null
     repos_changed=1
   else
-    log_info "Chaotic AUR repository is already registered. Skipping..."
+    df_info "Chaotic AUR repository is already registered. Skipping..."
   fi
 
   # CachyOS Repository
   if ! grep -q "\[cachyos-v3\]" /etc/pacman.conf; then
-    log_info "Importing CachyOS keys..."
+    df_info "Importing CachyOS keys..."
     echo "y" | sudo pacman-key --recv-keys F3B607488DB35A47 --keyserver keyserver.ubuntu.com
-    log_info "Signing CachyOS keys..."
+    df_info "Signing CachyOS keys..."
     echo "y" | sudo pacman-key --lsign-key F3B607488DB35A47
-    log_info "Installing CachyOS keyring and mirrorlist..."
+    df_info "Installing CachyOS keyring and mirrorlist..."
     sudo pacman -U --noconfirm --noprogressbar \
       'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-keyring-20240331-1-any.pkg.tar.zst' \
       'https://mirror.cachyos.org/repo/x86_64/cachyos/cachyos-mirrorlist-27-1-any.pkg.tar.zst' \
@@ -122,11 +136,11 @@ Include = /etc/pacman.d/cachyos-mirrorlist
 " | sudo tee -a /etc/pacman.conf >/dev/null
     repos_changed=1
   else
-    log_info "CachyOS repository is already registered. Skipping..."
+    df_info "CachyOS repository is already registered. Skipping..."
   fi
 
   if [ "$repos_changed" -eq 1 ]; then
-    log_info "Refreshing package databases..."
+    df_info "Refreshing package databases..."
     sudo pacman -Syy --noconfirm --noprogressbar
   fi
 }
@@ -135,16 +149,16 @@ Include = /etc/pacman.d/cachyos-mirrorlist
 install_yay() {
   require_writeable_rootfs
   if command -v yay >/dev/null 2>&1; then
-    log_info "yay is already installed"
+    df_info "yay is already installed"
     return 0
   fi
 
-  log_info "Installing yay..."
+  df_info "Installing yay..."
 
   # SteamOS 3.8.10+ removed debugedit and fakeroot, which are required by makepkg.
   for pkg in debugedit fakeroot; do
     if ! is_installed "$pkg"; then
-      log_info "Installing $pkg (required to build yay on SteamOS 3.8.10+)..."
+      df_info "Installing $pkg (required to build yay on SteamOS 3.8.10+)..."
       sudo pacman -S --noconfirm --needed "$pkg"
     fi
   done
@@ -160,20 +174,20 @@ install_yay() {
   git checkout 7d1b1a155500987cd7684a4b2afd76a98b6ed922
   makepkg -si --noconfirm
 
-  log_info "yay installed successfully"
+  df_info "yay installed successfully"
 }
 
 # Install mandatory packages
 install_packages() {
   require_writeable_rootfs
-  log_info "Installing mandatory packages..."
+  df_info "Installing mandatory packages..."
 
   repo_packages=""
   candidate_aur_packages=""
 
   for package_name in podman-docker podman-compose xorg-server-xvfb xsel ncdu rclone; do
     if is_installed "$package_name"; then
-      log_info "$package_name is already installed"
+      df_info "$package_name is already installed"
     elif pacman -Si "$package_name" >/dev/null 2>&1; then
       # Install via pacman directly so we skip yay's AUR resolver/warnings.
       repo_packages="$repo_packages $package_name"
@@ -183,7 +197,7 @@ install_packages() {
   done
 
   if [ -n "$repo_packages" ]; then
-    log_info "Installing from configured repositories:$repo_packages"
+    df_info "Installing from configured repositories:$repo_packages"
     pacman_install "-S --needed --noconfirm --noprogressbar" $repo_packages
   fi
 
@@ -195,7 +209,7 @@ install_packages() {
   done
 
   if [ -n "$aur_packages" ]; then
-    log_info "Installing via yay:$aur_packages"
+    df_info "Installing via yay:$aur_packages"
     yay -S --noconfirm $aur_packages
   fi
 }
@@ -203,27 +217,27 @@ install_packages() {
 # Install optional edge packages (common on SteamOS 3.8.10+ or other distros)
 install_packages_edge() {
   require_writeable_rootfs
-  log_info "Installing optional extra packages..."
+  df_info "Installing optional extra packages..."
 
   edge_packages=""
 
   for package_name in dmemcg-booster kcgroups plasma-foreground-booster; do
     if is_installed "$package_name"; then
-      log_info "$package_name is already installed (Your OS/Distro may include this)"
+      df_info "$package_name is already installed (Your OS/Distro may include this)"
     else
       edge_packages="$edge_packages $package_name"
     fi
   done
 
   if [ -n "$edge_packages" ]; then
-    log_info "Installing:$edge_packages"
+    df_info "Installing:$edge_packages"
     pacman_install "-S --noconfirm --noprogressbar" $edge_packages
   fi
 }
 
 # Run the full setup chain
 run_setup() {
-  local install_optional="${1:-false}"
+  install_optional="${1:-false}"
 
   fix_keyring
   setup_repositories
@@ -234,7 +248,7 @@ run_setup() {
     install_packages_edge
   fi
 
-  log_info "Setup complete."
+  df_info "Setup complete."
 }
 
 usage() {
@@ -254,8 +268,19 @@ usage() {
 }
 
 main() {
-  local install_optional="false"
-  local command_arg=""
+  install_optional="false"
+  command_arg=""
+
+  detect_verbose_flag "$@"
+
+  if [ "$ARCH_VERBOSE" -eq 1 ]; then
+    df_output_init --verbose
+  else
+    df_output_init
+  fi
+
+  # Init ordering rule: output lib init must happen before pacman helper source.
+  . "$SCRIPT_DIR/dotfiles-pacman-install"
 
   # Parse options and command (options may appear before or after the command)
   while [ $# -gt 0 ]; do
@@ -269,7 +294,7 @@ main() {
         exit 0
         ;;
       -*)
-        log_error "Unknown option: $1"
+        df_error "Unknown option: $1"
         usage
         exit 1
         ;;
@@ -277,7 +302,7 @@ main() {
         if [ -z "$command_arg" ]; then
           command_arg="$1"
         else
-          log_error "Unexpected argument: $1"
+          df_error "Unexpected argument: $1"
           usage
           exit 1
         fi
@@ -314,7 +339,7 @@ main() {
       usage
       ;;
     *)
-      log_error "Unknown command: $command_arg"
+      df_error "Unknown command: $command_arg"
       usage
       exit 1
       ;;
