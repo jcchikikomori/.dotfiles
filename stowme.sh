@@ -349,7 +349,7 @@ if [ -f "$HOME/.local/share/devtools-opencode/omos.prefs" ] && command -v devtoo
   # devtools-opencode ships in the devtools package and still prints raw output,
   # so it is wrapped here rather than left to stream over the step lines.
   # `omos restore` is non-interactive (backup + restore state, no prompts).
-  run_step "Restoring oh-my-opencode-slim configuration" df_run devtools-opencode omos restore || true
+  run_step "Restoring oh-my-opencode-slim config" df_run devtools-opencode omos restore || true
 fi
 
 # Remind user about EmuDeck sync setup if emudecktools package was stowed.
