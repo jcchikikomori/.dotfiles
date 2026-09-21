@@ -302,11 +302,284 @@ case_elapsed_format() {
   step_done=$(printf '%s\n' "$step_out" | sed -n '2p')
 
   assert_contains "work..." "$step_start" "step-end: start line" || status=1
-  assert_contains "(00:00)" "$step_start" "step-end: in-progress MM:SS" || status=1
+  # #271: the static (non-redraw) start line carries no timer -- no ticker will
+  # ever correct it, so a printed value would be a permanent lie.
+  if printf '%s\n' "$step_start" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] step-end: static start line has no MM:SS ... FAIL: [%s]\n' "$step_start" >&2
+    status=1
+  fi
   assert_contains "work..." "$step_done" "step-end: success line" || status=1
   assert_contains "done" "$step_done" "step-end: done mark" || status=1
-  if printf '%s\n' "$step_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
-    printf '[fixture] step-end: success has no MM:SS ... FAIL: [%s]\n' "$step_done" >&2
+  if ! printf '%s\n' "$step_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] step-end: success carries MM:SS ... FAIL: [%s]\n' "$step_done" >&2
+    status=1
+  fi
+
+  return "$status"
+}
+
+# Assert the #271 rendering contract on one captured non-redraw run:
+#   line 1: "<name>..."                    -- no timer, nothing would keep it true
+#   line 2: "<name>... <mark> (MM:SS)"     -- a real, non-zero duration
+# The step slept 2s, so anything under (00:02) means elapsed was not measured.
+#
+# $3 is the completion mark to expect, defaulting to the success one. The
+# failure branch renders a different mark ("Error: <name>... X failed (MM:SS)")
+# but MUST satisfy the identical elapsed contract (#271 AC-2), so both paths are
+# checked by this one helper rather than by two regexes that could drift apart.
+#
+# All locals are elapsed_*-prefixed on purpose: POSIX sh has no `local`, and the
+# assert_* helpers assign the global `label`, so an unprefixed name here would be
+# clobbered mid-helper and garble every failure message this case emits.
+assert_step_elapsed() {
+  elapsed_file="$1"
+  elapsed_label="$2"
+  elapsed_mark="${3:-done}"
+  elapsed_status=0
+
+  elapsed_start=$(LC_ALL=C grep -F 'work...' "$elapsed_file" | sed -n '1p')
+  elapsed_done=$(LC_ALL=C grep -F 'work...' "$elapsed_file" | sed -n '$p')
+
+  assert_contains "work..." "$elapsed_start" "$elapsed_label: start line present" || elapsed_status=1
+  if printf '%s\n' "$elapsed_start" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] %s: start line has no MM:SS ... FAIL: [%s]\n' "$elapsed_label" "$elapsed_start" >&2
+    elapsed_status=1
+  fi
+
+  assert_contains "$elapsed_mark" "$elapsed_done" "$elapsed_label: completion mark" || elapsed_status=1
+  if ! printf '%s\n' "$elapsed_done" | LC_ALL=C grep -Eq '\(00:(0[2-9]|[1-5][0-9])\)'; then
+    printf '[fixture] %s: completion line shows elapsed >= 2s ... FAIL: [%s]\n' "$elapsed_label" "$elapsed_done" >&2
+    elapsed_status=1
+  fi
+
+  assert_eq "2" "$(LC_ALL=C grep -c 'work\.\.\.' "$elapsed_file")" "$elapsed_label: exactly start + end lines" || elapsed_status=1
+
+  assert_bytes_clean "$elapsed_file" "$elapsed_label: no CR/ESC" || elapsed_status=1
+
+  return "$elapsed_status"
+}
+
+# Regression guard for #271: outside the redraw path no ticker ever repaints the
+# step line, so the completion line is the ONLY place elapsed can appear. Before
+# the fix, df_step printed "(00:00)" at t=0 (frozen forever) and df_step_end's
+# success branch printed no timer at all -- so a 2-second step reported 00:00
+# everywhere, in exactly the modes whose output gets archived. Cover all three
+# non-redraw triggers plus df_step_quiet, which carried the same frozen line.
+#
+# GITHUB_ACTIONS is cleared in the non-CI sub-cases: df__is_ci_env returns true
+# when CI is truthy OR GITHUB_ACTIONS is non-empty (lib :70-75), so on a GitHub
+# runner "CI=false" alone still yields DF_OUTPUT_CI=1 and the verbose/piped
+# sub-cases would silently collapse into duplicates of the CI one.
+# Precedent: :355, :373, :620, :659.
+#
+# The real `sleep 2` is unavoidable: df_timer_elapsed is whole-second
+# (date +%s), so a non-zero duration cannot be produced any other way without
+# mocking `date` -- which would test the mock, not the library.
+# Precedent for the sleep: case_redraw_gating (:596, :600, :604).
+case_step_elapsed_non_tty() {
+  status=0
+
+  step_body='. "$1"; df_output_init; df_step "work"; sleep 2; df_step_end 0'
+  quiet_body='. "$1"; df_output_init; df_step_quiet "work"; sleep 2; df_step_end 0'
+  # df_step_end propagates the failing status, so `|| true` keeps the fixture's
+  # own `set -e` from aborting on a sub-case that is supposed to fail.
+  fail_body='. "$1"; df_output_init; df_step "work"; sleep 2; df_step_end 5 || true'
+
+  # Trigger 1: CI mode (DF_OUTPUT_CI=1).
+  ci_file="$1/elapsed-ci.out"
+  CI=true DOTFILES_VERBOSE=0 DF_PREFIX=fixture \
+    sh -c "$step_body" sh "$LIB" > "$ci_file" 2>&1
+  assert_step_elapsed "$ci_file" "elapsed-ci" || status=1
+
+  # Trigger 2: verbose mode only (DF_OUTPUT_VERBOSE=1, DF_OUTPUT_CI=0).
+  verbose_file="$1/elapsed-verbose.out"
+  CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=1 DF_PREFIX=fixture \
+    sh -c "$step_body" sh "$LIB" > "$verbose_file" 2>&1
+  assert_step_elapsed "$verbose_file" "elapsed-verbose" || status=1
+
+  # Trigger 3: piped / non-tty only (DF_OUTPUT_TTY=0, CI=0, VERBOSE=0). A pipe
+  # and a redirect are the same condition to the library ([ -t 1 ] false); the
+  # pipe is used here so the case name is literally true.
+  piped_file="$1/elapsed-piped.out"
+  CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 DF_PREFIX=fixture \
+    sh -c "$step_body" sh "$LIB" 2>&1 | cat > "$piped_file"
+  assert_step_elapsed "$piped_file" "elapsed-piped" || status=1
+
+  # df_step_quiet is ticker-free by construction, so it is permanently in the
+  # non-redraw shape and carried the identical defect.
+  quiet_file="$1/elapsed-quiet.out"
+  CI=true DOTFILES_VERBOSE=0 DF_PREFIX=fixture \
+    sh -c "$quiet_body" sh "$LIB" > "$quiet_file" 2>&1
+  assert_step_elapsed "$quiet_file" "elapsed-quiet" || status=1
+
+  # The failure completion line must report elapsed exactly like the success one
+  # (#271 AC-2). This is not symmetry for its own sake: df_step_end's failure
+  # branch owns no timer state, it renders a value computed once, above the
+  # success/failure fork -- so dropping the timer from that one printf is a
+  # silent, one-line regression that every other case here stays green through.
+  # Rendered shape: "[dotfiles:fixture] Error: work... X failed (00:02)", with
+  # "Error:" after the prefix, so the mark is matched rather than the line head.
+  fail_file="$1/elapsed-fail.out"
+  CI=true DOTFILES_VERBOSE=0 DF_PREFIX=fixture \
+    sh -c "$fail_body" sh "$LIB" > "$fail_file" 2>&1
+  assert_step_elapsed "$fail_file" "elapsed-fail" "failed" || status=1
+
+  return "$status"
+}
+
+# #271 / ADR-0002: the timer is appended at the TAIL of the completion line, so
+# an over-budget line loses precisely the value this change adds. This case
+# renders a representative long consumer label through the real library at 80
+# columns and requires an intact MM:SS -- it proves the truncation math end to
+# end, on actual output, which a static byte count cannot do.
+#
+# It pins ONE label, so it cannot notice a different label going over budget.
+# case_label_width_ceiling is what enforces the invariant repo-wide; keep both.
+# A label's ceiling is `79 - len(prefix) - 20` and the prefix is per-script, so
+# there is no single character count that applies everywhere.
+#
+# A pty AND a mocked stty are both required: without the pty, df__log_line takes
+# the non-tty branch (cap 120) and the width mock is never consulted, so the
+# guard silently passes. Without the mock, the pty inherits the host terminal
+# width and the guard silently passes on wide terminals. NO_COLOR=1 keeps the
+# end-anchored regex meaningful on a tty.
+case_step_width_budget() {
+  status=0
+  if ! command -v script >/dev/null 2>&1; then
+    printf '[fixture] width: script(1) unavailable, skipping\n'
+    return 0
+  fi
+
+  mock_dir="$1/width-mocks"
+  create_mock_commands "$mock_dir"
+
+  longest='Restoring oh-my-opencode-slim config'
+
+  width_file="$1/width-budget.out"
+  tty_capture "$width_file" "env PATH='$mock_dir:$PATH' MOCK_STTY_COLS=80 NO_COLOR=1 DF_PREFIX=stowme LC_ALL=en_US.UTF-8 CI=true DOTFILES_VERBOSE=0 sh -c '. \"\$1\"; df_output_init; df_step_quiet \"\$2\"; df_step_end 0' sh '$LIB' '$longest'"
+
+  width_out=$(tr '\r' '\n' < "$width_file")
+  width_done=$(printf '%s\n' "$width_out" | LC_ALL=C grep -F 'done' | sed -n '$p')
+
+  assert_contains "$longest" "$width_done" "width: longest real label not truncated" || status=1
+  if ! printf '%s\n' "$width_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)$'; then
+    printf '[fixture] width: completion line ends with an intact MM:SS ... FAIL: [%s]\n' "$width_done" >&2
+    status=1
+  fi
+
+  return "$status"
+}
+
+# #271 / ADR-0002 enforcement. case_step_width_budget above pins a single label,
+# so a future over-long label -- or a revert of the one that was shortened --
+# sails past it. This case walks every static step label in the repository and
+# fails the build naming the offender, which is what makes ADR-0002's claim
+# ("the next over-long label fails CI instead of silently losing its timer")
+# actually true.
+#
+# Budget: an 80-column terminal, where df__log_line truncates at width - 1 = 79
+# bytes. The worst-case completion line is
+#   "[dotfiles:<prefix>] <label>... <mark> (MM:SS)"
+# whose fixed tail is 20 bytes: "... " + "* done" + " " + "(00:00)", counting the
+# UTF-8 tick as its 3 bytes. Truncation is byte-based, so bytes -- not display
+# columns -- are what decide whether the timer survives. Hence the per-label
+# ceiling is 79 - len(prefix) - 20.
+#
+# Prefix resolution mirrors df_output_init, which prefers an explicit DF_PREFIX
+# over df__basename "$0" (lib :726-727). Resolving every script by basename
+# instead would measure "[dotfiles:setup] " for the distro setup scripts, which
+# none of them print -- they set DF_PREFIX="ubuntu-setup" and friends, 7 bytes
+# longer -- and genuinely over-budget lines would pass.
+#
+# Only static literals are measurable: labels built from variables
+# (df_step "$label", run_step "Installing $name") are skipped by construction,
+# so the scanned count is asserted too. A walk that silently matches nothing is
+# a guard that can never fail again, which is the failure mode this whole case
+# exists to correct.
+#
+# Cost: one LC_ALL=C awk pass over the tracked files (~260 here, ~25ms). No
+# sleep, no pty -- this runs on four CI runners.
+case_label_width_ceiling() {
+  status=0
+
+  if ! command -v git >/dev/null 2>&1 || ! git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    printf '[fixture] ceiling: git unavailable, skipping\n'
+    return 0
+  fi
+
+  ceiling_files="$1/ceiling-files.txt"
+  ceiling_report="$1/ceiling-report.txt"
+
+  # Skip gitlink entries (submodule directories) and anything deleted from the
+  # worktree: awk would abort on those before reaching the labels.
+  git -C "$REPO_ROOT" ls-files | while IFS= read -r ceiling_tracked; do
+    [ -f "$REPO_ROOT/$ceiling_tracked" ] || continue
+    printf '%s/%s\n' "$REPO_ROOT" "$ceiling_tracked"
+  done > "$ceiling_files"
+
+  ceiling_prog='
+    /^[ \t]*DF_PREFIX="/ {
+      if (!(FILENAME in pfx)) {
+        declared = $0
+        sub(/^[ \t]*DF_PREFIX="/, "", declared)
+        sub(/".*/, "", declared)
+        if (declared !~ /[$]/) { pfx[FILENAME] = declared }
+      }
+    }
+    match($0, /(^|[ \t;])(df_step|df_step_quiet|run_step)[ \t]+"[^"$\\]+"/) {
+      label = substr($0, RSTART, RLENGTH)
+      sub(/^[^"]*"/, "", label)
+      sub(/"$/, "", label)
+      found++
+      hit_file[found] = FILENAME
+      hit_line[found] = FNR
+      hit_label[found] = label
+    }
+    END {
+      for (i = 1; i <= found; i++) {
+        f = hit_file[i]
+        if (f in pfx) {
+          p = pfx[f]
+        } else {
+          p = f
+          sub(/.*\//, "", p)
+          sub(/\.sh$/, "", p)
+          sub(/^dotfiles-/, "", p)
+        }
+        rel = f
+        if (substr(f, 1, length(root)) == root) { rel = substr(f, length(root) + 1) }
+        total = length("[dotfiles:" p "] ") + length(hit_label[i]) + tail
+        if (total > budget) {
+          printf "OVER %dB %s:%d [dotfiles:%s] %s\n", total, rel, hit_line[i], p, hit_label[i]
+        }
+      }
+      printf "SCANNED %d\n", found
+    }
+  '
+
+  (
+    # Newline-only IFS keeps paths containing spaces intact; -f stops the shell
+    # from globbing a path that happens to contain a wildcard character.
+    IFS='
+'
+    set -f
+    LC_ALL=C awk -v budget=79 -v tail=20 -v root="$REPO_ROOT/" "$ceiling_prog" $(cat "$ceiling_files")
+  ) > "$ceiling_report" 2>&1
+
+  ceiling_over=$(LC_ALL=C grep -c '^OVER ' "$ceiling_report" || true)
+  ceiling_scanned=$(LC_ALL=C awk '/^SCANNED /{ total += $2 } END { print total + 0 }' "$ceiling_report")
+
+  if [ "${ceiling_over:-0}" -ne 0 ] 2>/dev/null; then
+    printf '[fixture] ceiling: every step label composes to <= 79 bytes ... FAIL: %s label(s) over budget\n' "$ceiling_over" >&2
+    LC_ALL=C sed -n 's/^OVER //p' "$ceiling_report" | while IFS= read -r ceiling_hit; do
+      printf '[fixture]   %s  (shorten the label; the timer is what gets cut)\n' "$ceiling_hit" >&2
+    done
+    status=1
+  fi
+
+  # A walk that matches nothing would report a clean max forever.
+  if [ "${ceiling_scanned:-0}" -lt 20 ] 2>/dev/null; then
+    printf '[fixture] ceiling: walker still finds static labels ... FAIL: scanned %s, expected >= 20\n' "${ceiling_scanned:-0}" >&2
     status=1
   fi
 
@@ -344,11 +617,11 @@ case_step_tty() {
   fi
 
   # No animated spinner frames: step output is static start + completion lines.
-  # In-progress line includes MM:SS; success line omits it. Assert the stable,
-  # persistable tty output: step name, start/completion lines, absence of frame
-  # glyphs, and no
-  # literal backslash escape artifacts. Both locale runs are kept to exercise
-  # the utf8 and C mark paths.
+  # In-progress line includes MM:SS (ticker-driven); the success line carries
+  # its own final MM:SS too (#271). Assert the stable, persistable tty output:
+  # step name, start/completion lines, absence of frame glyphs, and no literal
+  # backslash escape artifacts. Both locale runs are kept to exercise the utf8
+  # and C mark paths.
   utf_file="$1/step-utf.out"
   ascii_file="$1/step-ascii.out"
 
@@ -363,8 +636,8 @@ case_step_tty() {
   assert_contains "(00:00)" "$utf_start" "step-utf: in-progress MM:SS" || status=1
   assert_contains "✓" "$utf_done" "step-utf: utf8 done mark" || status=1
   assert_contains "done" "$utf_done" "step-utf: completion line" || status=1
-  if printf '%s\n' "$utf_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
-    printf '[fixture] step-utf: no success MM:SS timer ... FAIL\n' >&2
+  if ! printf '%s\n' "$utf_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] step-utf: success carries MM:SS timer ... FAIL: [%s]\n' "$utf_done" >&2
     status=1
   fi
   assert_not_contains "ᗧ" "$utf_out" "step-utf: no spinner frames" || status=1
@@ -379,8 +652,8 @@ case_step_tty() {
   assert_contains "(00:00)" "$ascii_start" "step-ascii: in-progress MM:SS" || status=1
   assert_contains "OK" "$ascii_done" "step-ascii: ascii done mark" || status=1
   assert_contains "done" "$ascii_done" "step-ascii: completion line" || status=1
-  if printf '%s\n' "$ascii_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
-    printf '[fixture] step-ascii: no success MM:SS timer ... FAIL\n' >&2
+  if ! printf '%s\n' "$ascii_done" | LC_ALL=C grep -Eq '\([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] step-ascii: success carries MM:SS timer ... FAIL: [%s]\n' "$ascii_done" >&2
     status=1
   fi
   assert_not_contains ">" "$ascii_out" "step-ascii: no spinner frames" || status=1
@@ -700,6 +973,9 @@ main() {
   run_case "df_is_utf8: locale + darwin" case_utf8_detection "$temp_dir"
   run_case "byte-clean: CI + piped" case_byte_clean_modes "$temp_dir"
   run_case "elapsed: MM:SS format" case_elapsed_format
+  run_case "elapsed: real duration on non-tty completion line" case_step_elapsed_non_tty "$temp_dir"
+  run_case "step: width budget at 80 columns" case_step_width_budget "$temp_dir"
+  run_case "labels: repo-wide 79-byte ceiling" case_label_width_ceiling "$temp_dir"
   run_case "color: escape bytes vs literal" case_color_escapes "$temp_dir"
   run_case "step: static tty output (start + done)" case_step_tty "$temp_dir"
   run_case "df_run: exit/log/path/tty" case_df_run_contract "$temp_dir"

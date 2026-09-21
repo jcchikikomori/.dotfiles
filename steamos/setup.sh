@@ -55,7 +55,7 @@ run_step "Unlocking SteamOS rootfs" df_run sudo steamos-readonly disable || df_f
 run_step "Fixing SteamOS keyring" df_run "$DOTFILES_BIN/dotfiles-steamdeck" fix-keyring || df_fail "Failed SteamOS keyring fix"
 
 # Setup third-party repositories (Chaotic AUR + CachyOS)
-run_step "Setting up third-party repositories" df_run "$DOTFILES_BIN/dotfiles-arch" setup-repositories || df_fail "Failed repository setup"
+run_step "Setting up third-party repos" df_run "$DOTFILES_BIN/dotfiles-arch" setup-repositories || df_fail "Failed repository setup"
 
 # Install essential packages from standard pacman repos (needed before
 # install-yay, which requires git + base-devel). Repos were just refreshed

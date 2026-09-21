@@ -79,7 +79,7 @@ run_step "Updating apt index" run_with_priv apt update || df_fail "Failed apt up
 # TODO(#267): software-properties-common is Ubuntu-centric and is not locatable
 # on the Debian CI image. Tolerated for now so the run continues; the failure is
 # still printed with its log path. Restore df_fail once the package list is fixed.
-run_step "Installing apt transport dependencies" run_with_priv_soft apt install -y apt-transport-https ca-certificates curl software-properties-common || df_warn "apt transport dependencies install failed/skipped"
+run_step "Installing apt transport deps" run_with_priv_soft apt install -y apt-transport-https ca-certificates curl software-properties-common || df_warn "apt transport dependencies install failed/skipped"
 
 # Install kbd for loadkeys (console keyboard layout)
 # Install gnupg for gpgconf and gpg-connect-agent commands
@@ -101,7 +101,7 @@ run_step "Installing rclone" run_with_priv apt install -y rclone || df_fail "Fai
 
 # Rust toolchain via rustup (apt's rustc/cargo on Debian is too old to build
 # current crates - xdvdfs-cli requires Rust edition 2024, rustc >= 1.85) + exiftool
-run_step "Installing rust/exiftool prerequisites" run_with_priv apt install -y libimage-exiftool-perl || df_fail "Failed exiftool prerequisite install"
+run_step "Installing rust/exiftool deps" run_with_priv apt install -y libimage-exiftool-perl || df_fail "Failed exiftool prerequisite install"
 if ! command -v cargo >/dev/null 2>&1; then
   run_step "Installing rustup" df_run sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable" || df_fail "Failed rustup install"
 fi

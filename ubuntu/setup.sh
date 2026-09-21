@@ -45,7 +45,7 @@ run_step() {
 
 # Init setup
 run_step "Updating apt index" df_run sudo apt-get update || df_fail "Failed apt-get update"
-run_step "Installing apt transport dependencies" df_run sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common || df_fail "Failed apt transport dependencies install"
+run_step "Installing apt transport deps" df_run sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common || df_fail "Failed apt transport dependencies install"
 
 # Install kbd for loadkeys (console keyboard layout)
 # Install gnupg for gpgconf and gpg-connect-agent commands
@@ -69,7 +69,7 @@ run_step "Installing rclone" df_run sudo apt-get install -y rclone || df_fail "F
 
 # Rust toolchain via rustup (apt's rustc/cargo on Ubuntu is too old to build
 # current crates - xdvdfs-cli requires Rust edition 2024, rustc >= 1.85) + exiftool
-run_step "Installing rust/exiftool prerequisites" df_run sudo apt-get install -y libimage-exiftool-perl || df_fail "Failed exiftool prerequisite install"
+run_step "Installing rust/exiftool deps" df_run sudo apt-get install -y libimage-exiftool-perl || df_fail "Failed exiftool prerequisite install"
 if ! command -v cargo >/dev/null 2>&1; then
   run_step "Installing rustup" df_run sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable" || df_fail "Failed rustup install"
 fi

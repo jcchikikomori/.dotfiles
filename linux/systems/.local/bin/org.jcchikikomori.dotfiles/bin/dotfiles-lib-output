@@ -459,7 +459,11 @@ df_step() {
     df__step_frame
     df__ticker_start
   else
-    df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+    # No ticker owns this line, so any elapsed value printed here is frozen at
+    # the instant df__step_begin started the timer -- necessarily 00:00, and
+    # never corrected. The completion line from df_step_end is the only place
+    # a non-redraw run can report a true duration.
+    df_info "$DF_OUTPUT_STEP_NAME..."
   fi
 
   return 0
@@ -473,7 +477,9 @@ df_step() {
 # child's own ticker is the only one that may own the line.
 df_step_quiet() {
   df__step_begin "$@"
-  df_info "$DF_OUTPUT_STEP_NAME... ($(df__fmt_duration "$(df_timer_elapsed)"))"
+  # Never ticks by construction, so it never carries an in-progress timer
+  # (see df_step's non-redraw branch for why).
+  df_info "$DF_OUTPUT_STEP_NAME..."
   return 0
 }
 
@@ -498,16 +504,20 @@ df_step_end() {
     [ "$status" -ne 0 ] 2>/dev/null || status=1
   fi
 
+  # Both outcomes render elapsed. On a non-redraw run (CI, verbose, piped) this
+  # is the ONLY line that can carry a true duration -- nothing repaints the
+  # start line there. Read the clock once so success and failure can never
+  # report different values for the same step across a second boundary.
+  timer=$(df__fmt_duration "$(df_timer_elapsed)")
+
   if [ "$status" -eq 0 ] 2>/dev/null; then
     if df_is_utf8; then
       mark='✓ done'
     else
       mark='OK done'
     fi
-    df_ok "$DF_OUTPUT_STEP_NAME... $mark"
+    df_ok "$DF_OUTPUT_STEP_NAME... $mark ($timer)"
   else
-    elapsed=$(df_timer_elapsed)
-    timer=$(df__fmt_duration "$elapsed")
     if df_is_utf8; then
       mark='✗ failed'
     else
