@@ -257,3 +257,11 @@ RPROMPT='$(starship prompt --right --terminal-width="$COLUMNS" --keymap="${KEYMA
 # Sit the right prompt flush against the right edge. Left unset, zsh keeps
 # one blank column there, which reads as a gap after the clock pill.
 ZLE_RPROMPT_INDENT=0
+
+# Prompt separator: starship.toml sets add_newline = false, so the blank line
+# between prompts is printed by this hook instead. See ADR-0003 / #270.
+# An `if` rather than a `&&` chain: this is the file's last statement, so a
+# false guard would hand starship a non-zero status to render on prompt one.
+if [ -r "$HOME/.zsh/prompt-gap.zsh" ]; then
+    source "$HOME/.zsh/prompt-gap.zsh"
+fi

@@ -9,8 +9,62 @@ if command -v starship &> /dev/null; then
     # has no separate right-prompt concept, so PS1 is the only thing to
     # wrap. See starship-blend.
     eval "$(declare -f starship_precmd | sed '1s/starship_precmd/_starship_precmd_orig/')"
+
+    # One blank separator line above every prompt except the first of the shell
+    # process and the first after a screen wipe -- the bash half of ADR-0003 /
+    # #270. starship.toml is shared, so add_newline = false would otherwise
+    # strip the separator from bash entirely.
+    #
+    # Printed here, not embedded in PS1: readline's Ctrl-L repaints PS1, so a
+    # newline carried inside it would reinstate the gap on a cleared screen.
+    #
+    # bash has no preexec, so the screen-wipe check reads the last history
+    # entry. It must gate on the history INDEX advancing, not on the text:
+    # a bare Enter and a Ctrl-C on an unsubmitted line record nothing, so
+    # `history 1` keeps returning the PREVIOUS command. Matching text alone
+    # therefore re-fires a `clear` disarm on every subsequent prompt until
+    # something else is recorded, silently eating separators that #270
+    # requires (AC-003/AC-004). Measured; see the Design Doc red/green matrix.
+    #
+    # The gate compares for INEQUALITY, never ordering: `history -c` resets the
+    # index to 1 and `history -d` can lower it, so `>` would latch the disarm
+    # off and silently eat separators.
+    #
+    # If history is disabled the disarm is lost and nothing else is -- the
+    # four primary behaviours hang off the flag, not off history.
+    #
+    # Both are PRESERVED across a re-source, never reset. `source ~/.bashrc` is
+    # routine right after editing the rc, and it re-runs this file in a shell
+    # that has already drawn prompts. A plain `=0` would disarm the flag and cost
+    # the NEXT prompt its separator -- a MISSING row, the direction ADR-0003
+    # Implementation Guidance 9 forbids. Measured before this guard existed.
+    # The index is preserved for the same reason: blanking it re-opens the disarm
+    # to a stale `clear` entry whenever the re-source itself was not recorded
+    # (HISTCONTROL=ignorespace, a leading space on the command).
+    # `${var+set}` is true when var is SET, empty or not, which is what an
+    # intentionally-empty initial index needs -- `:=` cannot express it.
+    : "${_dotfiles_prompt_gap_armed:=0}"
+    [ -n "${_dotfiles_prompt_gap_histidx+set}" ] || _dotfiles_prompt_gap_histidx=
     starship_precmd() {
         _starship_precmd_orig
         PS1="$(printf '%s' "$PS1" | starship-blend left)"
+
+        local _hist _idx _cmd
+        _hist=$(HISTTIMEFORMAT= builtin history 1 2>/dev/null)
+        # `read` splits the "%5d  %s" history line into index and command, and
+        # strips the surrounding whitespace on both -- so `clear ` matches too.
+        read -r _idx _cmd <<< "$_hist" || true
+        if [ "$_idx" != "$_dotfiles_prompt_gap_histidx" ]; then
+            _dotfiles_prompt_gap_histidx=$_idx
+            case "$_cmd" in
+                clear|reset|"tput clear"|"tput reset") _dotfiles_prompt_gap_armed=0 ;;
+            esac
+        fi
+
+        if [ "$_dotfiles_prompt_gap_armed" -eq 1 ]; then
+            printf '\n'
+        else
+            _dotfiles_prompt_gap_armed=1
+        fi
     }
 fi

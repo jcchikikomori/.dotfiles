@@ -104,6 +104,11 @@ jobs:
 
   prompt-gap-ubuntu:
     runs-on: ubuntu-latest
+    # The suite's documented worst case is a hang, not a failure: a shell that
+    # never reaches `exit`, or tmux auto-attaching and swallowing the pty once
+    # the TMUX_DISABLE_AT_BOOT inversion is fixed. A happy run is ~35s, and
+    # GitHub's default ceiling is 360 minutes of a held runner.
+    timeout-minutes: 10
     env:
       # Pinned on purpose, not out of laziness. Every empirical claim behind #270
       # -- the measured pty captures, the per-assertion expectations derived from
