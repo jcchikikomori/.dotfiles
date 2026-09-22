@@ -446,6 +446,25 @@ case_config_add_newline() {
 case_zsh_gap() {
   _root="$1"
   _home="$_root/zsh-home"; mkdir -p "$_home/$ANCHOR"
+  # Ubuntu's /etc/zsh/zshrc:106-112 runs compinit unconditionally, and that runs
+  # BEFORE the sandbox .zshrc. Where the completion directories are insecure --
+  # group-writable and owned by neither root nor the shell's euid, which is the
+  # state a GitHub runner ships in -- compinit stops on an interactive
+  # "Ignore insecure directories and continue [y]" prompt. That is 129 bytes of
+  # text sitting exactly where assertion 1 looks, and it eats the first driven
+  # keystroke as its answer, so no prompt ever renders. Same class of trap as
+  # the bash markers below, which is why the two sit together.
+  #
+  # skip_global_compinit is the opt-out /etc/zsh/zshrc documents for itself, and
+  # it must land in .zshenv: the read order is /etc/zshenv, $ZDOTDIR/.zshenv,
+  # /etc/zshrc, $ZDOTDIR/.zshrc, so .zshenv is the only user file read before the
+  # global rc. Preferred over `zsh -d` (NO_GLOBAL_RCS), which would discard the
+  # whole global rc and leave the sandbox less like a real user's shell.
+  #
+  # Do not delete this as dead weight because the warning never appears on your
+  # machine. A developer box whose completion directories are securely owned
+  # runs the same global compinit in silence; only CI is loud about it.
+  printf 'skip_global_compinit=1\n' > "$_home/.zshenv"
   cat > "$_home/.zshrc" <<EOF
 autoload -Uz add-zsh-hook
 eval "\$(starship init zsh)"
