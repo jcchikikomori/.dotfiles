@@ -1,3 +1,9 @@
+# The blank separator line above the prompt is owned by the shell, not by
+# starship: starship renders each prompt in a fresh process and cannot tell a
+# first prompt from a later one (upstream #560). See ADR-0003 and
+# linux/zsh/.zsh/prompt-gap.zsh / linux/bash/.bashrc.d/04-starship.
+add_newline = false
+
 # Powerline-style prompt, palette matched to tmux-powerline (linux/tmux/.config/tmux-powerline/config.sh):
 # bg/text-on-accent #0E1419, accent blue #00BFFF, git green #5FAF87 (xterm colour72), neutral #cccccc.
 format = """
