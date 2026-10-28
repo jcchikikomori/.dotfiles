@@ -957,7 +957,71 @@ _omos_backup_state() {
     fi
 }
 
+_omos_tracked_config() {
+    # Dotfiles-managed copy of the omos config (the opencode submodule,
+    # stowed into ~/.config/opencode as a symlink so the tracked copy stays
+    # canonical).
+    printf '%s\n' "${DOTFILES_PATH:-$HOME/.dotfiles}/linux/opencode/.config/opencode/oh-my-opencode-slim.json"
+}
+
+_omos_repair_link() {
+    # oh-my-opencode-slim persists its config atomically: it writes a temp
+    # file next to the target and rename(2)s it over the config path. rename
+    # replaces a symlink instead of writing through it, so any omo-slim
+    # rewrite (installer regen, preset switch, marketplace enable/disable)
+    # silently destroys the stow link. Once that happens the -L guard in
+    # _omos_restore_state no longer fires and a later 'omos restore' would
+    # overwrite the tracked config with the installer's generated one.
+    # Re-assert the symlink so the dotfiles copy is authoritative again.
+    local live="$HOME/.config/opencode/oh-my-opencode-slim.json"
+    local tracked
+    tracked=$(_omos_tracked_config)
+
+    if [ -L "$live" ]; then
+        # Invariant already holds; the tracked copy is canonical.
+        return 0
+    fi
+
+    if [ ! -f "$tracked" ]; then
+        _warn "Cannot repair oh-my-opencode-slim.json: no dotfiles copy at $tracked."
+        return 1
+    fi
+
+    # Preserve whatever replaced the link (installer output, manual edits)
+    # before discarding it, so nothing is lost when the tracked copy wins.
+    if [ -f "$live" ]; then
+        _ensure_omos_dirs
+        local timestamp backup_subdir
+        timestamp=$(date +%Y%m%d-%H%M%S)
+        backup_subdir="$OMOS_BACKUP_DIR/$timestamp-repair"
+        mkdir -p "$backup_subdir"
+        if cp "$live" "$backup_subdir/oh-my-opencode-slim.json"; then
+            _log "  Preserved replaced file to $backup_subdir/"
+        fi
+    fi
+
+    # Match the stow layout: keep the link relative when the tracked copy
+    # lives under $HOME (../../<path-after-home>), absolute otherwise.
+    local target rel
+    target=$(readlink -f "$tracked")
+    case "$target" in
+        "$HOME"/*)
+            rel="../../${target#"$HOME"/}"
+            ;;
+        *)
+            rel=$target
+            ;;
+    esac
+    ln -sfn "$rel" "$live"
+    _log "Re-asserted dotfiles-managed symlink: $live -> $rel"
+}
+
 _omos_restore_state() {
+    # Repair first: if omo-slim replaced the symlink with a regular file,
+    # re-assert it so the guard below (and the installer skip it enforces)
+    # cannot be defeated.
+    _omos_repair_link
+
     # Dotfiles-managed omos config is authoritative: when oh-my-opencode-slim.json
     # is a symlink (stowed from the dotfiles opencode submodule), skip regenerating
     # it so 'omos restore' cannot clobber the tracked configuration.
@@ -1073,6 +1137,14 @@ EOF
     fi
 
     _log "Oh-My-OpenCode-Slim installation complete."
+
+    # The installer regenerates the config atomically (temp file + rename),
+    # which replaces the stow symlink with a regular file. Re-assert the
+    # dotfiles-managed link so the tracked copy stays authoritative; the
+    # installer's generated config was preserved to the omos backup dir by
+    # the repair step if it replaced a managed link.
+    _omos_repair_link
+
     echo ""
     echo "Next steps:"
     echo "  1. Run 'opencode auth login' to authenticate your providers"
@@ -1092,9 +1164,15 @@ do_omos_status() {
 
     if _omos_is_installed; then
         echo "Installation:  INSTALLED"
-        for file in "$HOME/.config/opencode/oh-my-opencode-slim.json"; do
-            if [ -f "$file" ]; then
+        local omos_live="$HOME/.config/opencode/oh-my-opencode-slim.json"
+        for file in "$omos_live"; do
+            if [ -L "$file" ]; then
                 echo "Config file:   $file"
+                echo "Config source: DOTFILES-MANAGED (symlink -> $(readlink "$file"))"
+            elif [ -f "$file" ]; then
+                echo "Config file:   $file"
+                _warn "Config source: UNMANAGED regular file (omo-slim likely replaced the stow symlink)."
+                echo "               Run 'devtools-opencode omos repair' to re-assert the dotfiles copy."
             fi
         done
     else
@@ -1179,13 +1257,18 @@ main() {
             case "$subcommand" in
                 install) shift 2; do_omos_install "$@" ;;
                 restore) do_omos_restore ;;
+                repair) _omos_repair_link ;;
                 status) do_omos_status ;;
                 *)
-                    echo "Usage: devtools-opencode omos {install|restore|status}"
+                    echo "Usage: devtools-opencode omos {install|restore|repair|status}"
                     echo ""
                     echo "  install   Install/configure oh-my-opencode-slim interactively"
                     echo "            Or non-interactive: devtools-opencode omos install --no-tui --preset=opencode-go ..."
                     echo "  restore   Re-apply saved oh-my-opencode-slim config (use after stow)"
+                    echo "            Repairs the dotfiles-managed symlink first, so a clobbered"
+                    echo "            config can never be overwritten by the installer"
+                    echo "  repair    Re-assert the dotfiles-managed oh-my-opencode-slim.json"
+                    echo "            symlink (omo-slim rewrites replace it with a regular file)"
                     echo "  status    Show oh-my-opencode-slim installation status"
                     exit 1
                     ;;
