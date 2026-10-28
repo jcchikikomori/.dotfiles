@@ -46,6 +46,7 @@ _devtools-opencode() {
           _values 'omos subcommand' \
             'install[Install/configure oh-my-opencode-slim]' \
             'restore[Re-apply saved oh-my-opencode-slim config after stow]' \
+            'repair[Re-assert the dotfiles-managed omos config symlink]' \
             'status[Show oh-my-opencode-slim status]'
           ;;
       esac
