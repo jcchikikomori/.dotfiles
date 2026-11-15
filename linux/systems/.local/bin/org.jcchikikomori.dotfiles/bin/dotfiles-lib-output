@@ -12,6 +12,13 @@
 #
 # set -e guard pattern for child commands:
 #   df_run command arg1 arg2 || df_fail "command failed" $?
+#
+# Privileged commands (#284):
+#   df_run_priv cmd arg...      -- df_run with the step ticker paused, so a
+#                                  password prompt is not erased mid-read
+#   df_run_soft_priv cmd arg... -- df_run_soft equivalent
+#   Use these for anything that may prompt for a password, and for a child
+#   script that runs privileged commands internally.
 
 # Internal cached state (populated by df_output_init)
 DF_OUTPUT_INITIALIZED=0
@@ -26,6 +33,7 @@ DF_OUTPUT_TIMER_START=0
 DF_OUTPUT_STEP_NAME=""
 DF_OUTPUT_LOG_FILE=""
 DF_OUTPUT_TICKER_PID=""
+DF_OUTPUT_TICKER_PAUSED=0
 DF_OUTPUT_STEP_FAILED=0
 DF_OUTPUT_STEP_FAIL_CODE=0
 DF_OUTPUT_FAIL_SEQ=0
@@ -434,11 +442,66 @@ df__ticker_stop() {
   return 0
 }
 
+# --- Privileged commands (#284) -------------------------------------------
+# A command that may prompt for a password (sudo, or anything that sudos
+# internally -- makepkg, a nested dotfiles-* helper) must own the terminal
+# while it runs. The ticker repaints its line once per second with
+# CR + reprint + erase-to-EOL, which erases sudo's prompt within a second of
+# it appearing: the user sees a frozen step line and no prompt, and sudo then
+# blocks for the whole passwd_timeout. sudo writes its prompt to /dev/tty and
+# reads the password from /dev/tty, so neither df_run's log redirection nor
+# df_run_interactive can surface it -- only stopping the repaint can.
+#
+# The pause spans the whole child process, so prompts raised by grandchildren
+# (makepkg's own privileged pacman call) are covered too.
+
+# Stop the ticker for the duration of a command that may prompt. Remembers
+# whether it stopped one, so df__priv_end can never start a ticker that was
+# not already running (an orphan ticker would repaint after df_step_end).
+# A complete no-op when no ticker owns the line -- CI, piped, verbose, or a
+# df_step_quiet step -- which is what keeps df_run_priv byte-identical to
+# df_run in every non-redraw mode.
+#
+# Not reentrant: nesting df_run_priv inside another df_run_priv in the same
+# shell would clear the outer marker and leave the step line without its
+# ticker until df_step_end. Every privileged child in this repo is a separate
+# process, which starts from fresh state, so the nesting does not occur today.
+# Keep it that way: do not nest these in one shell.
+df__priv_begin() {
+  DF_OUTPUT_TICKER_PAUSED=0
+  [ -n "$DF_OUTPUT_TICKER_PID" ] || return 0
+
+  df__ticker_stop
+  DF_OUTPUT_TICKER_PAUSED=1
+
+  # Keep the step label on screen: the child may run for minutes with its
+  # output captured to the log, and a blank line reads as a hang. Permanent
+  # (newline-terminated) so a prompt below it starts on a clean line. Printed
+  # only on the redraw path, so non-tty output gains no lines at all.
+  # df__ticker_stop already cleared the PID, so df__stdout adds no extra CR.
+  df__stdout "$(df__step_progress_line)"
+  return 0
+}
+
+# Restart the ticker df__priv_begin stopped, and nothing else.
+df__priv_end() {
+  [ "$DF_OUTPUT_TICKER_PAUSED" -eq 1 ] || return 0
+  DF_OUTPUT_TICKER_PAUSED=0
+  df__redraw_enabled || return 0
+  # Repaint immediately: the ticker's first frame is a full second away.
+  df__step_frame
+  df__ticker_start
+  return 0
+}
+
 df__step_begin() {
   DF_OUTPUT_STEP_NAME="$*"
   DF_OUTPUT_STEP_FAILED=0
   DF_OUTPUT_STEP_FAIL_CODE=0
   DF_OUTPUT_TICKER_PID=""
+  # A leaked pause flag is the only way df__priv_end could restart a ticker
+  # after df_step_end stopped one, leaving an orphan repainting the line.
+  DF_OUTPUT_TICKER_PAUSED=0
   df_timer_start
   return 0
 }
@@ -528,6 +591,8 @@ df_step_end() {
 
   DF_OUTPUT_STEP_FAILED=0
   DF_OUTPUT_STEP_FAIL_CODE=0
+  # See df__step_begin: a leaked pause flag could restart an orphan ticker.
+  DF_OUTPUT_TICKER_PAUSED=0
 
   return "$status"
 }
@@ -679,6 +744,100 @@ df_run_soft() {
   DF_OUTPUT_STEP_FAILED="$prev_failed"
   DF_OUTPUT_STEP_FAIL_CODE="$prev_code"
   return "$status"
+}
+
+# True when a controlling terminal is available, i.e. when sudo can actually
+# put a prompt in front of the user. `[ -t 0 ]` is not the right test: sudo
+# prompts on /dev/tty, and a redirected stdin can still have one. The probe
+# runs in a subshell so a failed redirect can never kill a `set -e` caller.
+df__tty_available() {
+  ( : > /dev/tty ) 2>/dev/null
+}
+
+# Ask for the sudo credential once, up front, where the user can see it:
+# before any step owns the terminal line. Later privileged commands inherit
+# the cached credential (sudo's default timestamp_type is tty, which the
+# nested dotfiles-* children this flow runs all share).
+#
+# Advisory only -- ALWAYS returns 0, so a `set -e` caller cannot abort here.
+# When the credential cannot be obtained the privileged steps still run and
+# fail on their own terms, with their own log evidence.
+#
+# Never handles the password itself: sudo reads it from the tty. No password
+# piping, no askpass helper, no stored secret, no sudoers change.
+df_sudo_prime() {
+  if [ "$(id -u 2>/dev/null || printf 1)" -eq 0 ]; then
+    return 0
+  fi
+  if ! command -v sudo >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # Already authenticated (NOPASSWD, warm cache, CI runners). This check MUST
+  # stay first: it is what makes a CI run gain no output at all. Never route
+  # it through df_run -- df_run truncates the working log on every call and
+  # would destroy the preserved evidence of an earlier failure.
+  if sudo -n true 2>/dev/null; then
+    return 0
+  fi
+
+  # Three cases, each returning 0. An explicit opt-out (DOTFILES_SUDO_PRIME=0)
+  # stays silent: no prompt is wanted, so there is nothing to report. CI or a
+  # missing controlling terminal means a prompt cannot be answered at all, so
+  # say so once instead of blocking for passwd_timeout (5 min) per privileged
+  # command.
+  if ! df__bool_true "${DOTFILES_SUDO_PRIME:-1}"; then
+    return 0
+  fi
+  if df_is_ci || ! df__tty_available; then
+    df_warn "sudo needs a password but cannot prompt here; privileged steps may fail"
+    return 0
+  fi
+
+  df__priv_begin
+  df_info "Administrator privileges are required for the system setup steps"
+  if sudo -v; then
+    df__priv_end
+    return 0
+  fi
+  df__priv_end
+  df_warn "sudo authentication failed; privileged steps may fail"
+  df_info "If this account has no password, set one with 'passwd' and re-run"
+  return 0
+}
+
+# df_run for commands that may prompt for a password: identical redirection,
+# status and latch behaviour, with the step ticker paused for the child's
+# whole lifetime. Use for privileged commands, and for any child script that
+# sudos internally.
+df_run_priv() {
+  if [ "$#" -eq 0 ]; then
+    return 0
+  fi
+  df__priv_begin
+  if df_run "$@"; then
+    priv_status=0
+  else
+    priv_status=$?
+  fi
+  df__priv_end
+  return "$priv_status"
+}
+
+# df_run_soft for commands that may prompt for a password (failure still does
+# not mark the surrounding step failed).
+df_run_soft_priv() {
+  if [ "$#" -eq 0 ]; then
+    return 0
+  fi
+  df__priv_begin
+  if df_run_soft "$@"; then
+    priv_status=0
+  else
+    priv_status=$?
+  fi
+  df__priv_end
+  return "$priv_status"
 }
 
 df_fail() {

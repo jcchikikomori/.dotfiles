@@ -18,7 +18,12 @@ df_pacman_info() {
 }
 
 df_pacman_run() {
-  if command -v df_run >/dev/null 2>&1; then
+  # df_run_priv when available: pacman_install is called both inside and
+  # outside a step, and privileged pacman must never race the step ticker
+  # (#284).
+  if command -v df_run_priv >/dev/null 2>&1; then
+    df_run_priv "$@"
+  elif command -v df_run >/dev/null 2>&1; then
     df_run "$@"
   else
     "$@"

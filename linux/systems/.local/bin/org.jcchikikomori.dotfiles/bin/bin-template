@@ -15,6 +15,10 @@ set -eu
 #   - Reserve the terminal for prompts. Only genuinely interactive commands use
 #     df_run_interactive, and those run under run_step_quiet so the live timer
 #     does not fight the prompt for the same line.
+#   - Privileged commands, and any child script that escalates privileges
+#     internally, use df_run_priv / df_run_soft_priv instead: they pause the
+#     live timer for the child's whole lifetime, so a password prompt is not
+#     erased a second after it appears (#284).
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if [ ! -r "${DOTFILES_BIN:-$SCRIPT_DIR}/dotfiles-lib-output" ]; then
