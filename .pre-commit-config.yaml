@@ -31,4 +31,11 @@ repos:
     hooks:
     -   id: shellcheck
         args: ["-s", "sh"]
-        files: ^linux/systems/\.local/bin/org\.jcchikikomori\.dotfiles/bin/dotfiles-lib-output$
+        # A named allowlist, deliberately NOT a directory glob. 62 of the 78
+        # tracked sh/bash-shebanged scripts in this repo fail `shellcheck -s sh`
+        # today, so `^scripts/.*\.sh$` would go red on the next commit that
+        # touched any of them -- including scripts/tests/output-lib-fixtures.sh,
+        # which has 43 findings of its own. Files join this list once they are
+        # clean, one at a time; see issue #270 for the first addition.
+        files: >-
+          ^(linux/systems/\.local/bin/org\.jcchikikomori\.dotfiles/bin/dotfiles-lib-output|scripts/tests/prompt-gap-fixtures\.sh)$
