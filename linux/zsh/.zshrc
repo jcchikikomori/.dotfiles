@@ -221,8 +221,19 @@ zstyle ':completion:*' cache-path ~/.cache/zcache
 # automatically load bash completion functions
 autoload -U +X bashcompinit && bashcompinit
 
-# opencode ships its own zsh completion generator
-command -v opencode >/dev/null 2>&1 && eval "$(opencode completion zsh)"
+# opencode ships its own zsh completion generator. v2 moved it from the v1
+# `completion` subcommand to a global --completions flag, and prints its help
+# text to stdout on argument errors -- eval only a real #compdef script so a
+# future CLI change can't execute help text as commands again (issue #288).
+if command -v opencode >/dev/null 2>&1; then
+  _oc_completions="$(opencode --completions zsh 2>/dev/null)"
+  if [[ "$_oc_completions" == "#compdef opencode"* ]]; then
+    eval "$_oc_completions"
+  else
+    print -u2 -- "opencode completions unavailable; run 'opencode --completions zsh' to see why (issue #288)"
+  fi
+  unset _oc_completions
+fi
 
 # Insert current git branch at cursor (see insert-current-branch in .zfunctions)
 bindkey '^Xb' insert-current-branch
