@@ -102,6 +102,71 @@ jobs:
         run: |
           sh scripts/tests/output-lib-fixtures.sh
 
+  prompt-gap-ubuntu:
+    runs-on: ubuntu-latest
+    # The suite's documented worst case is a hang, not a failure: a shell that
+    # never reaches `exit`, or tmux auto-attaching and swallowing the pty once
+    # the TMUX_DISABLE_AT_BOOT inversion is fixed. A happy run is ~35s, and
+    # GitHub's default ceiling is 360 minutes of a held runner.
+    timeout-minutes: 10
+    env:
+      # Pinned on purpose, not out of laziness. Every empirical claim behind #270
+      # -- the measured pty captures, the per-assertion expectations derived from
+      # them, the whole red/green matrix -- was taken on starship v1.26.0.
+      # Bumping this pin is the deliberate act that triggers ADR-0003's Kill
+      # Criteria re-evaluation: has starship since shipped first-prompt
+      # suppression upstream, making the local hooks redundant? Do not float this
+      # to "latest".
+      STARSHIP_VERSION: v1.26.0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install prompt-gap test deps
+        run: |
+          sudo apt-get update
+          # ncurses-bin supplies clear(1), util-linux supplies script(1). The
+          # fixture fails hard on either being absent rather than skipping.
+          sudo apt-get install -y zsh util-linux ncurses-bin
+          # install.sh refuses a bin-dir that does not already exist ("does not
+          # appear to be a directory") -- a fresh runner has no ~/.local/bin.
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://starship.rs/install.sh | sh -s -- -b "$HOME/.local/bin" -v "$STARSHIP_VERSION" -f
+          printf '%s\n' "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Record tested versions
+        run: |
+          starship --version
+          zsh --version
+          bash --version | head -1
+          script --version
+      - name: Validate fixture and fragment syntax
+        run: |
+          sh -n scripts/tests/prompt-gap-fixtures.sh
+          dash -n scripts/tests/prompt-gap-fixtures.sh
+          # The two fragments are excluded from the POSIX gate above on purpose:
+          # neither is POSIX sh, and each is only ever sourced by its own shell.
+          zsh -n linux/zsh/.zsh/prompt-gap.zsh
+          bash -n linux/bash/.bashrc.d/04-starship
+      # The `if:` below is load-bearing -- do not delete it as redundant. This
+      # workflow also runs on `push: branches: [master]` and on
+      # workflow_dispatch. On a master push this step would diff master against
+      # develop, so any legitimate prompt-geometry edit already merged to develop
+      # would turn EVERY master push red until master catches up. False reds
+      # train people to ignore the guard, which is the same failure mode that
+      # keeps AC-008b a manual review item.
+      - name: Assert prompt geometry lines untouched (AC-008a)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --depth=1 origin develop
+          if git diff FETCH_HEAD -- linux/zsh/.zshrc | grep -E '^[+-][^+-]' | grep -E 'PROMPT=|RPROMPT=|ZLE_RPROMPT_INDENT'; then
+            echo "AC-008a: this PR adds or removes a prompt-geometry line in linux/zsh/.zshrc." >&2
+            echo "Those lines are a hand-maintained copy of 'starship init zsh' output and must stay byte-identical." >&2
+            exit 1
+          fi
+      - name: Run prompt-gap fixtures
+        run: |
+          sh scripts/tests/prompt-gap-fixtures.sh
+
   ubuntu:
     runs-on: ubuntu-latest
     strategy:
