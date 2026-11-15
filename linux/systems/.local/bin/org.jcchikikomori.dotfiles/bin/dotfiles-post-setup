@@ -273,7 +273,7 @@ install_zsh_plugins() {
 }
 
 main() {
-    run_step "Setting up git flow" df_run sh "$WORKDIR/dotfiles-git" || df_fail "dotfiles-git setup failed"
+    run_step "Setting up git flow" df_run_priv sh "$WORKDIR/dotfiles-git" || df_fail "dotfiles-git setup failed"
 
     run_step "Symlinking state dir" sh -c 'mkdir -p "$HOME/.local/state/dotstow" && ln -snf "$HOME/.dotfiles" "$HOME/.local/state/dotstow/dotfiles"'
 

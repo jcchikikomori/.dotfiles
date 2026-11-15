@@ -1241,6 +1241,9 @@ EOF
 
     assert_eq "0" "$(cat "$opt_rc")" "prime: opt-out returns 0" || status=1
     assert_not_contains "-v" "$(cat "$opt_log")" "prime: opt-out never prompts" || status=1
+    # The opt-out is deliberate, so it must be silent -- not merely quiet about
+    # the prompt. Not one library line may be emitted.
+    assert_eq "0" "$(LC_ALL=C grep -c '^\[dotfiles:fixture\]' "$opt_out" || true)" "prime: opt-out emits nothing" || status=1
   else
     printf '[fixture] prime: script(1) unavailable, skipping the tty branches\n'
   fi

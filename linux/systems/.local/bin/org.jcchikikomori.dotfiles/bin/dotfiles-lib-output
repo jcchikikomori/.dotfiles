@@ -461,6 +461,12 @@ df__ticker_stop() {
 # A complete no-op when no ticker owns the line -- CI, piped, verbose, or a
 # df_step_quiet step -- which is what keeps df_run_priv byte-identical to
 # df_run in every non-redraw mode.
+#
+# Not reentrant: nesting df_run_priv inside another df_run_priv in the same
+# shell would clear the outer marker and leave the step line without its
+# ticker until df_step_end. Every privileged child in this repo is a separate
+# process, which starts from fresh state, so the nesting does not occur today.
+# Keep it that way: do not nest these in one shell.
 df__priv_begin() {
   DF_OUTPUT_TICKER_PAUSED=0
   [ -n "$DF_OUTPUT_TICKER_PID" ] || return 0
@@ -769,15 +775,21 @@ df_sudo_prime() {
 
   # Already authenticated (NOPASSWD, warm cache, CI runners). This check MUST
   # stay first: it is what makes a CI run gain no output at all. Never route
-  # it through df_run -- that truncates the working log (L689) and would
-  # destroy the preserved evidence of an earlier failure.
+  # it through df_run -- df_run truncates the working log on every call and
+  # would destroy the preserved evidence of an earlier failure.
   if sudo -n true 2>/dev/null; then
     return 0
   fi
 
-  # No way to answer a prompt: say so once instead of blocking for
-  # passwd_timeout (5 min) per privileged command.
-  if df_is_ci || ! df__bool_true "${DOTFILES_SUDO_PRIME:-1}" || ! df__tty_available; then
+  # Three cases, each returning 0. An explicit opt-out (DOTFILES_SUDO_PRIME=0)
+  # stays silent: no prompt is wanted, so there is nothing to report. CI or a
+  # missing controlling terminal means a prompt cannot be answered at all, so
+  # say so once instead of blocking for passwd_timeout (5 min) per privileged
+  # command.
+  if ! df__bool_true "${DOTFILES_SUDO_PRIME:-1}"; then
+    return 0
+  fi
+  if df_is_ci || ! df__tty_available; then
     df_warn "sudo needs a password but cannot prompt here; privileged steps may fail"
     return 0
   fi
