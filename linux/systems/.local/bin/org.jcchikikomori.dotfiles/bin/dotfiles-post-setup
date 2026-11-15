@@ -28,6 +28,11 @@ else
     df_output_init
 fi
 
+# Prime the sudo credential cache once, before any step owns the terminal
+# line (#284). No-op as root, without sudo, or when the cache is already
+# valid -- so CI output is unchanged.
+df_sudo_prime
+
 run_step() {
     label="$1"
     shift
@@ -274,7 +279,7 @@ main() {
 
     run_step "Symlinking vim rc files" link_vim_rc
 
-    run_step "Installing dotstow" df_run ./dotfiles-dotstow || df_fail "dotfiles-dotstow install failed"
+    run_step "Installing dotstow" df_run_priv ./dotfiles-dotstow || df_fail "dotfiles-dotstow install failed"
 
     run_step "Cloning fzf" clone_once "$HOME/.fzf" --depth 1 https://github.com/junegunn/fzf.git
     # --all is the "yes to everything" path (--key-bindings --completion

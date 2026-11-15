@@ -34,7 +34,9 @@ assert_contains() {
   needle="$1"
   haystack="$2"
   label="$3"
-  if printf '%s\n' "$haystack" | LC_ALL=C grep -Fq "$needle"; then
+  # `--` so a needle that starts with a dash (a sudo flag, say) is a pattern and
+  # not an option to grep.
+  if printf '%s\n' "$haystack" | LC_ALL=C grep -Fq -- "$needle"; then
     return 0
   fi
   printf '[fixture] %s ... FAIL: [%s] not found\n' "$label" "$needle" >&2
@@ -45,7 +47,7 @@ assert_not_contains() {
   needle="$1"
   haystack="$2"
   label="$3"
-  if printf '%s\n' "$haystack" | LC_ALL=C grep -Fq "$needle"; then
+  if printf '%s\n' "$haystack" | LC_ALL=C grep -Fq -- "$needle"; then
     printf '[fixture] %s ... FAIL: unexpected [%s] found\n' "$label" "$needle" >&2
     return 1
   fi
@@ -961,6 +963,362 @@ case_nested_step_tty() {
   return "$status"
 }
 
+# ---- #284: privileged commands and sudo prompts ---------------------------
+
+# In every non-redraw mode no ticker owns the line, so df__priv_begin and
+# df__priv_end are complete no-ops: df_run_priv output must stay byte-identical
+# to df_run's, which is what keeps CI logs and piped runs unchanged.
+assert_priv_non_tty() {
+  eq_file="$1"
+  eq_logs="$2"
+  eq_label="$3"
+  eq_status=0
+
+  assert_eq "2" "$(LC_ALL=C grep -c 'work\.\.\.' "$eq_file")" "$eq_label: exactly start + end lines" || eq_status=1
+  assert_bytes_clean "$eq_file" "$eq_label: no CR/ESC" || eq_status=1
+
+  eq_out=$(cat "$eq_file")
+  assert_not_contains "PRIV-STDOUT" "$eq_out" "$eq_label: child stdout stays off stdout" || eq_status=1
+
+  eq_log=$(cat "$eq_logs"/*.log 2>/dev/null || true)
+  assert_contains "PRIV-STDOUT" "$eq_log" "$eq_label: child stdout captured to the log" || eq_status=1
+
+  return "$eq_status"
+}
+
+# THE #284 regression: sudo prints its prompt on /dev/tty and reads the answer
+# from there, so df_run's log redirection never hid the prompt -- the per-second
+# ticker repaint is what erased it. The pause has to span the child's whole
+# lifetime, which is also why one marker wraps yay (a child that escalates
+# privileges internally, e.g. makepkg installing the built package).
+#
+# The assertion is byte ORDER, not appearance: between the prompt marker and the
+# completion marker there must be no repaint at all. The negative control runs
+# the identical child under plain df_run and requires the repaint to be there --
+# a guard that cannot fail is not a guard.
+case_priv_prompt_visible() {
+  status=0
+  if ! command -v script >/dev/null 2>&1; then
+    printf '[fixture] priv: script(1) unavailable, skipping\n'
+    return 0
+  fi
+
+  work="$1/priv-prompt"
+  logs="$work/logs"
+  mkdir -p "$logs"
+
+  # The prompt carries no trailing newline on purpose, exactly like sudo's: the
+  # ticker's CR + repaint is what makes it disappear from the screen.
+  child="$work/child.sh"
+  cat > "$child" <<'EOF'
+#!/bin/sh
+printf 'PROMPT-MARKER' > /dev/tty
+sleep 3
+printf '\nDONE-MARKER\n' > /dev/tty
+printf 'PRIV-CHILD-STDOUT\n'
+EOF
+  chmod +x "$child"
+
+  runner="$work/runner.sh"
+  cat > "$runner" <<'EOF'
+#!/bin/sh
+# $1 library, $2 child, $3 runner (df_run or df_run_priv)
+. "$1"
+df_output_init
+df_step "priv work"
+"$3" "$2"
+df_step_end 0
+EOF
+  chmod +x "$runner"
+
+  priv_file="$work/priv.out"
+  tty_capture "$priv_file" "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture LC_ALL=C CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh '$runner' '$LIB' '$child' df_run_priv"
+
+  priv_flat=$(tr '\r' '\n' < "$priv_file")
+  priv_between=$(printf '%s\n' "$priv_flat" | sed -n '/PROMPT-MARKER/,/DONE-MARKER/p')
+
+  assert_not_contains "priv work" "$priv_between" "priv: no repaint over the prompt" || status=1
+  # Guard against passing vacuously: the frozen label must really be on screen,
+  # or "nothing between the markers" could just mean the step never started.
+  assert_contains "priv work" "$priv_flat" "priv: frozen label printed" || status=1
+  assert_contains "DONE-MARKER" "$priv_flat" "priv: child completed" || status=1
+  assert_not_contains "PRIV-CHILD-STDOUT" "$priv_flat" "priv: child stdout off the terminal" || status=1
+
+  priv_log=$(cat "$logs"/*.log 2>/dev/null || true)
+  assert_contains "PRIV-CHILD-STDOUT" "$priv_log" "priv: child stdout captured to the log" || status=1
+
+  priv_done=$(printf '%s\n' "$priv_flat" | LC_ALL=C grep -F 'priv work' | sed -n '$p')
+  assert_contains "done" "$priv_done" "priv: completion line" || status=1
+  if ! printf '%s\n' "$priv_done" | LC_ALL=C grep -Eq '\(00:(0[3-9]|[1-5][0-9])\)'; then
+    printf '[fixture] priv: pause does not reset the timer ... FAIL: [%s]\n' "$priv_done" >&2
+    status=1
+  fi
+
+  # Negative control: same child, same pty, plain df_run.
+  neg_file="$work/priv-neg.out"
+  tty_capture "$neg_file" "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture LC_ALL=C CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh '$runner' '$LIB' '$child' df_run"
+  neg_between=$(tr '\r' '\n' < "$neg_file" | sed -n '/PROMPT-MARKER/,/DONE-MARKER/p')
+  assert_contains "priv work" "$neg_between" "priv: control shows the erasure" || status=1
+
+  return "$status"
+}
+
+# df_run_priv must be indistinguishable from df_run where no ticker exists.
+# CI is the mode the archived logs come from; the pipe covers the same
+# [ -t 1 ] false branch without CI.
+case_priv_non_tty_equivalence() {
+  status=0
+  logs="$1/priv-equivalence-logs"
+  mkdir -p "$logs"
+
+  body='. "$1"; df_output_init; df_step "work"; df_run_priv sh -c "echo PRIV-STDOUT"; df_step_end 0'
+
+  ci_file="$1/priv-eq-ci.out"
+  DOTFILES_LOG_DIR="$logs" CI=true GITHUB_ACTIONS= DF_PREFIX=fixture \
+    sh -c "$body" sh "$LIB" > "$ci_file" 2>&1
+  assert_priv_non_tty "$ci_file" "$logs" "priv-eq-ci" || status=1
+
+  piped_file="$1/priv-eq-piped.out"
+  DOTFILES_LOG_DIR="$logs" CI=false GITHUB_ACTIONS= DF_PREFIX=fixture \
+    sh -c "$body" sh "$LIB" 2>&1 | cat > "$piped_file"
+  assert_priv_non_tty "$piped_file" "$logs" "priv-eq-piped" || status=1
+
+  return "$status"
+}
+
+# The pause flag is the only thing that decides whether df__priv_end restarts a
+# ticker. If it can leak, a ticker outlives its step and repaints over whatever
+# runs next; if it can be set without a ticker, df_run_priv starts one where
+# df_run never would. Both are checked, inside and outside a step.
+case_priv_no_orphan_ticker() {
+  status=0
+  if ! command -v script >/dev/null 2>&1; then
+    printf '[fixture] priv-orphan: script(1) unavailable, skipping\n'
+    return 0
+  fi
+
+  work="$1/priv-orphan"
+  logs="$work/logs"
+  mkdir -p "$logs"
+
+  # (i) inside a step: the 2s sleep before the sentinel is the window a leaked
+  # ticker would repaint into, so nothing may follow the completion line.
+  in_step_file="$work/in-step.out"
+  tty_capture "$in_step_file" "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture LC_ALL=C CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_step \"work\"; df_run_priv true; df_step_end 0; sleep 2; printf \"SENTINEL\\n\"'"
+
+  in_step_out=$(tr '\r' '\n' < "$in_step_file")
+  in_step_tail=$(printf '%s\n' "$in_step_out" | sed -n '/done/,$p' | sed -n '2,$p')
+  assert_not_contains "work..." "$in_step_tail" "priv-orphan: no ticker after step end" || status=1
+  assert_contains "SENTINEL" "$in_step_out" "priv-orphan: sentinel reached" || status=1
+
+  # (ii) outside any step: there is no line to own, so nothing at all may be
+  # drawn -- no frame, no prefix.
+  bare_file="$work/bare.out"
+  tty_capture "$bare_file" "env DOTFILES_LOG_DIR='$logs' DF_PREFIX=fixture LC_ALL=C CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh -c '. \"$LIB\"; df_output_init; df_run_priv true; sleep 2; printf \"SENTINEL2\\n\"'"
+
+  bare_out=$(tr '\r' '\n' < "$bare_file")
+  if printf '%s\n' "$bare_out" | LC_ALL=C grep -Eq '\.\.\. \([0-9]+:[0-9]{2}\)'; then
+    printf '[fixture] priv-orphan: no frame without a step ... FAIL: [%s]\n' "$bare_out" >&2
+    status=1
+  fi
+  assert_not_contains "[dotfiles:fixture]" "$bare_out" "priv-orphan: no library line without a step" || status=1
+  assert_contains "SENTINEL2" "$bare_out" "priv-orphan: sentinel2 reached" || status=1
+
+  return "$status"
+}
+
+# df_sudo_prime has four outcomes and one hard contract: it NEVER fails a
+# `set -eu` caller. The warm-cache branch is first precisely so a CI run (or a
+# NOPASSWD account) gains no output at all; getting that ordering wrong would
+# still look correct in an interactive run.
+case_sudo_prime_branches() {
+  status=0
+  work="$1/sudo-prime"
+  mock_dir="$work/mock"
+  mkdir -p "$mock_dir"
+
+  real_id=$(command -v id 2>/dev/null || true)
+
+  cat > "$mock_dir/sudo" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$*" >> "${MOCK_SUDO_LOG:?}"
+case "${1:-}" in
+  -n) exit "${MOCK_SUDO_N_STATUS:-1}" ;;
+esac
+exit 0
+EOF
+
+  # df_sudo_prime returns early as root. CI containers are often root, and a
+  # dev box may be too, so the uid is mocked rather than assumed.
+  cat > "$mock_dir/id" <<EOF
+#!/bin/sh
+case "\${1:-}" in
+  -u) printf '%s\n' "\${MOCK_UID:-1000}" ;;
+  *) exec "$real_id" "\$@" ;;
+esac
+EOF
+  chmod +x "$mock_dir/sudo" "$mock_dir/id"
+
+  runner="$work/prime.sh"
+  cat > "$runner" <<'EOF'
+#!/bin/sh
+# $1 library, $2 file to receive df_sudo_prime's exit status
+. "$1"
+df_output_init
+df_sudo_prime
+printf '%s\n' "$?" > "$2"
+EOF
+  chmod +x "$runner"
+
+  # 1. Warm cache: silent, and it must never reach the prompting branch.
+  warm_log="$work/sudo-warm.log"
+  warm_out="$work/prime-warm.out"
+  warm_rc="$work/prime-warm.rc"
+  : > "$warm_log"
+  env PATH="$mock_dir:$PATH" MOCK_SUDO_LOG="$warm_log" MOCK_SUDO_N_STATUS=0 \
+    DOTFILES_LOG_DIR="$work/logs" DF_PREFIX=fixture CI=false GITHUB_ACTIONS= \
+    sh "$runner" "$LIB" "$warm_rc" > "$warm_out" 2>&1
+
+  assert_eq "0" "$(cat "$warm_rc")" "prime: warm cache returns 0" || status=1
+  assert_eq "" "$(cat "$warm_out")" "prime: warm cache emits nothing" || status=1
+  assert_contains "-n true" "$(cat "$warm_log")" "prime: warm cache probes non-interactively" || status=1
+  assert_not_contains "-v" "$(cat "$warm_log")" "prime: warm cache never prompts" || status=1
+
+  # 2. Cold cache with no controlling terminal: exactly one warning, and no
+  # credential attempt. setsid(1) removes the controlling terminal that an
+  # interactive dev shell would otherwise give the probe; where it is missing
+  # (macOS) this branch cannot be simulated, so it is skipped rather than
+  # asserted on a condition that does not hold.
+  if command -v setsid >/dev/null 2>&1; then
+    notty_log="$work/sudo-notty.log"
+    notty_out="$work/prime-notty.out"
+    notty_rc="$work/prime-notty.rc"
+    : > "$notty_log"
+    setsid env PATH="$mock_dir:$PATH" MOCK_SUDO_LOG="$notty_log" MOCK_SUDO_N_STATUS=1 \
+      DOTFILES_LOG_DIR="$work/logs" DF_PREFIX=fixture CI=false GITHUB_ACTIONS= \
+      sh "$runner" "$LIB" "$notty_rc" > "$notty_out" 2>&1
+
+    assert_eq "0" "$(cat "$notty_rc")" "prime: no-tty returns 0" || status=1
+    assert_eq "1" "$(LC_ALL=C grep -c '^\[dotfiles:fixture\]' "$notty_out" || true)" "prime: no-tty warns once" || status=1
+    assert_contains "cannot prompt" "$(cat "$notty_out")" "prime: no-tty explains itself" || status=1
+    assert_not_contains "-v" "$(cat "$notty_log")" "prime: no-tty never prompts" || status=1
+  else
+    printf '[fixture] prime: setsid(1) unavailable, skipping the no-tty branch\n'
+  fi
+
+  # 3. Cold cache under CI: same outcome as no-tty, decided before the probe.
+  ci_log="$work/sudo-ci.log"
+  ci_out="$work/prime-ci.out"
+  ci_rc="$work/prime-ci.rc"
+  : > "$ci_log"
+  env PATH="$mock_dir:$PATH" MOCK_SUDO_LOG="$ci_log" MOCK_SUDO_N_STATUS=1 \
+    DOTFILES_LOG_DIR="$work/logs" DF_PREFIX=fixture CI=true GITHUB_ACTIONS= \
+    sh "$runner" "$LIB" "$ci_rc" > "$ci_out" 2>&1
+
+  assert_eq "0" "$(cat "$ci_rc")" "prime: CI returns 0" || status=1
+  assert_eq "1" "$(LC_ALL=C grep -c '^\[dotfiles:fixture\]' "$ci_out" || true)" "prime: CI warns once" || status=1
+  assert_contains "cannot prompt" "$(cat "$ci_out")" "prime: CI explains itself" || status=1
+  assert_not_contains "-v" "$(cat "$ci_log")" "prime: CI never prompts" || status=1
+
+  if command -v script >/dev/null 2>&1; then
+    # 4. Cold cache on a tty: the prompt happens once, up front.
+    tty_log="$work/sudo-tty.log"
+    tty_out="$work/prime-tty.out"
+    tty_rc="$work/prime-tty.rc"
+    : > "$tty_log"
+    tty_capture "$tty_out" "env PATH='$mock_dir:$PATH' MOCK_SUDO_LOG='$tty_log' MOCK_SUDO_N_STATUS=1 DOTFILES_LOG_DIR='$work/logs' DF_PREFIX=fixture LC_ALL=C CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh '$runner' '$LIB' '$tty_rc'"
+
+    assert_eq "0" "$(cat "$tty_rc")" "prime: tty returns 0" || status=1
+    assert_contains "-v" "$(cat "$tty_log")" "prime: tty asks for the credential" || status=1
+    assert_contains "Administrator privileges" "$(cat "$tty_out")" "prime: tty explains why" || status=1
+
+    # 5. Opt-out: DOTFILES_SUDO_PRIME=0 keeps the prompt away entirely.
+    opt_log="$work/sudo-optout.log"
+    opt_out="$work/prime-optout.out"
+    opt_rc="$work/prime-optout.rc"
+    : > "$opt_log"
+    tty_capture "$opt_out" "env PATH='$mock_dir:$PATH' MOCK_SUDO_LOG='$opt_log' MOCK_SUDO_N_STATUS=1 DOTFILES_SUDO_PRIME=0 DOTFILES_LOG_DIR='$work/logs' DF_PREFIX=fixture LC_ALL=C CI=false GITHUB_ACTIONS= DOTFILES_VERBOSE=0 sh '$runner' '$LIB' '$opt_rc'"
+
+    assert_eq "0" "$(cat "$opt_rc")" "prime: opt-out returns 0" || status=1
+    assert_not_contains "-v" "$(cat "$opt_log")" "prime: opt-out never prompts" || status=1
+  else
+    printf '[fixture] prime: script(1) unavailable, skipping the tty branches\n'
+  fi
+
+  return "$status"
+}
+
+# Static ratchet for #284: privileged commands must go through the paused
+# runner, and no password may ever be piped into sudo. Both defects are
+# invisible in review (the runner name differs by four characters) and
+# invisible at runtime under CI (no prompt is ever attempted there).
+#
+# Scoped to the distro setup scripts and the bin directory, which is the whole
+# surface the guard is about. This fixture lives in scripts/tests/, outside the
+# walked paths, so its own pattern text can never match itself.
+case_priv_static_guards() {
+  status=0
+
+  if ! command -v git >/dev/null 2>&1 || ! git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    printf '[fixture] priv-guards: git unavailable, skipping\n'
+    return 0
+  fi
+
+  guard_files="$1/priv-guard-files.txt"
+  guard_hits="$1/priv-guard-hits.txt"
+  guard_users="$1/priv-guard-users.txt"
+
+  git -C "$REPO_ROOT" ls-files | while IFS= read -r guard_tracked; do
+    [ -f "$REPO_ROOT/$guard_tracked" ] || continue
+    case "$guard_tracked" in
+      */setup.sh) printf '%s/%s\n' "$REPO_ROOT" "$guard_tracked" ;;
+      */.local/bin/org.jcchikikomori.dotfiles/bin/*) printf '%s/%s\n' "$REPO_ROOT" "$guard_tracked" ;;
+    esac
+  done > "$guard_files"
+
+  guard_count=$(wc -l < "$guard_files" | tr -d ' ')
+  if [ "$guard_count" -lt 10 ] 2>/dev/null; then
+    printf '[fixture] priv-guards: walked a plausible file set ... FAIL: %s file(s)\n' "$guard_count" >&2
+    status=1
+  fi
+
+  # Positive control: the paused runner must actually be in use, otherwise the
+  # two empty greps below would pass on a tree that never adopted it.
+  : > "$guard_users"
+  while IFS= read -r guard_file; do
+    LC_ALL=C grep -El 'df_run_(soft_)?priv' "$guard_file" >> "$guard_users" 2>/dev/null || true
+  done < "$guard_files"
+  guard_user_count=$(wc -l < "$guard_users" | tr -d ' ')
+  if [ "$guard_user_count" -lt 5 ] 2>/dev/null; then
+    printf '[fixture] priv-guards: paused runner adopted ... FAIL: %s file(s)\n' "$guard_user_count" >&2
+    status=1
+  fi
+
+  : > "$guard_hits"
+  while IFS= read -r guard_file; do
+    LC_ALL=C grep -En 'df_run(_soft)?[[:space:]]+sudo' "$guard_file" >> "$guard_hits" 2>/dev/null || true
+  done < "$guard_files"
+  guard_plain=$(wc -l < "$guard_hits" | tr -d ' ')
+  if [ "$guard_plain" -ne 0 ] 2>/dev/null; then
+    printf '[fixture] priv-guards: privileged commands use the paused runner ... FAIL: %s hit(s)\n' "$guard_plain" >&2
+    LC_ALL=C sed -n '1,10p' "$guard_hits" >&2
+    status=1
+  fi
+
+  : > "$guard_hits"
+  while IFS= read -r guard_file; do
+    LC_ALL=C grep -En 'sudo[[:space:]]+(-S|--stdin)' "$guard_file" >> "$guard_hits" 2>/dev/null || true
+  done < "$guard_files"
+  guard_pipe=$(wc -l < "$guard_hits" | tr -d ' ')
+  if [ "$guard_pipe" -ne 0 ] 2>/dev/null; then
+    printf '[fixture] priv-guards: no password piped into sudo ... FAIL: %s hit(s)\n' "$guard_pipe" >&2
+    LC_ALL=C sed -n '1,10p' "$guard_hits" >&2
+    status=1
+  fi
+
+  return "$status"
+}
+
 main() {
   temp_dir=$(mktemp -d)
   trap 'rm -rf "$temp_dir"' EXIT
@@ -984,6 +1342,11 @@ main() {
   run_case "step: failure latch propagation" case_step_fail_latch "$temp_dir"
   run_case "step: redraw gating + live timer" case_redraw_gating "$temp_dir"
   run_case "step: nested parent/child tty" case_nested_step_tty "$temp_dir"
+  run_case "priv: prompt survives the step timer" case_priv_prompt_visible "$temp_dir"
+  run_case "priv: CI/piped equivalence with df_run" case_priv_non_tty_equivalence "$temp_dir"
+  run_case "priv: no orphan ticker outside/after a step" case_priv_no_orphan_ticker "$temp_dir"
+  run_case "sudo prime: cache/CI/no-tty/tty branches" case_sudo_prime_branches "$temp_dir"
+  run_case "priv: static guards (no privileged df_run, no password piping)" case_priv_static_guards "$temp_dir"
 
   if [ "$FIXTURE_FAILED" -eq 1 ]; then
     printf '[fixture] RESULT: FAIL\n' >&2

@@ -28,6 +28,11 @@ else
   df_output_init
 fi
 
+# Prime the sudo credential cache once, before any step owns the terminal
+# line (#284). No-op as root, without sudo, or when the cache is already
+# valid -- so CI output is unchanged.
+df_sudo_prime
+
 run_step() {
   label="$1"
   shift
@@ -45,7 +50,7 @@ run_step() {
 
 run_with_priv() {
   if [ -n "$SUDO" ]; then
-    df_run sudo "$@"
+    df_run_priv sudo "$@"
   else
     df_run "$@"
   fi
@@ -54,7 +59,7 @@ run_with_priv() {
 # As run_with_priv, but a failure does not mark the surrounding step failed.
 run_with_priv_soft() {
   if [ -n "$SUDO" ]; then
-    df_run_soft sudo "$@"
+    df_run_soft_priv sudo "$@"
   else
     df_run_soft "$@"
   fi

@@ -28,6 +28,11 @@ else
   df_output_init
 fi
 
+# Prime the sudo credential cache once, before any step owns the terminal
+# line (#284). No-op as root, without sudo, or when the cache is already
+# valid -- so CI output is unchanged.
+df_sudo_prime
+
 run_step() {
   label="$1"
   shift
@@ -44,13 +49,13 @@ run_step() {
 }
 
 # Init setup
-run_step "Updating apt index" df_run sudo apt-get update || df_fail "Failed apt-get update"
-run_step "Installing apt transport deps" df_run sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common || df_fail "Failed apt transport dependencies install"
+run_step "Updating apt index" df_run_priv sudo apt-get update || df_fail "Failed apt-get update"
+run_step "Installing apt transport deps" df_run_priv sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common || df_fail "Failed apt transport dependencies install"
 
 # Install kbd for loadkeys (console keyboard layout)
 # Install gnupg for gpgconf and gpg-connect-agent commands
 # Install locales for locale-gen
-run_step "Installing core packages" df_run sudo apt-get install -y stow vim nano htop iftop mtr dkms lz4 git zsh build-essential sqlite3 ccache tmux unzip kbd gnupg locales || df_fail "Failed core package install"
+run_step "Installing core packages" df_run_priv sudo apt-get install -y stow vim nano htop iftop mtr dkms lz4 git zsh build-essential sqlite3 ccache tmux unzip kbd gnupg locales || df_fail "Failed core package install"
 
 # Installing essentials (additional)
 # NOTES:
@@ -59,17 +64,17 @@ run_step "Installing core packages" df_run sudo apt-get install -y stow vim nano
 # - podman-compose = compose-compatible wrapper for podman
 # TODO(#267): "vi" and "openssh" are pacman package names; Ubuntu needs
 # vim-tiny and openssh-client. Tolerated for now; the failure is still printed.
-run_step "Installing additional essentials" df_run_soft sudo apt-get install -y python3 zip vim openssh-client xclip xsel ncdu wget vim-gtk3 xvfb podman-compose || df_warn "additional essential package install failed/skipped"
+run_step "Installing additional essentials" df_run_soft_priv sudo apt-get install -y python3 zip vim openssh-client xclip xsel ncdu wget vim-gtk3 xvfb podman-compose || df_warn "additional essential package install failed/skipped"
 
 # Installing additional packages (for building others such as pyenv)
-run_step "Installing build dependencies" df_run sudo apt-get install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev || df_fail "Failed build dependency install"
+run_step "Installing build dependencies" df_run_priv sudo apt-get install -y libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev || df_fail "Failed build dependency install"
 
 # Installing rclone
-run_step "Installing rclone" df_run sudo apt-get install -y rclone || df_fail "Failed rclone install"
+run_step "Installing rclone" df_run_priv sudo apt-get install -y rclone || df_fail "Failed rclone install"
 
 # Rust toolchain via rustup (apt's rustc/cargo on Ubuntu is too old to build
 # current crates - xdvdfs-cli requires Rust edition 2024, rustc >= 1.85) + exiftool
-run_step "Installing rust/exiftool deps" df_run sudo apt-get install -y libimage-exiftool-perl || df_fail "Failed exiftool prerequisite install"
+run_step "Installing rust/exiftool deps" df_run_priv sudo apt-get install -y libimage-exiftool-perl || df_fail "Failed exiftool prerequisite install"
 if ! command -v cargo >/dev/null 2>&1; then
   run_step "Installing rustup" df_run sh -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable" || df_fail "Failed rustup install"
 fi
@@ -87,16 +92,16 @@ if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
   df_info "WSL detected: Skipping loadkeys (not supported in WSL)."
 else
   if command -v loadkeys >/dev/null 2>&1; then
-    df_run sudo loadkeys us || df_warn "loadkeys failed, continuing"
+    df_run_priv sudo loadkeys us || df_warn "loadkeys failed, continuing"
   fi
 fi
 
-run_step "Configuring locale" df_run sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen || df_fail "Failed locale.gen update"
-df_run sudo locale-gen en_US.UTF-8 || df_fail "Failed locale generation"
+run_step "Configuring locale" df_run_priv sudo sed -i '/^# *en_US.UTF-8 UTF-8/s/^# *//' /etc/locale.gen || df_fail "Failed locale.gen update"
+df_run_priv sudo locale-gen en_US.UTF-8 || df_fail "Failed locale generation"
 
 # localectl may not work in containers or WSL, handle gracefully
 if command -v localectl >/dev/null 2>&1; then
-  df_run sudo localectl set-locale LANG=en_US.UTF-8 2>/dev/null || df_warn "localectl set-locale failed (may not work in containers/WSL)"
+  df_run_priv sudo localectl set-locale LANG=en_US.UTF-8 2>/dev/null || df_warn "localectl set-locale failed (may not work in containers/WSL)"
 fi
 
 # Post-Setup

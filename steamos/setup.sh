@@ -28,6 +28,11 @@ else
   df_output_init
 fi
 
+# Prime the sudo credential cache once, before any step owns the terminal
+# line (#284). No-op as root, without sudo, or when the cache is already
+# valid -- so CI output is unchanged.
+df_sudo_prime
+
 . "$DOTFILES_BIN/dotfiles-pacman-install"
 
 run_step() {
@@ -46,16 +51,16 @@ run_step() {
 }
 
 # Unlocking SteamOS rootfs...
-run_step "Unlocking SteamOS rootfs" df_run sudo steamos-readonly disable || df_fail "Failed to disable steamos-readonly"
+run_step "Unlocking SteamOS rootfs" df_run_priv sudo steamos-readonly disable || df_fail "Failed to disable steamos-readonly"
 
 # Initialize pacman keyring (SteamOS 3.5+ requires holo keyring for Valve-signed
 # packages). Use dotfiles-steamdeck's fix-keyring, not dotfiles-arch's: the Arch
 # version early-returns whenever any key already exists (true on SteamOS, which
 # ships with holo keys pre-populated) and never runs --populate archlinux.
-run_step "Fixing SteamOS keyring" df_run "$DOTFILES_BIN/dotfiles-steamdeck" fix-keyring || df_fail "Failed SteamOS keyring fix"
+run_step "Fixing SteamOS keyring" df_run_priv "$DOTFILES_BIN/dotfiles-steamdeck" fix-keyring || df_fail "Failed SteamOS keyring fix"
 
 # Setup third-party repositories (Chaotic AUR + CachyOS)
-run_step "Setting up third-party repos" df_run "$DOTFILES_BIN/dotfiles-arch" setup-repositories || df_fail "Failed repository setup"
+run_step "Setting up third-party repos" df_run_priv "$DOTFILES_BIN/dotfiles-arch" setup-repositories || df_fail "Failed repository setup"
 
 # Install essential packages from standard pacman repos (needed before
 # install-yay, which requires git + base-devel). Repos were just refreshed
@@ -75,11 +80,11 @@ else
 fi
 
 # Install AUR helper, then mandatory
-run_step "Installing yay" df_run "$DOTFILES_BIN/dotfiles-arch" install-yay || df_fail "Failed yay installation"
-run_step "Installing mandatory packages" df_run "$DOTFILES_BIN/dotfiles-arch" install-packages || df_fail "Failed package installation"
+run_step "Installing yay" df_run_priv "$DOTFILES_BIN/dotfiles-arch" install-yay || df_fail "Failed yay installation"
+run_step "Installing mandatory packages" df_run_priv "$DOTFILES_BIN/dotfiles-arch" install-packages || df_fail "Failed package installation"
 
 # Locking SteamOS rootfs...
-run_step "Locking SteamOS rootfs" df_run sudo steamos-readonly enable || df_fail "Failed to enable steamos-readonly"
+run_step "Locking SteamOS rootfs" df_run_priv sudo steamos-readonly enable || df_fail "Failed to enable steamos-readonly"
 
 # Post-Setup
 if command -v zenity >/dev/null 2>&1; then
